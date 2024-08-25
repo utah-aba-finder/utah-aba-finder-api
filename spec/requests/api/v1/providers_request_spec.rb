@@ -39,13 +39,13 @@ describe "Providers Requests" do
       expect(providers_response[:data].first[:attributes][:ages_served]).to a(String)
 
       expect(providers_response[:data].first[:attributes]).to have_key(:waitlist)
-      expect(providers_response[:data].first[:attributes][:waitlist]).to a(String)
+      expect(providers_response[:data].first[:attributes][:waitlist]).to a(Integer)
 
       expect(providers_response[:data].first[:attributes]).to have_key(:telehealth_services)
-      expect(providers_response[:data].first[:attributes][:telehealth_services]).to a(String)
+      expect(providers_response[:data].first[:attributes][:telehealth_services]).to a(Integer)
 
       expect(providers_response[:data].first[:attributes]).to have_key(:spanish_speakers)
-      expect(providers_response[:data].first[:attributes][:spanish_speakers]).to a(String)
+      expect(providers_response[:data].first[:attributes][:spanish_speakers]).to a(Integer)
 
       expect(providers_response[:data].first[:attributes]).to have_key(:insurance)
       expect(providers_response[:data].first[:attributes][:insurance]).to a(Array)
