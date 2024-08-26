@@ -27,5 +27,5 @@ jobs:
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
-          git remote add heroku https://git.heroku.com/<your-heroku-app-name>.git
+          git remote add heroku https://git.heroku.com/utah-aba-finder-api.git
           git push heroku main
