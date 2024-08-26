@@ -12,20 +12,21 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
         with:
-          node-version: '14'
+          ruby-version: '3.0'  # Specify your Ruby version here
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install Ruby gems
+        run: bundle install
 
-      - name: Build the project
-        run: npm run build  # Adjust this if you're using a different build command
+      - name: Run RSpec tests
+        run: bundle exec rspec
 
       - name: Deploy to Heroku
+        if: success()
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
-          git remote add heroku https://git.heroku.com/<your-heroku-app-name>.git
+          git remote add heroku https://git.heroku.com/utah-aba-finder-api.git
           git push heroku main
