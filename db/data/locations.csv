@@ -1,4 +1,4 @@
-provider_id,Website,Location Name,Phone,Email,Address 1,Address 2,City,State,Zip
+provider_id,website,location_name,phone,email,address_1,address_2,city,state,zip
 1,https://www.bridgecareaba.com/locations/utah,https://www.bridgecareaba.com/locations/aba-therapy-in-utah,801-435-8088,info@bridgecareaba.com,,,,,
 2,https://www.abtaba.com/,https://www.abtaba.com/locations/aba-therapy-in-utah,(801) 630-2040,info@abtaba.com,,,,,
 3,www.abapediatricautismservices.com,https://www.abapediatricautismservices.com/locations,(801) 762-8342,info@abapediatricautismservices.com,,,,,

@@ -1,4 +1,4 @@
-Id,Name,Website,Email,Cost,min_age,max_age,Waitlist,In Clinic Services,In Home Services,Telehealth services,Spanish speakers
+id,name,website,email,cost,min_age,max_age,waitlist,in_clinic_services,in_home_services,telehealth_services,spanish_speakers
 1,A BridgeCare ABA,https://www.bridgecareaba.com/locations/utah,info@bridgecareaba.com,N/A,2,16,No,,,Yes,Yes
 2,Above & Beyond Therapy,https://www.abtaba.com/,info@abtaba.com,Out-of-Network and single-case agreements.,2,21,No,,,Yes,
 3,ABA Pediatric Autism Services,www.abapediatricautismservices.com,info@abapediatricautismservices.com,Private pay rates available upon request,1.5,6,No,,,limited,
