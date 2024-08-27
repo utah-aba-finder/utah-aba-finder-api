@@ -22,7 +22,6 @@ class ProviderSerializer
               }
             end,
             "website": provider.website,
-            "address": provider.address,
             "email": provider.email,
             "cost": provider.cost,
             "insurance": provider.insurance.map { |insurance| insurance.name},
