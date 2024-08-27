@@ -13,7 +13,6 @@ CSV.foreach(Rails.root.join('db', 'data', 'providers.csv'), headers: true) do |r
     min_age: row['min_age'],
     max_age: row['max_age'],
     waitlist: row['waitlist'],
-    telehealth: row['telehealth'],
     at_home_services: row['in_home_services'],
     in_clinic_services: row['in_clinic_services'],
     telehealth_services: row['telehealth_services'],
@@ -21,11 +20,23 @@ CSV.foreach(Rails.root.join('db', 'data', 'providers.csv'), headers: true) do |r
   )
 end
 
-CSV.foreach(Rails.root.join('db', 'data', 'providers_insurances.csv'), headers: true) do |row|
-  ProvidersInsurance.create!(
+CSV.foreach(Rails.root.join('db', 'data', 'providers_insurance.csv'), headers: true) do |row|
+  ProviderInsurance.create!(
     provider_id: row['provider_id'].to_i,
     insurance_id: row['insurance_id'].to_i
   )
+
+  # provider = Provider.find_by(id: row['provider_id'].to_i)
+  # insurance = Insurance.find_by(id: row['insurance_id'].to_i)
+  
+  # if provider && insurance
+  #   ProviderInsurance.create!(
+  #     provider: provider,
+  #     insurance: insurance
+  #   )
+  # else
+  #   puts "Skipping invalid ProviderInsurance: provider_id=#{row['provider_id']} insurance_id=#{row['insurance_id']}"
+  # end
 end
 
 CSV.foreach(Rails.root.join('db', 'data', 'locations.csv'), headers: true) do |row|
@@ -43,7 +54,7 @@ CSV.foreach(Rails.root.join('db', 'data', 'locations.csv'), headers: true) do |r
 end
 
 CSV.foreach(Rails.root.join('db', 'data', 'counties_served.csv'), headers: true) do |row|
-  Counties.create!(
+  County.create!(
     provider_id: row['provider_id'],
     counties_served: row['counties_served']
   )
