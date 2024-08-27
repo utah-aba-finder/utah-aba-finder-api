@@ -47,5 +47,4 @@ CSV.foreach(Rails.root.join('db', 'data', 'counties_served.csv'), headers: true)
     provider_id: row['provider_id'],
     counties_served: row['counties_served']
   )
-  counties.save
 end
