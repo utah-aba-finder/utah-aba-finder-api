@@ -13,9 +13,9 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '14'
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
 
       - name: Install dependencies
         run: npm install
@@ -23,7 +23,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.0'  # Specify your Ruby version here
+          ruby-version: '3.2.2'  # Specify your Ruby version here
 
       - name: Install Ruby gems
         run: bundle install
