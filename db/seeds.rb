@@ -43,7 +43,7 @@ CSV.foreach(Rails.root.join('db', 'data', 'locations.csv'), headers: true) do |r
 end
 
 CSV.foreach(Rails.root.join('db', 'data', 'counties_served.csv'), headers: true) do |row|
-  counties = Counties.new(
+  Counties.create!(
     provider_id: row['provider_id'],
     counties_served: row['counties_served']
   )
