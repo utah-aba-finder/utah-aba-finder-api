@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_08_27_203121) do
+ActiveRecord::Schema[7.1].define(version: 2024_08_27_204535) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -68,19 +68,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_27_203121) do
     t.index ["provider_id"], name: "index_providers_insurance_on_provider_id"
   end
 
-  create_table "providers_insurances", force: :cascade do |t|
-    t.bigint "provider_id", null: false
-    t.bigint "insurance_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["insurance_id"], name: "index_providers_insurances_on_insurance_id"
-    t.index ["provider_id"], name: "index_providers_insurances_on_provider_id"
-  end
-
   add_foreign_key "counties", "providers"
   add_foreign_key "locations", "providers"
   add_foreign_key "providers_insurance", "insurances"
   add_foreign_key "providers_insurance", "providers"
-  add_foreign_key "providers_insurances", "insurances"
-  add_foreign_key "providers_insurances", "providers"
 end

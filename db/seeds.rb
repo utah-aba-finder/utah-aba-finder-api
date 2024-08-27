@@ -25,18 +25,6 @@ CSV.foreach(Rails.root.join('db', 'data', 'providers_insurance.csv'), headers: t
     provider_id: row['provider_id'].to_i,
     insurance_id: row['insurance_id'].to_i
   )
-
-  # provider = Provider.find_by(id: row['provider_id'].to_i)
-  # insurance = Insurance.find_by(id: row['insurance_id'].to_i)
-  
-  # if provider && insurance
-  #   ProviderInsurance.create!(
-  #     provider: provider,
-  #     insurance: insurance
-  #   )
-  # else
-  #   puts "Skipping invalid ProviderInsurance: provider_id=#{row['provider_id']} insurance_id=#{row['insurance_id']}"
-  # end
 end
 
 CSV.foreach(Rails.root.join('db', 'data', 'locations.csv'), headers: true) do |row|
