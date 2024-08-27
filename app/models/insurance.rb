@@ -1,4 +1,4 @@
 class Insurance < ApplicationRecord
-  has_many :providers_insurance
-  has_many :providers, through: :providers_insurance
+  has_many :provider_insurances
+  has_many :providers, through: :provider_insurances
 end
