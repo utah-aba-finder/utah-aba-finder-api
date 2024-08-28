@@ -4,6 +4,7 @@ class ProviderSerializer
   def self.format_providers(providers)
     {
       data: providers.map do |provider|
+        # binding.pry
         {
           id: provider.id,
           type: "provider",
@@ -24,16 +25,17 @@ class ProviderSerializer
             "website": provider.website,
             "email": provider.email,
             "cost": provider.cost,
-            "insurance": provider.insurance.map { |insurance| insurance.name},
-            "counties_served": provider.counties_served.map { |area| area.counties_served},
+            
+            "insurance": provider.insurances.map { |insurance| {name: insurance.name} },
+            "counties_served": provider.counties.map { |area| {county: area.counties_served} },
             "min_age": provider.min_age,
             "max_age": provider.max_age,
-            "waitlist_detail": provider.waitlist_detail,
+            "waitlist": provider.waitlist,
             "telehealth_services": provider.telehealth_services,
             "spanish_speakers": provider.spanish_speakers,
             "at_home_services": provider.at_home_services,
             "in_clinic_services": provider.in_clinic_services,
-            "logo": provider.logo
+            # "logo": provider.logo
           }
         }
       end
