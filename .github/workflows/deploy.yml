@@ -1,37 +1,4 @@
-# name: CI Testing
-
-# on:
-#   push:
-#     branches:
-#       - main  # or the branch you want to deploy from
-#   pull_request:
-#     branches:
-#       - main
-
-# jobs:
-#   deploy:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#       - uses: actions/checkout@v2
-
-#       - name: Set up Node.js
-#         uses: actions/setup-node@v2
-#         with:
-#           node-version: '14'
-
-#       - name: Set up Ruby
-#         uses: ruby/setup-ruby@v1
-#         with:
-#           ruby-version: '3.2.2'  # Specify your Ruby version here
-
-#       - name: Install Ruby gems
-#         run: bundle install
-
-#       - name: Run RSpec tests
-#         run: bundle exec rspec
-
-name: CI Testing
+name: deploy
 
 on:
   push:
@@ -50,16 +17,19 @@ jobs:
         ports:
           - 5432:5432
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
           POSTGRES_DB: utah_aba_finder_api_test
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: "postgres://user:password@localhost:5432/utah_aba_finder_api_test"
     steps:
       - uses: actions/checkout@v2
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.2.2'  # Specify your Ruby version here
+          ruby-version: '3.2.2'
 
       - name: Install Ruby gems
         run: bundle install
