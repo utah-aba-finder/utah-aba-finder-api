@@ -4,11 +4,9 @@ class ProviderSerializer
   def self.format_providers(providers)
     {
       data: providers.map do |provider|
-        # binding.pry
         {
           id: provider.id,
           type: "provider",
-          # attributes need to be updated
           attributes: {
             "name": provider.name,
             "locations": provider.locations.map do |location| 
@@ -35,7 +33,7 @@ class ProviderSerializer
             "spanish_speakers": provider.spanish_speakers,
             "at_home_services": provider.at_home_services,
             "in_clinic_services": provider.in_clinic_services,
-            # "logo": provider.logo
+            "logo": provider.logo
           }
         }
       end

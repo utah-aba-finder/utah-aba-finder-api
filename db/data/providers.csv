@@ -1,87 +1,87 @@
-id,name,website,email,cost,min_age,max_age,waitlist,in_clinic_services,in_home_services,telehealth_services,spanish_speakers
-1,A BridgeCare ABA,https://www.bridgecareaba.com/locations/utah,info@bridgecareaba.com,N/A,2,16,No,,,Yes,Yes
-2,Above & Beyond Therapy,https://www.abtaba.com/,info@abtaba.com,Out-of-Network and single-case agreements.,2,21,No,,,Yes,
-3,ABA Pediatric Autism Services,www.abapediatricautismservices.com,info@abapediatricautismservices.com,Private pay rates available upon request,1.5,6,No,,,limited,
-4,ABA with Iris,www.abawithiris.com,abawithiris@gmail.com,Private pay available,5,45,No,,,Yes,No
-5,Affinity Autism Services,www.affinityautism.com,Affinity@affinitytreatment.com,Private pay rates available upon request,1.5,21,12 months,,,limited,limited
-6,A.B.I. Learning Center,www.abilearningcenter.com,Office@abilearningcenter.com,"Bill insurance or private pay is $50 an hour for RBT, BCaBA, and BCBA",1.5,18,24 months,,,limited,Yes
-7,Achieving Abilities LLC,www.achievingabilities.com,info@achievingabilities.com,,1.5,18,Contact provider,,,,
-8,ABS Kids,www.abskids.com,info@alternativebehaviorstrategies.com,"Intake and assessment $480 (6hrs. $80hr.)
+id,name,logo,website,email,cost,min_age,max_age,waitlist,in_clinic_services,in_home_services,telehealth_services,spanish_speakers
+1,A BridgeCare ABA,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691616/bridgecare-aba_ldxeau.jpg?_s=public-apps,https://www.bridgecareaba.com/locations/utah,info@bridgecareaba.com,N/A,2,16,No,,,Yes,Yes
+2,Above & Beyond Therapy,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691614/above-and-beyond-therapy_rt8yfl.jpg?_s=public-apps,https://www.abtaba.com/,info@abtaba.com,Out-of-Network and single-case agreements.,2,21,No,,,Yes,
+3,ABA Pediatric Autism Services,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691620/pediatric-autism-services_tr0wtf.jpg?_s=public-apps,www.abapediatricautismservices.com,info@abapediatricautismservices.com,Private pay rates available upon request,1.5,6,No,,,limited,
+4,ABA with Iris,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691615/aba-with-iris_ooptno.jpg?_s=public-apps,www.abawithiris.com,abawithiris@gmail.com,Private pay available,5,45,No,,,Yes,No
+5,Affinity Autism Services,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691615/Affinity-autism-logo_dhzbv0.jpg?_s=public-apps,www.affinityautism.com,Affinity@affinitytreatment.com,Private pay rates available upon request,1.5,21,12 months,,,limited,limited
+6,A.B.I. Learning Center,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691614/abi-autism-logo_nnr238.jpg?_s=public-apps,www.abilearningcenter.com,Office@abilearningcenter.com,"Bill insurance or private pay is $50 an hour for RBT, BCaBA, and BCBA",1.5,18,24 months,,,limited,Yes
+7,Achieving Abilities LLC,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691615/achieving-autism-logo_c05oin.jpg?_s=public-apps,www.achievingabilities.com,info@achievingabilities.com,,1.5,18,Contact provider,,,,
+8,ABS Kids,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691614/ABS-Kids-logo_ofsmkq.jpg?_s=public-apps,www.abskids.com,info@alternativebehaviorstrategies.com,"Intake and assessment $480 (6hrs. $80hr.)
  RBT $380 weekly (1hr supervised
  $80 + 30 hrs. at
  $30hr direct care)",1.5,,8 months,,Yes,Yes,Yes
-9,ACES ABA,www.acesaba.com/location-salt-lake-city/,verifications@acesaba.com,Varies based on child needs and location.,0,21,No,,,Yes,Yes
-10,A.G.E.S. Learning Solutions,www.ageslearningsolutions.com,emmylou@ageslearningsolutions.com,,1.5,21,"In-clinic no waitlist for daytime (9AM-3PM);
+9,ACES ABA,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691615/aces-autism-logo_ejtzjx.jpg?_s=public-apps,www.acesaba.com/location-salt-lake-city/,verifications@acesaba.com,Varies based on child needs and location.,0,21,No,,,Yes,Yes
+10,A.G.E.S. Learning Solutions,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691615/ages-autism-logo_w7ohnd.jpg?_s=public-apps,www.ageslearningsolutions.com,emmylou@ageslearningsolutions.com,,1.5,21,"In-clinic no waitlist for daytime (9AM-3PM);
  60+ days for after school (3PM - 6PM);
  In-home 60+ days (SLC
  County",,,Yes,
-11,"Advanced Behavior Analysis, Inc",https://anybehavior.com/,,"Pricing may vary depending on the child's needs.
+11,"Advanced Behavior Analysis, Inc",https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691615/advanced-aba-Logo_cryvc8.jpg?_s=public-apps,https://anybehavior.com/,,"Pricing may vary depending on the child's needs.
  Private pay: Supervised $80 per hour
  RBT $32 per hour Every 10 hours of RBT requires one hour of supervised.",2,14,No,,Yes,No,limited
-12,Advanced Behavior Change,http://www.advancedbehaviorchange.com/,onlydiane@advancedbehaviorchange.com,Private pay with support for submitting to your insurance,7,,No,,,Yes,
-13,Apex Behavior Consulting,http://www.apexbehavior.com,clientservices@apexbehavior.com,"Bill insurance or private pay behavior technician
+12,Advanced Behavior Change,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691615/advanced-behavior-change-logo_srbqxv.jpg?_s=public-apps,http://www.advancedbehaviorchange.com/,onlydiane@advancedbehaviorchange.com,Private pay with support for submitting to your insurance,7,,No,,,Yes,
+13,Apex Behavior Consulting,,http://www.apexbehavior.com,clientservices@apexbehavior.com,"Bill insurance or private pay behavior technician
  $50-$80 per hour, ABA program supervision $125 per hour, behavior consultation
  $100 per hour.",,,"0-3 months for
  9AM - 3PM
  18-24
  months for 3:30PM-6:
  30PM.",,,limited,Yes
-14,AIM-Autism in Motion,http://aim-autisminmotion.com/,gennie.tucker@aim-autisminmotion.com,Bill insurance and private pay available,1.5,22,No,,,Yes,
-15,Autism Solutions,http://autismsolutionsutah.com,info@autismsolutionsutah.com,ABA $125 per hour (BCBA),,,12 months,,,Yes,
-16,Autism Therapy Services,http://www.autismtherapyservices.com/,info@autismtherapyservices.com,Contact Provider,0,8,Contact Provider,,,Yes,No
-17,Balance Family Solutions,balancefamilysolutions.org,info@balancefamilysolutions.org,Bill insurance and private pay available,2,16,No,,,Yes,No
-18,Bee Kids Utah,https://www.beekidsutah.com/,admin@beekidsutah.com,,2,16,,,,,
-19,Beehive Behavior Services,www.beehivebehaviorservices.com,admin@buzzaba.com,Contact Provider,0,,No,,,Yes,limited
-20,"Behavior and Learning Strategies, Inc.",https://behaviorlearning.hi5aba.com,Joe.dixon@hi5aba.com,Based on need,1.5,18,1 month,,,Yes,No
-21,Blue Autism Center,https://www.blueautism.com/,,Contact office,1.5,18,No,,,,
-22,ABA Blue Gems Therapy,https://bluegemsaba.com/aba-therapy-in-utah/,info@bluegemsaba.com,Contact us for any questions regarding coverage or plans in Utah.,2,15,No,,,Yes,
-23,Brighter Strides ABA,brighterstridesaba.com,info@brighterstridesaba.com,Scaled,2,18,No,,,Yes,No
-24,"Buddies Behavioral Services, LLC",https://buddiesbehavior.com/,admin@buddiesbehavior.com,Contact office,0,,No,,,Yes,Yes
-25,Catalyst Behavior Solutions,https://catalystbehavior.com/,,"Discount offered for prepaying services
+14,AIM-Autism in Motion,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691615/AIM-logo_vtazlz.jpg?_s=public-apps,http://aim-autisminmotion.com/,gennie.tucker@aim-autisminmotion.com,Bill insurance and private pay available,1.5,22,No,,,Yes,
+15,Autism Solutions,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691616/autism-solutions-logo_updhbw.jpg?_s=public-apps,http://autismsolutionsutah.com,info@autismsolutionsutah.com,ABA $125 per hour (BCBA),,,12 months,,,Yes,
+16,Autism Therapy Services,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691616/autism-therapy-services-logo_s302ug.jpg?_s=public-apps,http://www.autismtherapyservices.com/,info@autismtherapyservices.com,Contact Provider,0,8,Contact Provider,,,Yes,No
+17,Balance Family Solutions,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691616/balance-family-logo_wmk8sd.jpg?_s=public-apps,balancefamilysolutions.org,info@balancefamilysolutions.org,Bill insurance and private pay available,2,16,No,,,Yes,No
+18,Bee Kids Utah,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691616/bee-kids-aba-logo_e0jeqw.jpg?_s=public-apps,https://www.beekidsutah.com/,admin@beekidsutah.com,,2,16,,,,,
+19,Beehive Behavior Services,,www.beehivebehaviorservices.com,admin@buzzaba.com,Contact Provider,0,,No,,,Yes,limited
+20,"Behavior and Learning Strategies, Inc.",https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691616/behavior-_-learning-logo_stsvor.jpg?_s=public-apps,https://behaviorlearning.hi5aba.com,Joe.dixon@hi5aba.com,Based on need,1.5,18,1 month,,,Yes,No
+21,Blue Autism Center,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691616/Blue-Autism-Logo_knbjns.jpg?_s=public-apps,https://www.blueautism.com/,,Contact office,1.5,18,No,,,,
+22,ABA Blue Gems Therapy,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691616/Blue-Gems-Logo_m1vxy5.jpg?_s=public-apps,https://bluegemsaba.com/aba-therapy-in-utah/,info@bluegemsaba.com,Contact us for any questions regarding coverage or plans in Utah.,2,15,No,,,Yes,
+23,Brighter Strides ABA,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691617/brighterstrides-logo_xwr4ok.jpg?_s=public-apps,brighterstridesaba.com,info@brighterstridesaba.com,Scaled,2,18,No,,,Yes,No
+24,"Buddies Behavioral Services, LLC",https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691617/Buddies-aba-logo_i4hrao.jpg?_s=public-apps,https://buddiesbehavior.com/,admin@buddiesbehavior.com,Contact office,0,,No,,,Yes,Yes
+25,Catalyst Behavior Solutions,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691617/Catalyst-aba-Logo_plk7zr.jpg?_s=public-apps,https://catalystbehavior.com/,,"Discount offered for prepaying services
  RBT $80, $64 with prepay discount. BCaBA/student
  $100, $80 with prepay discount BCBA $150, $120
  with prepay
  discount.",2,21,"Availability for daytime hours for kids ages 2-
  6, after school services typically several months",,,Yes,limited
-26,ABA Cedar Tree,https://cedartreeaba.com/,info@cedartreeaba.com,Out of network,,,No,,,Yes,Yes
-27,Chrysalis,https://www.chrysalis.care/autism,autismservices@gochrysalis.com,,,21,Contact provider,,,Yes,limited
-28,Continuum Behavioral Health,http://www.behavioralhealthservices.net/,contact@autismspectrumalliance.com,Varies based on needs,0.5,,,,,Yes,
-29,Crimson Counseling,https://crimsonheightsbh.com/,admin@crimsoncounseling.net,,,,No,,,Yes,
-30,Discovery ABA,www.discoveryaba.com,info@discoveryaba.com,,2,18,No,,,Yes,Yes
-31,Elevation Behavioral Science Services,https://www.elevationbx.com/,services@elevationbx.com,Private pay rates available upon request,1.5,18,"Daytime (8:
+26,ABA Cedar Tree,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691617/cedar-tree-aba_ostu23.jpg?_s=public-apps,https://cedartreeaba.com/,info@cedartreeaba.com,Out of network,,,No,,,Yes,Yes
+27,Chrysalis,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691617/Chrysalis_Logo_txejgc.jpg?_s=public-apps,https://www.chrysalis.care/autism,autismservices@gochrysalis.com,,,21,Contact provider,,,Yes,limited
+28,Continuum Behavioral Health,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691617/continuum-aba-logo_jvppyz.jpg?_s=public-apps,http://www.behavioralhealthservices.net/,contact@autismspectrumalliance.com,Varies based on needs,0.5,,,,,Yes,
+29,Crimson Counseling,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691617/crimson-aba-logo_iqxlc8.jpg?_s=public-apps,https://crimsonheightsbh.com/,admin@crimsoncounseling.net,,,,No,,,Yes,
+30,Discovery ABA,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691617/discover-aba-logo_uuap9y.jpg?_s=public-apps,www.discoveryaba.com,info@discoveryaba.com,,2,18,No,,,Yes,Yes
+31,Elevation Behavioral Science Services,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691618/Elevation-aba-logo_k2lmfi.jpg?_s=public-apps,https://www.elevationbx.com/,services@elevationbx.com,Private pay rates available upon request,1.5,18,"Daytime (8:
  30 AM - 2:30 PM) No
  waitlist; After school hours ~6 months",,,Yes,
-32,Eaton Alliance,http://eatonalliance.com,,,,,No,,,,
-33,Fabian House,www.fabianhouse.com,info@fabianhouse.com,Private pay accepted,2,8,Contact provider,,,No,Yes
-34,"ABA Golden Steps UT, LLC",www.goldenstepsaba.com/utah,info@goldenstepsaba.com,N/A,0,18,No,,,Yes,Yes
-35,Golden Touch ABA,www.goldentouchaba.com,info@goldentouchaba.com,Out of network benefits and single case agreements,1,18,No,,,Yes,Yes
-36,Honey Beehavior Analysis,www.honeyaba.org,tricia.hayner@honeyaba.org,Private pay accepted,0,,Contact provider,,,Yes,
-37,Integrated Autism Therapies,https://www.iatutah.com/,barb@iatutah.com,Private pay rates available upon request,,,,,,Yes,
-38,Just Parent,www.justparent.com/,,$99/month,0,,Please call,,,Yes,
-39,Kids On The Move,kotm.org,autismintake@kotm.org,Private pay available,0,17,Please call,,,Yes,Yes
-40,Kyo Autism Therapy,https://kyocare.com,info@kyocare.com,Private pay accepted,0,,No,,,Yes,Yes
-41,Learning Solutions LLC,https://www.learningsolutionsinc.org/,Madilyn.Bernard@learningsolutionsinc.org,Private pay available,2,18,6 months,,,,
-42,Lexington Services,www.lexingtonservices.com,utahinfo@lexingtonservices.com,Private pay available,0,,No,,,Yes,Yes
-43,Lighthouse Youth & Family Therapy,www.lighthouseyouthandfamily.com,lbretorr.aba@gmail.com,Private pay rates available upon request,0,,No,,,No,No
-44,Manning Behavior Services,www.manningbehaviorservices.com/,christine@manningbehaviorservices.com,$75 per hour,2,25,Daytime no waitlist; After school hours contact provider,,,Yes,No
-45,Mendability Sensory Enrichment Therapy,www.mendability.com,,"$3 per day
+32,Eaton Alliance,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691618/eaton-aba-logo_nzp5vq.jpg?_s=public-apps,http://eatonalliance.com,,,,,No,,,,
+33,Fabian House,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691618/fabianhouse-aba-logo_g5na30.jpg?_s=public-apps,www.fabianhouse.com,info@fabianhouse.com,Private pay accepted,2,8,Contact provider,,,No,Yes
+34,"ABA Golden Steps UT, LLC",https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691618/goldensteps-aba_zhqbvo.jpg?_s=public-apps,www.goldenstepsaba.com/utah,info@goldenstepsaba.com,N/A,0,18,No,,,Yes,Yes
+35,Golden Touch ABA,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691618/golden-touch-logo_vjta48.jpg?_s=public-apps,www.goldentouchaba.com,info@goldentouchaba.com,Out of network benefits and single case agreements,1,18,No,,,Yes,Yes
+36,Honey Beehavior Analysis,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691618/honey-behavior-aba-logo_jifomb.jpg?_s=public-apps,www.honeyaba.org,tricia.hayner@honeyaba.org,Private pay accepted,0,,Contact provider,,,Yes,
+37,Integrated Autism Therapies,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691618/integrated-aba-logo_dbv2hv.jpg?_s=public-apps,https://www.iatutah.com/,barb@iatutah.com,Private pay rates available upon request,,,,,,Yes,
+38,Just Parent,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691619/justparent-aba-logo_upivlk.jpg?_s=public-apps,www.justparent.com/,,$99/month,0,,Please call,,,Yes,
+39,Kids On The Move,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691619/kidsonthemove-aba-logo_qf8svw.jpg?_s=public-apps,kotm.org,autismintake@kotm.org,Private pay available,0,17,Please call,,,Yes,Yes
+40,Kyo Autism Therapy,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691619/kyo-aba-logo_oln2cu.jpg?_s=public-apps,https://kyocare.com,info@kyocare.com,Private pay accepted,0,,No,,,Yes,Yes
+41,Learning Solutions LLC,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691619/Learning_Solutions_logo_p3laox.jpg?_s=public-apps,https://www.learningsolutionsinc.org/,Madilyn.Bernard@learningsolutionsinc.org,Private pay available,2,18,6 months,,,,
+42,Lexington Services,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691619/Lexington-aba-Logo_rwuwd5.jpg?_s=public-apps,www.lexingtonservices.com,utahinfo@lexingtonservices.com,Private pay available,0,,No,,,Yes,Yes
+43,Lighthouse Youth & Family Therapy,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691621/lighthouse-aba-logo_mgagmk.jpg?_s=public-apps,www.lighthouseyouthandfamily.com,lbretorr.aba@gmail.com,Private pay rates available upon request,0,,No,,,No,No
+44,Manning Behavior Services,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691619/manning-aba-logo_ssng8u.jpg?_s=public-apps,www.manningbehaviorservices.com/,christine@manningbehaviorservices.com,$75 per hour,2,25,Daytime no waitlist; After school hours contact provider,,,Yes,No
+45,Mendability Sensory Enrichment Therapy,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691619/mendability-aba-logo_jdd6q8.jpg?_s=public-apps,www.mendability.com,,"$3 per day
  15 mins per day",0,,No,,,Yes,No
-46,Neurobehavioral Center for Growth,http://www.neurobcg.com/,admin@neurobcg.com,"Neuro BCG offers a ""tier"" program for clients that don't qualify for in home ABA.",3,9,No,,,Yes,Yes
-47,PBJ & Friends - Behavioral Health Center For Children With Autism,https://pbjandfriends.com/ ,,Contact provider,1,18,"2 months waitlist for evenings.
+46,Neurobehavioral Center for Growth,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691619/NBCG-aba-Logo_btdqd2.jpg?_s=public-apps,http://www.neurobcg.com/,admin@neurobcg.com,"Neuro BCG offers a ""tier"" program for clients that don't qualify for in home ABA.",3,9,No,,,Yes,Yes
+47,PBJ & Friends - Behavioral Health Center For Children With Autism,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691620/PBJ-and-friends-aba-logo_adpix5.jpg?_s=public-apps,https://pbjandfriends.com/ ,,Contact provider,1,18,"2 months waitlist for evenings.
  No waitlist for the morning and afternoon schedule.",,,Yes,Yes
-48,Perfect Piece,www.PerfectPiece.org,Lauren@PerfectPiece.org,,2,21,No,,,,No
-49,Pingree Autism Center,www.carmenbpingree.com,,,3,18,No,,,,
-50,ABA Skill Builders,www.skillbuildersaba.com,info@skillbuildersaba.com,N/A,0,18,No,,,Yes,Yes
-51,Success on the Spectrum,www.successonthespectrum.com,americanfork@successonthespectrum.com,,1.5,18,No,,,,
-52,Summit Behavior Services,www.summitbehaviorservicesutah.weebly.com,,"RBT - 1 hour $35 BCBA - 30
+48,Perfect Piece,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691620/perfect-piece-aba-logo_tgqich.jpg?_s=public-apps,www.PerfectPiece.org,Lauren@PerfectPiece.org,,2,21,No,,,,No
+49,Pingree Autism Center,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691620/pingree-aba-logo_brr11r.jpg?_s=public-apps,www.carmenbpingree.com,,,3,18,No,,,,
+50,ABA Skill Builders,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691621/skill-builders-aba_vnvdu2.jpg?_s=public-apps,www.skillbuildersaba.com,info@skillbuildersaba.com,N/A,0,18,No,,,Yes,Yes
+51,Success on the Spectrum,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691621/successOnTheSpectrum-aba-logo_r2f3aa.jpg?_s=public-apps,www.successonthespectrum.com,americanfork@successonthespectrum.com,,1.5,18,No,,,,
+52,Summit Behavior Services,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691621/summit-behavior-aba-logo_avvxhg.jpg?_s=public-apps,www.summitbehaviorservicesutah.weebly.com,,"RBT - 1 hour $35 BCBA - 30
  minutes $40",3,18,,,Yes,Yes,No
-53,Radiant Behavior Solutions - Art-Based & Neurodiversity Affirming,www.radiantbehavior.com,info@radiantbehavior.com,Private Pay Available,2,21,No,,,Yes,No
-54,Re Therapy Services,http://www.retherapyservices.com/,,,2,18,No,,,,
-55,Reaching Milestones,www.reachingmilestones.com,,,2,18,No,,,,
-56,Rogue Behavior Services,https://roguebehaviorservices.com/,info@roguebx.com,Pay rates: Available upon request,0,17,No,,,Yes,limited
-57,Transitional Behavior Support,www.transitionalbehaviorsupport.com,leslielilino@transitionalbehaviorsupport.com,Pay Rates: Available upon request,3,65,No,,,Yes,No
-58,Utah Autism Academy,http://utahautismacademy.com,,Varies based on hours and patient needs.,2,21,No,,,,Yes
-59,Utah Behavior Services,http://utahbehaviorservices.com,office@utbs.com,,0,21,No,,,,Yes
-60,Whole Child Therapy,www.thewholechildtherapy.com/,contactus@twctherapy.com,Private pay rates available upon request,2,18,"Afterschool - 9 months;
+53,Radiant Behavior Solutions - Art-Based & Neurodiversity Affirming,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691620/radiant-behavior-aba-logo_gpql6x.jpg?_s=public-apps,www.radiantbehavior.com,info@radiantbehavior.com,Private Pay Available,2,21,No,,,Yes,No
+54,Re Therapy Services,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691622/Whole_Child_Therapy-aba-Logo_mbh8wy.jpg?_s=public-apps,http://www.retherapyservices.com/,,,2,18,No,,,,
+55,Reaching Milestones,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691620/reaching-milestones-aba-logo_dqqrk2.jpg?_s=public-apps,www.reachingmilestones.com,,,2,18,No,,,,
+56,Rogue Behavior Services,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691620/rogue-aba-logo_dkh0ad.jpg?_s=public-apps,https://roguebehaviorservices.com/,info@roguebx.com,Pay rates: Available upon request,0,17,No,,,Yes,limited
+57,Transitional Behavior Support,,www.transitionalbehaviorsupport.com,leslielilino@transitionalbehaviorsupport.com,Pay Rates: Available upon request,3,65,No,,,Yes,No
+58,Utah Autism Academy,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691621/utahAutismAcademy-aba-logo_hoprmb.jpg?_s=public-apps,http://utahautismacademy.com,,Varies based on hours and patient needs.,2,21,No,,,,Yes
+59,Utah Behavior Services,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691621/utah-behavior-aba-logo_ho8s1p.jpg?_s=public-apps,http://utahbehaviorservices.com,office@utbs.com,,0,21,No,,,,Yes
+60,Whole Child Therapy,https://res.cloudinary.com/don662dbn/image/upload/fl_preserve_transparency/v1724691622/Whole_Child_Therapy-aba-Logo_mbh8wy.jpg?_s=public-apps,www.thewholechildtherapy.com/,contactus@twctherapy.com,Private pay rates available upon request,2,18,"Afterschool - 9 months;
  Daytime - 1-
  2 months",,,No,No
