@@ -13,7 +13,8 @@ RSpec.describe "Providers Requests", type: :request do
       telehealth_services: "Available",
       at_home_services: "Available",
       in_clinic_services: "Available",
-      spanish_speakers: "Yes"
+      spanish_speakers: "Yes",
+      logo: "https://logo.com"
       )
       
     @insurance1 = Insurance.create!(name: "Insurance A")
