@@ -90,8 +90,8 @@ RSpec.describe "Providers Requests", type: :request do
       expect(providers_response[:data].first[:attributes]).to have_key(:spanish_speakers)
       expect(providers_response[:data].first[:attributes][:spanish_speakers]).to be_a(String)
 
-      # expect(providers_response[:data].first[:attributes]).to have_key(:logo)
-      # expect(providers_response[:data].first[:attributes][:logo]).to be_a(String)
+      expect(providers_response[:data].first[:attributes]).to have_key(:logo)
+      expect(providers_response[:data].first[:attributes][:logo]).to be_a(String)
 
       expect(providers_response[:data].first[:attributes]).to have_key(:insurance)
       expect(providers_response[:data].first[:attributes][:insurance]).to be_a(Array)
