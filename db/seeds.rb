@@ -7,6 +7,7 @@ end
 CSV.foreach(Rails.root.join('db', 'data', 'providers.csv'), headers: true) do |row|
   Provider.create!(
     name: row['name'],
+    logo: row['logo'],
     website: row['website'],
     email: row['email'],
     cost: row['cost'],
