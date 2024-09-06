@@ -42,8 +42,6 @@ Run the server in the terminal:
 
     rails server
 
-You can now access the API in your browser at http://localhost:3000.
-
 ## Related Links & Repositories
 - [Utah ABA Finder API Repository](https://github.com/utah-aba-finder/utah-aba-finder-api)
 - [Utah ABA Finder BE Repository](https://github.com/utah-aba-finder/utah_aba-finder_be)
