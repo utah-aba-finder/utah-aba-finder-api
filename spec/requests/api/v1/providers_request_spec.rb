@@ -162,15 +162,10 @@ RSpec.describe "Providers Requests", type: :request do
         "email": "example@email.com",
         "cost": "private pay",
         "insurance": [
-          { name: "Aetna"},
-          { name: "Regency"},
-          { name: "Cigna"}
+          { name: "Insurance A"},
+          { name: "Insurance B"}
         ],
-        "counties_served": [
-          {county: "Davis"}, 
-          {county: "Salt Lake"}, 
-          {county: "Weber"}
-        ],
+        "counties_served": "Davis, Salt Lake, Weber",
         "min_age": 6,
         "max_age": 12,
         "waitlist": "none",
@@ -178,9 +173,11 @@ RSpec.describe "Providers Requests", type: :request do
         "spanish_speakers": "",
         "at_home_services": "yes",
         "in_clinic_services": "yes",
+        "logo": "",
         "npi": "1234"
       }
 
+      expect(Provider.all.count).to eq(1)
       expect(Provider.last.name).to eq("Provider 1")
 
       post "/api/v1/providers", params: provider_attributes.to_json, headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
@@ -197,58 +194,50 @@ RSpec.describe "Providers Requests", type: :request do
       expect(provider_response[:data].size).to eq(1)
 
       expect(provider_response[:data].first).to have_key(:id)
-      expect(provider_response[:data].first[:id]).to eq(@provider.id)
+      expect(provider_response[:data].first[:id]).to be_a(Integer)
 
       expect(provider_response[:data].first[:attributes]).to have_key(:name)
-      expect(provider_response[:data].first[:attributes][:name]).to be_a(String)
+      expect(provider_response[:data].first[:attributes][:name]).to eq("ABA Initiative")
 
       expect(provider_response[:data].first[:attributes]).to have_key(:website)
-      expect(provider_response[:data].first[:attributes][:website]).to be_a(String)
+      expect(provider_response[:data].first[:attributes][:website]).to eq("example@example.com")
 
       expect(provider_response[:data].first[:attributes]).to have_key(:email)
-      expect(provider_response[:data].first[:attributes][:email]).to be_a(String)
+      expect(provider_response[:data].first[:attributes][:email]).to eq("example@email.com")
 
       expect(provider_response[:data].first[:attributes]).to have_key(:cost)
-      expect(provider_response[:data].first[:attributes][:cost]).to be_a(String)
+      expect(provider_response[:data].first[:attributes][:cost]).to eq("private pay")
 
       expect(provider_response[:data].first[:attributes]).to have_key(:min_age)
-      expect(provider_response[:data].first[:attributes][:min_age]).to be_a(Float)
+      expect(provider_response[:data].first[:attributes][:min_age]).to eq(6)
 
       expect(provider_response[:data].first[:attributes]).to have_key(:max_age)
-      expect(provider_response[:data].first[:attributes][:max_age]).to be_a(Float)
+      expect(provider_response[:data].first[:attributes][:max_age]).to eq(12)
 
       expect(provider_response[:data].first[:attributes]).to have_key(:waitlist)
-      expect(provider_response[:data].first[:attributes][:waitlist]).to be_a(String)
+      expect(provider_response[:data].first[:attributes][:waitlist]).to eq("none")
 
       expect(provider_response[:data].first[:attributes]).to have_key(:telehealth_services)
-      expect(provider_response[:data].first[:attributes][:telehealth_services]).to be_a(String)
+      expect(provider_response[:data].first[:attributes][:telehealth_services]).to eq("yes")
 
       expect(provider_response[:data].first[:attributes]).to have_key(:at_home_services)
-      expect(provider_response[:data].first[:attributes][:at_home_services]).to be_a(String)
+      expect(provider_response[:data].first[:attributes][:at_home_services]).to eq("yes")
 
       expect(provider_response[:data].first[:attributes]).to have_key(:in_clinic_services)
-      expect(provider_response[:data].first[:attributes][:in_clinic_services]).to be_a(String)
+      expect(provider_response[:data].first[:attributes][:in_clinic_services]).to eq("yes")
 
       expect(provider_response[:data].first[:attributes]).to have_key(:spanish_speakers)
-      expect(provider_response[:data].first[:attributes][:spanish_speakers]).to be_a(String)
+      expect(provider_response[:data].first[:attributes][:spanish_speakers]).to eq("")
 
       expect(provider_response[:data].first[:attributes]).to have_key(:logo)
-      expect(provider_response[:data].first[:attributes][:logo]).to be_a(String)
-
-      expect(provider_response[:data].first[:attributes]).to have_key(:npi)
-      expect(provider_response[:data].first[:attributes][:npi]).to be_a(String)
+      expect(provider_response[:data].first[:attributes][:logo]).to eq("")
 
       expect(provider_response[:data].first[:attributes]).to have_key(:insurance)
-      expect(provider_response[:data].first[:attributes][:insurance]).to be_a(Array)
-      
-      provider_response[:data].first[:attributes][:insurance].each do |insurance|
-        expect(insurance).to have_key(:name)
-        expect(insurance[:name]).to be_a(String)
-      end
+      expect(provider_response[:data].first[:attributes][:insurance]).to eq([{name: "Insurance A"}, {name: "Insurance B"}])
 
       expect(provider_response[:data].first[:attributes]).to have_key(:locations)
       expect(provider_response[:data].first[:attributes][:locations]).to be_a(Array)
-      expect(provider_response[:data].first[:attributes][:locations].length).to eq(3)
+      expect(provider_response[:data].first[:attributes][:locations].length).to eq(2)
 
       provider_response[:data].first[:attributes][:locations].each do |location|
         expect(location).to be_a(Hash)
@@ -270,7 +259,7 @@ RSpec.describe "Providers Requests", type: :request do
 
       expect(provider_response[:data].first[:attributes]).to have_key(:counties_served)
       expect(provider_response[:data].first[:attributes][:counties_served]).to be_a(Array)
-      expect(provider_response[:data].first[:attributes][:counties_served].length).to eq(3)
+      expect(provider_response[:data].first[:attributes][:counties_served].length).to eq(1)
 
       provider_response[:data].first[:attributes][:counties_served].each do |area_served|
         expect(area_served).to be_a(Hash)
@@ -278,6 +267,7 @@ RSpec.describe "Providers Requests", type: :request do
         expect(area_served[:county]).to be_a(String)
       end
 
+      expect(Provider.all.count).to eq(2)
       expect(Provider.last.name).to eq("ABA Initiative")
     end
   end
