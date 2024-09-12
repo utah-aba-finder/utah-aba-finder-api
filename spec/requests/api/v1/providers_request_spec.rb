@@ -271,4 +271,8 @@ RSpec.describe "Providers Requests", type: :request do
       expect(Provider.last.name).to eq("ABA Initiative")
     end
   end
+
+  it "updates a provider" do
+    
+  end
 end
