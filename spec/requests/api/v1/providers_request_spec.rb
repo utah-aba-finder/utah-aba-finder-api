@@ -271,4 +271,46 @@ RSpec.describe "Providers Requests", type: :request do
       expect(Provider.last.name).to eq("ABA Initiative")
     end
   end
+
+  context "patch /api/v1/providers/:id" do
+    it "can update a provider" do
+      updated_attributes = {
+        "name": "Updated Provider",
+        "email": "updated@provider1.com",
+        "cost": "$200",
+        "min_age": 6.0,
+        "max_age": 20.0
+      }
+  
+      patch "/api/v1/providers/#{@provider.id}", params: updated_attributes.to_json, headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+  
+      expect(response).to be_successful
+      expect(response.status).to eq(200)
+  
+      provider_response = JSON.parse(response.body, symbolize_names: true)
+  
+      expect(provider_response).to be_an(Hash)
+      
+      # Since data is likely an array, access the first element
+      provider_data = provider_response[:data].first
+  
+      expect(provider_data).to have_key(:id)
+      expect(provider_data[:id]).to eq(@provider.id)
+  
+      expect(provider_data[:attributes]).to have_key(:name)
+      expect(provider_data[:attributes][:name]).to eq("Updated Provider")
+  
+      expect(provider_data[:attributes]).to have_key(:email)
+      expect(provider_data[:attributes][:email]).to eq("updated@provider1.com")
+  
+      expect(provider_data[:attributes]).to have_key(:cost)
+      expect(provider_data[:attributes][:cost]).to eq("$200")
+  
+      expect(provider_data[:attributes]).to have_key(:min_age)
+      expect(provider_data[:attributes][:min_age]).to eq(6.0)
+  
+      expect(provider_data[:attributes]).to have_key(:max_age)
+      expect(provider_data[:attributes][:max_age]).to eq(20.0)
+    end
+  end  
 end

@@ -28,6 +28,12 @@ class Api::V1::ProvidersController < ApplicationController
     end
   end
 
+  def update
+    provider = Provider.find(params[:id])
+    provider.update!(provider_params)
+    render json: ProviderSerializer.format_providers([provider])
+  end
+
   private
   def provider_params
     params.permit(
