@@ -34,6 +34,11 @@ class Api::V1::ProvidersController < ApplicationController
     render json: ProviderSerializer.format_providers([provider])
   end
 
+  def show
+    provider = Provider.find(params[:id])
+    render json: ProviderSerializer.format_providers([provider])
+  end
+
   private
   def provider_params
     params.permit(
