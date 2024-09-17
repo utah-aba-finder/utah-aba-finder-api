@@ -37,12 +37,15 @@ RSpec.describe "Get Providers Request", type: :request do
 
     County.create!(provider: @provider, counties_served: "Salt Lake County")
     County.create!(provider: @provider, counties_served: "Davis County")
+
+    @client = Client.create!(name: "test_client", api_key: SecureRandom.hex)
+    @api_key = @client.api_key
   end
 
   context "get /api/v1/providers" do
     it "returns all providers with provider attributes" do
 
-      get "/api/v1/providers"
+      get "/api/v1/providers", headers: { 'Content-Type': 'application/json', 'Authorization': @api_key, 'Accept': 'application/json' }
 
       expect(response).to be_successful
       expect(response.status).to eq(200)
@@ -131,6 +134,20 @@ RSpec.describe "Get Providers Request", type: :request do
         expect(area_served).to have_key(:county)
         expect(area_served[:county]).to be_a(String)
       end
+    end
+
+
+    it "it throws error if not authorized with bearer token" do
+
+      get "/api/v1/providers"
+
+      expect(response.status).to eq(401)
+
+      error_response = JSON.parse(response.body, symbolize_names: true)
+
+      expect(error_response).to be_an(Hash)
+      expect(error_response).to have_key(:error)
+      expect(error_response[:error]).to eq("Unauthorized")
     end
   end
 end
