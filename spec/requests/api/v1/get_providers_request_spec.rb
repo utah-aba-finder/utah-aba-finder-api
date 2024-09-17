@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe "Provider Requests", type: :request do
+RSpec.describe "Get Providers Request", type: :request do
   before(:each) do
     @provider = Provider.create!(
       name: "Provider 1",
@@ -20,8 +20,8 @@ RSpec.describe "Provider Requests", type: :request do
     @insurance1 = Insurance.create!(name: "Insurance A")
     @insurance2 = Insurance.create!(name: "Insurance B")
 
-    ProviderInsurance.create!(provider: @provider, insurance: @insurance1)
-    ProviderInsurance.create!(provider: @provider, insurance: @insurance2)
+    @pi1 = ProviderInsurance.create!(provider: @provider, insurance: @insurance1)
+    @pi2 = ProviderInsurance.create!(provider: @provider, insurance: @insurance2)
 
     Location.create!(
       provider: @provider,
@@ -39,10 +39,10 @@ RSpec.describe "Provider Requests", type: :request do
     County.create!(provider: @provider, counties_served: "Davis County")
   end
 
-  context "get /api/v1/providers/:id" do
-    it "returns provider with provider attributes" do
+  context "get /api/v1/providers" do
+    it "returns all providers with provider attributes" do
 
-      get "/api/v1/providers/1"
+      get "/api/v1/providers"
 
       expect(response).to be_successful
       expect(response.status).to eq(200)
@@ -50,7 +50,7 @@ RSpec.describe "Provider Requests", type: :request do
       providers_response = JSON.parse(response.body, symbolize_names: true)
 
       expect(providers_response).to be_an(Hash)
-      binding.pry
+
       expect(providers_response).to have_key(:data)
       expect(providers_response[:data]).to be_a(Array)
       expect(providers_response[:data].size).to eq(1)

@@ -11,6 +11,7 @@ class ProviderSerializer
             "name": provider.name,
             "locations": provider.locations.map do |location| 
               {
+              id: location.id,
               name: location.name,
               address_1: location.address_1,
               address_2: location.address_2,
@@ -24,7 +25,12 @@ class ProviderSerializer
             "email": provider.email,
             "cost": provider.cost,
             
-            "insurance": provider.insurances.map { |insurance| {name: insurance.name} },
+            "insurance": provider.provider_insurances.map do |provider_insurance|
+              {
+                name: provider_insurance.insurance.name, 
+                id: provider_insurance.id
+              }
+            end,
             "counties_served": provider.counties.map { |area| {county: area.counties_served} },
             "min_age": provider.min_age,
             "max_age": provider.max_age,
