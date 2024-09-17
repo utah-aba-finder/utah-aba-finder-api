@@ -50,7 +50,7 @@ RSpec.describe "Get Provider Request", type: :request do
       provider_response = JSON.parse(response.body, symbolize_names: true)
 
       expect(provider_response).to be_an(Hash)
-
+      # binding.pry
       expect(provider_response).to have_key(:data)
       expect(provider_response[:data]).to be_a(Array)
       expect(provider_response[:data].size).to eq(1)
@@ -100,6 +100,8 @@ RSpec.describe "Get Provider Request", type: :request do
       provider_response[:data].first[:attributes][:insurance].each do |insurance|
         expect(insurance).to have_key(:name)
         expect(insurance[:name]).to be_a(String)
+        expect(insurance).to have_key(:id)
+        expect(insurance[:id]).to be_an(Integer)
       end
 
       expect(provider_response[:data].first[:attributes]).to have_key(:locations)
@@ -109,6 +111,8 @@ RSpec.describe "Get Provider Request", type: :request do
         expect(location).to be_a(Hash)
         expect(location).to have_key(:name)
         expect(location[:name]).to be_a(String)
+        expect(location).to have_key(:id)
+        expect(location[:id]).to be_an(Integer)
         expect(location).to have_key(:address_1)
         expect(location[:address_1]).to be_a(String)
         expect(location).to have_key(:address_2)
