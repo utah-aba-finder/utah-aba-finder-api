@@ -37,12 +37,15 @@ RSpec.describe "Get Providers Request", type: :request do
 
     County.create!(provider: @provider, counties_served: "Salt Lake County")
     County.create!(provider: @provider, counties_served: "Davis County")
+
+    @client = Client.create!(name: "test_client", api_key: SecureRandom.hex)
+    @api_key = @client.api_key
   end
 
   context "get /api/v1/providers" do
     it "returns all providers with provider attributes" do
 
-      get "/api/v1/providers"
+      get "/api/v1/providers", headers: { 'Content-Type': 'application/json', 'Authorization': @api_key, 'Accept': 'application/json' }
 
       expect(response).to be_successful
       expect(response.status).to eq(200)

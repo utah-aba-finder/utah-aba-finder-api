@@ -37,6 +37,9 @@ RSpec.describe "Get Providers Request", type: :request do
 
     County.create!(provider: @provider, counties_served: "Salt Lake County")
     County.create!(provider: @provider, counties_served: "Davis County")
+
+    @client = Client.create!(name: "test_client", api_key: SecureRandom.hex)
+    @api_key = @client.api_key
   end
 
   context "patch /api/v1/providers/:id" do
@@ -49,7 +52,7 @@ RSpec.describe "Get Providers Request", type: :request do
         "max_age": 20.0
       }
   
-      patch "/api/v1/providers/#{@provider.id}", params: updated_attributes.to_json, headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+      patch "/api/v1/providers/#{@provider.id}", params: updated_attributes.to_json, headers: { 'Content-Type': 'application/json', 'Authorization': @api_key, 'Accept': 'application/json' }
   
       expect(response).to be_successful
       expect(response.status).to eq(200)

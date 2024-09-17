@@ -1,5 +1,5 @@
 class Client < ApplicationRecord
-  before_create :generate_api_key
+  before_validation :generate_api_key, on: :create
 
   validates :name, presence: true, uniqueness: true
   validates :api_key, presence: true, uniqueness: true
@@ -7,6 +7,6 @@ class Client < ApplicationRecord
   private
 
   def generate_api_key
-    self.api_key = SecureRandom.hex
+    self.api_key ||= SecureRandom.hex
   end
 end
