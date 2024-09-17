@@ -135,5 +135,19 @@ RSpec.describe "Get Providers Request", type: :request do
         expect(area_served[:county]).to be_a(String)
       end
     end
+
+
+    it "it throws error if not authorized with bearer token" do
+
+      get "/api/v1/providers"
+
+      expect(response.status).to eq(401)
+
+      error_response = JSON.parse(response.body, symbolize_names: true)
+
+      expect(error_response).to be_an(Hash)
+      expect(error_response).to have_key(:error)
+      expect(error_response[:error]).to eq("Unauthorized")
+    end
   end
 end

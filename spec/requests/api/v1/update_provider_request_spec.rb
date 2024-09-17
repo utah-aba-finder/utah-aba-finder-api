@@ -81,5 +81,26 @@ RSpec.describe "Get Providers Request", type: :request do
       expect(provider_data[:attributes]).to have_key(:max_age)
       expect(provider_data[:attributes][:max_age]).to eq(20.0)
     end
+
+
+    it "it throws error if not authorized with bearer token" do
+      updated_attributes = {
+        "name": "Updated Provider",
+        "email": "updated@provider1.com",
+        "cost": "$200",
+        "min_age": 6.0,
+        "max_age": 20.0
+      }
+      
+      patch "/api/v1/providers/#{@provider.id}", params: updated_attributes.to_json, headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+
+      expect(response.status).to eq(401)
+
+      error_response = JSON.parse(response.body, symbolize_names: true)
+
+      expect(error_response).to be_an(Hash)
+      expect(error_response).to have_key(:error)
+      expect(error_response[:error]).to eq("Unauthorized")
+    end
   end  
 end
