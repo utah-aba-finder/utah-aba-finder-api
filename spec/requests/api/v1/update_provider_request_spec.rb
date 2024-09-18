@@ -21,8 +21,9 @@ RSpec.describe "Get Providers Request", type: :request do
     @insurance2 = Insurance.create!(name: "Insurance B")
     @insurance3 = Insurance.create!(name: "Insurance C")
 
-    @pi1 = ProviderInsurance.create!(provider: @provider, insurance: @insurance1)
-    @pi2 = ProviderInsurance.create!(provider: @provider, insurance: @insurance2)
+    @pi1 = ProviderInsurance.create!(provider: @provider, insurance: @insurance1, accepted: true)
+    @pi2 = ProviderInsurance.create!(provider: @provider, insurance: @insurance2, accepted: false)
+    @pi3 = ProviderInsurance.create!(provider: @provider, insurance: @insurance3, accepted: false)
 
     @location1 = Location.create!(
       provider: @provider,
@@ -104,7 +105,7 @@ RSpec.describe "Get Providers Request", type: :request do
       expect(provider_response).to be_an(Hash)
       
       provider_data = provider_response[:data].first
-  
+      
       expect(provider_data).to have_key(:id)
       expect(provider_data[:id]).to eq(@provider.id)
   
@@ -112,7 +113,7 @@ RSpec.describe "Get Providers Request", type: :request do
       expect(provider_data[:attributes][:name]).to eq("Provider 1")
 
       expect(provider_response[:attributes]).to have_key(:website)
-      expect(provider_response[:attributes][:website]).to be_a(String)
+      expect(provider_response[:attributes][:website]).to eq("https://www.bridgecareaba.com/locations/utah")
   
       expect(provider_data[:attributes]).to have_key(:email)
       expect(provider_data[:attributes][:email]).to eq("info@bridgecareaba.com")
@@ -190,4 +191,9 @@ RSpec.describe "Get Providers Request", type: :request do
     expect(error_response).to have_key(:error)
     expect(error_response[:error]).to eq("Unauthorized")
   end  
+
+  context "patch /api/v1/providers/:id" do
+    xit "can update a provider's existing attributes to nil" do
+    end
+  end
 end
