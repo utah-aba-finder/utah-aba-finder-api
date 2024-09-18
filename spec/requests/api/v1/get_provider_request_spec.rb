@@ -20,8 +20,8 @@ RSpec.describe "Get Provider Request", type: :request do
     @insurance1 = Insurance.create!(name: "Insurance A")
     @insurance2 = Insurance.create!(name: "Insurance B")
 
-    ProviderInsurance.create!(provider: @provider, insurance: @insurance1)
-    ProviderInsurance.create!(provider: @provider, insurance: @insurance2)
+    @pi1 = ProviderInsurance.create!(provider: @provider, insurance: @insurance1, accepted: true)
+    @pi2 = ProviderInsurance.create!(provider: @provider, insurance: @insurance2, accepted: false)
 
     Location.create!(
       provider: @provider,
@@ -102,6 +102,8 @@ RSpec.describe "Get Provider Request", type: :request do
       provider_response[:data].first[:attributes][:insurance].each do |insurance|
         expect(insurance).to have_key(:name)
         expect(insurance[:name]).to be_a(String)
+        expect(insurance).to have_key(:accepted)
+        expect(insurance[:accepted]).to be(true)
       end
 
       expect(provider_response[:data].first[:attributes]).to have_key(:locations)

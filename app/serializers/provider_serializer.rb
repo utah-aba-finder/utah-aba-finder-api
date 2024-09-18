@@ -25,10 +25,11 @@ class ProviderSerializer
             "email": provider.email,
             "cost": provider.cost,
             
-            "insurance": provider.provider_insurances.map do |provider_insurance|
+            "insurance": provider.provider_insurances.where(accepted: true).map do |provider_insurance|
               {
                 name: provider_insurance.insurance.name, 
-                id: provider_insurance.id
+                id: provider_insurance.id,
+                accepted: provider_insurance.accepted
               }
             end,
             "counties_served": provider.counties.map { |area| {county: area.counties_served} },

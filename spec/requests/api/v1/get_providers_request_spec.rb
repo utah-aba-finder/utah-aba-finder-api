@@ -103,8 +103,8 @@ RSpec.describe "Get Providers Request", type: :request do
       providers_response[:data].first[:attributes][:insurance].each do |insurance|
         expect(insurance).to have_key(:name)
         expect(insurance[:name]).to be_a(String)
-        # expect(insurance).to have_key(:accepted) #these will work on my next PR which I was already working on. we are looking for provider_insurance in serializer not insurance
-        # expect(insurance[:accepted]).to be_in([true, false])
+        expect(insurance).to have_key(:accepted) 
+        expect(insurance[:accepted]).to be(true)
       end
 
       expect(providers_response[:data].first[:attributes]).to have_key(:locations)
