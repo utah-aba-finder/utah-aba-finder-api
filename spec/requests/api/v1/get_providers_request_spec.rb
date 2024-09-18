@@ -104,7 +104,7 @@ RSpec.describe "Get Providers Request", type: :request do
         expect(insurance).to have_key(:name)
         expect(insurance[:name]).to be_a(String)
         expect(insurance).to have_key(:accepted) 
-        expect(insurance[:accepted]).to be(true).or be(false)
+        expect(insurance[:accepted]).to be(true)
       end
 
       expect(providers_response[:data].first[:attributes]).to have_key(:locations)
