@@ -4,29 +4,29 @@ class Api::V1::ProvidersController < ApplicationController
     render json: ProviderSerializer.format_providers(providers)
   end
 
-  def create
-    provider = Provider.new(provider_params)
-    if provider.save
-      # should create method in provider model to handle extra creation/association logic
-      params[:locations].each do |location|
-        provider.locations.create!(
-          name: location[:name],
-          address_1: location[:address_1] ,
-          address_2: location[:address_2] ,
-          city: location[:city] ,
-          state: location[:state] ,
-          zip: location[:zip] ,
-          phone: location[:phone] 
-          )
-        end
-      provider.counties.create!(counties_served: params[:counties_served])
-      params[:insurance].each do |insurance|
-        insurance_found = Insurance.find_by(name: insurance[:name])
-        ProviderInsurance.create!(provider_id: provider.id, insurance_id: insurance_found.id)
-      end
-      render json: ProviderSerializer.format_providers([provider])
-    end
-  end
+  # def create
+  #   provider = Provider.new(provider_params)
+  #   if provider.save
+  #     # should create method in provider model to handle extra creation/association logic
+  #     params[:locations].each do |location|
+  #       provider.locations.create!(
+  #         name: location[:name],
+  #         address_1: location[:address_1] ,
+  #         address_2: location[:address_2] ,
+  #         city: location[:city] ,
+  #         state: location[:state] ,
+  #         zip: location[:zip] ,
+  #         phone: location[:phone] 
+  #         )
+  #       end
+  #     provider.counties.create!(counties_served: params[:counties_served])
+  #     params[:insurance].each do |insurance|
+  #       insurance_found = Insurance.find_by(name: insurance[:name])
+  #       ProviderInsurance.create!(provider_id: provider.id, insurance_id: insurance_found.id)
+  #     end
+  #     render json: ProviderSerializer.format_providers([provider])
+  #   end
+  # end
 
   def update
     binding.pry

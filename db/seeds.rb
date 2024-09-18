@@ -49,3 +49,5 @@ CSV.foreach(Rails.root.join('db', 'data', 'counties_served.csv'), headers: true)
     counties_served: row['counties_served']
   )
 end
+
+Client.create!(name: "utah_aba_finder_be")

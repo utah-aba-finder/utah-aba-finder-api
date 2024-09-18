@@ -37,6 +37,9 @@ RSpec.describe "Get Providers Request", type: :request do
 
     County.create!(provider: @provider, counties_served: "Salt Lake County")
     County.create!(provider: @provider, counties_served: "Davis County")
+
+    @client = Client.create!(name: "test_client", api_key: SecureRandom.hex)
+    @api_key = @client.api_key
   end
 
   context "patch /api/v1/providers/:id" do
@@ -91,11 +94,7 @@ RSpec.describe "Get Providers Request", type: :request do
         ]
       }
 
-      patch "/api/v1/providers/#{@provider.id}", params: updated_attributes_json, headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
-      
-      #update provider_insurance -> we will be getting a provider_id and insurance_id (main) 
-      # use AR to cross reference the existing provider_insurance rows against the received ids and 
-      # can update or create or delete based on some ruby logic 
+      patch "/api/v1/providers/#{@provider.id}", params: updated_attributes_json, headers: { 'Content-Type': 'application/json', 'Authorization': @api_key, 'Accept': 'application/json' }
 
       expect(response).to be_successful
       expect(response.status).to eq(200)
@@ -170,5 +169,25 @@ RSpec.describe "Get Providers Request", type: :request do
 
       expect(provider_response[:attributes][:counties_served][0][:counties]).to_eq("Salt Lake County, Weber County")
     end
+  end  
+
+  it "it throws error if not authorized with bearer token" do
+    updated_attributes = {
+      "name": "Updated Provider",
+      "email": "updated@provider1.com",
+      "cost": "$200",
+      "min_age": 6.0,
+      "max_age": 20.0
+    }
+    
+    patch "/api/v1/providers/#{@provider.id}", params: updated_attributes.to_json, headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+
+    expect(response.status).to eq(401)
+
+    error_response = JSON.parse(response.body, symbolize_names: true)
+
+    expect(error_response).to be_an(Hash)
+    expect(error_response).to have_key(:error)
+    expect(error_response[:error]).to eq("Unauthorized")
   end  
 end
