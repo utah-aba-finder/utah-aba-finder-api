@@ -29,8 +29,11 @@ class Api::V1::ProvidersController < ApplicationController
   end
 
   def update
+    binding.pry
     provider = Provider.find(params[:id])
     provider.update!(provider_params)
+    # provider.update_locations(params[:locations])
+    #provider.update_provider_insurance(params[:insurances])
     render json: ProviderSerializer.format_providers([provider])
   end
 

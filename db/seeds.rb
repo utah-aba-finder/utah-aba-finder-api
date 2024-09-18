@@ -24,7 +24,8 @@ end
 CSV.foreach(Rails.root.join('db', 'data', 'providers_insurance.csv'), headers: true) do |row|
   ProviderInsurance.create!(
     provider_id: row['provider_id'].to_i,
-    insurance_id: row['insurance_id'].to_i
+    insurance_id: row['insurance_id'].to_i,
+    accepted: row['accepted']
   )
 end
 
