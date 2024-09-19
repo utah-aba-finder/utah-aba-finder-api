@@ -33,7 +33,8 @@ class Api::V1::ProvidersController < ApplicationController
     provider = Provider.find(params[:id])
     provider.update!(provider_params)
     # provider.update_locations(params[:locations])
-    #provider.update_provider_insurance(params[:insurances])
+    # provider.update_provider_insurance(params[:insurances])
+    # provider.update_counties_served(params[:counties_served])
     render json: ProviderSerializer.format_providers([provider])
   end
 

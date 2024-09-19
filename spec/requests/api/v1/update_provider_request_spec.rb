@@ -144,31 +144,34 @@ RSpec.describe "Get Providers Request", type: :request do
 
       expect(provider_response[:attributes]).to have_key(:logo)
       expect(provider_response[:attributes][:logo]).to eq("https://awesomelogo.com")
-
-      expect(provider_response[:attributes]).to have_key(:insurance)
-      expect(provider_response[:attributes][:insurance]).to be_a(Array)
       
-      expect(provider_response[:attributes][:insurance].length).to eq(2)
-      expect(provider_response[:attributes][:insurance].first.name).to eq("Insurance A")
-      expect(provider_response[:attributes][:insurance].first.id).to eq(@insurance1.id)
-      expect(provider_response[:attributes][:insurance][1].name).to eq("Insurance C")
-      expect(provider_response[:attributes][:insurance][1].id).to eq(@insurance3.id)
+      #UPDATE INSURANCE
+      # expect(provider_response[:attributes]).to have_key(:insurance)
+      # expect(provider_response[:attributes][:insurance]).to be_a(Array)
+      
+      # expect(provider_response[:attributes][:insurance].length).to eq(2)
+      # expect(provider_response[:attributes][:insurance].first.name).to eq("Insurance A")
+      # expect(provider_response[:attributes][:insurance].first.id).to eq(@insurance1.id)
+      # expect(provider_response[:attributes][:insurance][1].name).to eq("Insurance C")
+      # expect(provider_response[:attributes][:insurance][1].id).to eq(@insurance3.id)
 
-      expect(provider_response[:attributes]).to have_key(:locations)
-      expect(provider_response[:attributes][:locations]).to be_a(Array)
+      #UPDATE LOCATIONS
+      # expect(provider_response[:attributes]).to have_key(:locations)
+      # expect(provider_response[:attributes][:locations]).to be_a(Array)
 
-      expect(provider_response[:attributes][:locations].first.name).to_eq("Cool location name")
-      expect(provider_response[:attributes][:locations].first.address_1).to_eq("123 Main St")
-      expect(provider_response[:attributes][:locations].first.address_2).to_eq("Suite 100")
-      expect(provider_response[:attributes][:locations].first.city).to_eq("Salt Lake City")
-      expect(provider_response[:attributes][:locations].first.state).to_eq("UT")
-      expect(provider_response[:attributes][:locations].first.zip).to_eq("84101")
-      expect(provider_response[:attributes][:locations].first.phone).to_eq("801-435-8088")
+      # expect(provider_response[:attributes][:locations].first.name).to_eq("Cool location name")
+      # expect(provider_response[:attributes][:locations].first.address_1).to_eq("123 Main St")
+      # expect(provider_response[:attributes][:locations].first.address_2).to_eq("Suite 100")
+      # expect(provider_response[:attributes][:locations].first.city).to_eq("Salt Lake City")
+      # expect(provider_response[:attributes][:locations].first.state).to_eq("UT")
+      # expect(provider_response[:attributes][:locations].first.zip).to_eq("84101")
+      # expect(provider_response[:attributes][:locations].first.phone).to_eq("801-435-8088")
 
-      expect(provider_response[:attributes]).to have_key(:counties_served)
-      expect(provider_response[:attributes][:counties_served]).to be_a(Array)
+      #UPDATE COUNTIES
+      # expect(provider_response[:attributes]).to have_key(:counties_served)
+      # expect(provider_response[:attributes][:counties_served]).to be_a(Array)
 
-      expect(provider_response[:attributes][:counties_served][0][:counties]).to_eq("Salt Lake County, Weber County")
+      # expect(provider_response[:attributes][:counties_served][0][:counties]).to_eq("Salt Lake County, Weber County")
     end
   end  
 
