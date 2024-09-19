@@ -36,8 +36,7 @@ RSpec.describe "Get Providers Request", type: :request do
       phone: "555-1234",
     )
 
-    County.create!(provider: @provider, counties_served: "Salt Lake County")
-    County.create!(provider: @provider, counties_served: "Davis County")
+    County.create!(provider: @provider, counties_served: "Salt Lake")
 
     @client = Client.create!(name: "test_client", api_key: SecureRandom.hex)
     @api_key = @client.api_key
@@ -45,41 +44,41 @@ RSpec.describe "Get Providers Request", type: :request do
 
   context "patch /api/v1/providers/:id" do
     it "can update a provider's existing attributes" do
-      updated_attributes_json = {
+      updated_attributes = {
         "data": [
           {
-            "id": "#{@provider.id}",
+            "id": @provider.id,
             "type": "provider",
             "attributes": {
               "name": "Provider 1",
               "locations": [
                 {
-                  "id": "#{@location1.id}",
+                  "id": @location1.id,
                   "name": "Cool location name",
-                  "address_1": "123 Main St",
-                  "address_2": "Suite 100",
-                  "city": "Salt Lake City",
-                  "state": "UT",
-                  "zip": "84101",
+                  "address_1": "3 Elm St",
+                  "address_2": "PO Box 22",
+                  "city": "Frisco",
+                  "state": "CO",
+                  "zip": "80424",
                   "phone": "801-435-8088"
                 }
               ],
-              "website": "https://www.bridgecareaba.com/locations/utah",
-              "email": "info@bridgecareaba.com",
+              "website": "https://www.changedwebsite.com",
+              "email": "info@coolemail.com",
               "cost": "N/A",
               "insurance": [
                 {
                   "name": "Insurance A",
-                  "id": "#{@insurance1.id}"
+                  "id": @insurance1.id
                 },
                 {
                   "name": "Insurance C",
-                  "id": "#{@insurance3.id}"
+                  "id": @insurance3.id
                 }
               ],
               "counties_served": [
                 {
-                  "county": "Salt Lake County, Weber County"
+                  "county": "Salt Lake, Weber"
                 }
               ],
               "min_age": 2.0,
@@ -95,16 +94,16 @@ RSpec.describe "Get Providers Request", type: :request do
         ]
       }
 
-      patch "/api/v1/providers/#{@provider.id}", params: updated_attributes_json, headers: { 'Content-Type': 'application/json', 'Authorization': @api_key, 'Accept': 'application/json' }
+      patch "/api/v1/providers/#{@provider.id}", params: updated_attributes.to_json, headers: { 'Content-Type': 'application/json', 'Authorization': @api_key, 'Accept': 'application/json' }
 
       expect(response).to be_successful
       expect(response.status).to eq(200)
   
       provider_response = JSON.parse(response.body, symbolize_names: true)
-      
       expect(provider_response).to be_an(Hash)
       
       provider_data = provider_response[:data].first
+      # binding.pry
       
       expect(provider_data).to have_key(:id)
       expect(provider_data[:id]).to eq(@provider.id)
@@ -112,11 +111,11 @@ RSpec.describe "Get Providers Request", type: :request do
       expect(provider_data[:attributes]).to have_key(:name)
       expect(provider_data[:attributes][:name]).to eq("Provider 1")
 
-      expect(provider_response[:attributes]).to have_key(:website)
-      expect(provider_response[:attributes][:website]).to eq("https://www.bridgecareaba.com/locations/utah")
+      expect(provider_data[:attributes]).to have_key(:website)
+      expect(provider_data[:attributes][:website]).to eq("https://www.changedwebsite.com")
   
       expect(provider_data[:attributes]).to have_key(:email)
-      expect(provider_data[:attributes][:email]).to eq("info@bridgecareaba.com")
+      expect(provider_data[:attributes][:email]).to eq("info@coolemail.com")
   
       expect(provider_data[:attributes]).to have_key(:cost)
       expect(provider_data[:attributes][:cost]).to eq("N/A")
@@ -127,51 +126,51 @@ RSpec.describe "Get Providers Request", type: :request do
       expect(provider_data[:attributes]).to have_key(:max_age)
       expect(provider_data[:attributes][:max_age]).to eq(16.0)
       
-      expect(provider_response[:attributes]).to have_key(:waitlist)
-      expect(provider_response[:attributes][:waitlist]).to eq("Yes")
+      expect(provider_data[:attributes]).to have_key(:waitlist)
+      expect(provider_data[:attributes][:waitlist]).to eq("No")
 
-      expect(provider_response[:attributes]).to have_key(:telehealth_services)
-      expect(provider_response[:attributes][:telehealth_services]).to eq("Yes")
+      expect(provider_data[:attributes]).to have_key(:telehealth_services)
+      expect(provider_data[:attributes][:telehealth_services]).to eq("Yes")
 
-      expect(provider_response[:attributes]).to have_key(:at_home_services)
-      expect(provider_response[:attributes][:at_home_services]).to eq("Yes")
+      expect(provider_data[:attributes]).to have_key(:at_home_services)
+      expect(provider_data[:attributes][:at_home_services]).to eq("Yes")
 
-      expect(provider_response[:attributes]).to have_key(:in_clinic_services)
-      expect(provider_response[:attributes][:in_clinic_services]).to eq("Yes")
+      expect(provider_data[:attributes]).to have_key(:in_clinic_services)
+      expect(provider_data[:attributes][:in_clinic_services]).to eq("Yes")
 
-      expect(provider_response[:attributes]).to have_key(:spanish_speakers)
-      expect(provider_response[:attributes][:spanish_speakers]).to eq("Yes")
+      expect(provider_data[:attributes]).to have_key(:spanish_speakers)
+      expect(provider_data[:attributes][:spanish_speakers]).to eq("Yes")
 
-      expect(provider_response[:attributes]).to have_key(:logo)
-      expect(provider_response[:attributes][:logo]).to eq("https://awesomelogo.com")
+      expect(provider_data[:attributes]).to have_key(:logo)
+      expect(provider_data[:attributes][:logo]).to eq("https://awesomelogo.com")
       
       #UPDATE INSURANCE
-      # expect(provider_response[:attributes]).to have_key(:insurance)
-      # expect(provider_response[:attributes][:insurance]).to be_a(Array)
+      expect(provider_data[:attributes]).to have_key(:insurance)
+      expect(provider_data[:attributes][:insurance]).to be_a(Array)
       
-      # expect(provider_response[:attributes][:insurance].length).to eq(2)
-      # expect(provider_response[:attributes][:insurance].first.name).to eq("Insurance A")
-      # expect(provider_response[:attributes][:insurance].first.id).to eq(@insurance1.id)
-      # expect(provider_response[:attributes][:insurance][1].name).to eq("Insurance C")
-      # expect(provider_response[:attributes][:insurance][1].id).to eq(@insurance3.id)
+      expect(provider_data[:attributes][:insurance].length).to eq(2)
+      expect(provider_data[:attributes][:insurance].first[:name]).to eq("Insurance A")
+      expect(provider_data[:attributes][:insurance].first[:id]).to eq(@insurance1.id)
+      expect(provider_data[:attributes][:insurance][1][:name]).to eq("Insurance C")
+      expect(provider_data[:attributes][:insurance][1][:id]).to eq(@insurance3.id)
 
       #UPDATE LOCATIONS
-      # expect(provider_response[:attributes]).to have_key(:locations)
-      # expect(provider_response[:attributes][:locations]).to be_a(Array)
+      expect(provider_data[:attributes]).to have_key(:locations)
+      expect(provider_data[:attributes][:locations]).to be_a(Array)
 
-      # expect(provider_response[:attributes][:locations].first.name).to_eq("Cool location name")
-      # expect(provider_response[:attributes][:locations].first.address_1).to_eq("123 Main St")
-      # expect(provider_response[:attributes][:locations].first.address_2).to_eq("Suite 100")
-      # expect(provider_response[:attributes][:locations].first.city).to_eq("Salt Lake City")
-      # expect(provider_response[:attributes][:locations].first.state).to_eq("UT")
-      # expect(provider_response[:attributes][:locations].first.zip).to_eq("84101")
-      # expect(provider_response[:attributes][:locations].first.phone).to_eq("801-435-8088")
+      expect(provider_data[:attributes][:locations].first[:name]).to eq("Cool location name")
+      expect(provider_data[:attributes][:locations].first[:address_1]).to eq("3 Elm St")
+      expect(provider_data[:attributes][:locations].first[:address_2]).to eq("PO Box 22")
+      expect(provider_data[:attributes][:locations].first[:city]).to eq("Frisco")
+      expect(provider_data[:attributes][:locations].first[:state]).to eq("CO")
+      expect(provider_data[:attributes][:locations].first[:zip]).to eq("80424")
+      expect(provider_data[:attributes][:locations].first[:phone]).to eq("801-435-8088")
 
       #UPDATE COUNTIES
-      # expect(provider_response[:attributes]).to have_key(:counties_served)
-      # expect(provider_response[:attributes][:counties_served]).to be_a(Array)
+      expect(provider_data[:attributes]).to have_key(:counties_served)
+      expect(provider_data[:attributes][:counties_served]).to be_a(Array)
 
-      # expect(provider_response[:attributes][:counties_served][0][:counties]).to_eq("Salt Lake County, Weber County")
+      expect(provider_data[:attributes][:counties_served][0][:counties]).to eq("Salt Lake, Weber")
     end
   end  
 
