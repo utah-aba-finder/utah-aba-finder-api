@@ -15,15 +15,37 @@ RSpec.describe "Get Providers Request", type: :request do
       in_clinic_services: "Available",
       spanish_speakers: "Yes",
       logo: "https://logo.com"
-      )
+    )
+
+    # Additional Provider (to ensure it is not updated)
+    @other_provider = Provider.create!(
+      name: "Other Provider",
+      website: "https://otherprovider.com",
+      email: "contact@otherprovider.com",
+      cost: "$150",
+      min_age: 3.0,
+      max_age: 17.0,
+      waitlist: "No",
+      telehealth_services: "Unavailable",
+      at_home_services: "Unavailable",
+      in_clinic_services: "Unavailable",
+      spanish_speakers: "No",
+      logo: "https://otherlogo.com"
+    )
       
     @insurance1 = Insurance.create!(name: "Insurance A")
     @insurance2 = Insurance.create!(name: "Insurance B")
     @insurance3 = Insurance.create!(name: "Insurance C")
+    @insurance4 = Insurance.create!(name: "Insurance D")
 
     @pi1 = ProviderInsurance.create!(provider: @provider, insurance: @insurance1, accepted: true)
     @pi2 = ProviderInsurance.create!(provider: @provider, insurance: @insurance2, accepted: false)
     @pi3 = ProviderInsurance.create!(provider: @provider, insurance: @insurance3, accepted: false)
+    @pi4 = ProviderInsurance.create!(provider: @provider, insurance: @insurance4, accepted: true)
+
+    # ProviderInsurances for Other Provider
+    ProviderInsurance.create!(provider: @other_provider, insurance: @insurance1, accepted: true)
+    ProviderInsurance.create!(provider: @other_provider, insurance: @insurance2, accepted: true)
 
     @location1 = Location.create!(
       provider: @provider,
@@ -36,7 +58,22 @@ RSpec.describe "Get Providers Request", type: :request do
       phone: "555-1234",
     )
 
+    # Location for Other Provider
+    @location2 = Location.create!(
+      provider: @other_provider,
+      name: "Other Location",
+      address_1: "987 Another St",
+      address_2: "Suite 200",
+      city: "Denver",
+      state: "CO",
+      zip: "80204",
+      phone: "555-5678",
+    )
+
     County.create!(provider: @provider, counties_served: "Salt Lake")
+
+    # County for Other Provider
+    County.create!(provider: @other_provider, counties_served: "Denver County")
 
     @client = Client.create!(name: "test_client", api_key: SecureRandom.hex)
     @api_key = @client.api_key
@@ -103,7 +140,6 @@ RSpec.describe "Get Providers Request", type: :request do
       expect(provider_response).to be_an(Hash)
       
       provider_data = provider_response[:data].first
-      # binding.pry
       
       expect(provider_data).to have_key(:id)
       expect(provider_data[:id]).to eq(@provider.id)
@@ -147,17 +183,17 @@ RSpec.describe "Get Providers Request", type: :request do
       #UPDATE INSURANCE
       expect(provider_data[:attributes]).to have_key(:insurance)
       expect(provider_data[:attributes][:insurance]).to be_a(Array)
-      
       expect(provider_data[:attributes][:insurance].length).to eq(2)
       expect(provider_data[:attributes][:insurance].first[:name]).to eq("Insurance A")
-      expect(provider_data[:attributes][:insurance].first[:id]).to eq(@insurance1.id)
+      expect(provider_data[:attributes][:insurance].first[:id]).to eq(@pi1.id)
+      expect(provider_data[:attributes][:insurance].first[:accepted]).to be true
       expect(provider_data[:attributes][:insurance][1][:name]).to eq("Insurance C")
-      expect(provider_data[:attributes][:insurance][1][:id]).to eq(@insurance3.id)
+      expect(provider_data[:attributes][:insurance][1][:id]).to eq(@pi3.id)
+      expect(provider_data[:attributes][:insurance].first[:accepted]).to be true
 
       #UPDATE LOCATIONS
       expect(provider_data[:attributes]).to have_key(:locations)
       expect(provider_data[:attributes][:locations]).to be_a(Array)
-
       expect(provider_data[:attributes][:locations].first[:name]).to eq("Cool location name")
       expect(provider_data[:attributes][:locations].first[:address_1]).to eq("3 Elm St")
       expect(provider_data[:attributes][:locations].first[:address_2]).to eq("PO Box 22")
@@ -169,8 +205,17 @@ RSpec.describe "Get Providers Request", type: :request do
       #UPDATE COUNTIES
       expect(provider_data[:attributes]).to have_key(:counties_served)
       expect(provider_data[:attributes][:counties_served]).to be_a(Array)
+      expect(provider_data[:attributes][:counties_served][0][:county]).to eq("Salt Lake, Weber")
 
-      expect(provider_data[:attributes][:counties_served][0][:counties]).to eq("Salt Lake, Weber")
+      # Verify Other Provider is Unchanged
+      @other_provider.reload
+      expect(@other_provider.website).to eq("https://otherprovider.com")
+      expect(@other_provider.min_age).to eq(3.0)
+
+      # Verify Other Provider's Location is Unchanged
+      @location2.reload
+      expect(@location2.name).to eq("Other Location")
+      expect(@location2.city).to eq("Denver")
     end
   end  
 

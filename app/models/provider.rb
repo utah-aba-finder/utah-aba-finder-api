@@ -7,7 +7,6 @@ class Provider < ApplicationRecord
 
   def update_locations(location_params)
     location_params.each do |location_info|
-      # binding.pry
       location = Location.find_by(id: location_info[:id])
       # need to create rescue for not found
       location.update!(
@@ -24,10 +23,27 @@ class Provider < ApplicationRecord
   end
 
   def update_provider_insurance(insurance_params)
-    # binding.pry
+    array = insurance_params.map do |param|
+      param[:id]
+    end
+    self.provider_insurances.each do |provider_info|
+      if array.include?(provider_info[:insurance_id])
+        provider_insurance = self.provider_insurances.find_by(insurance_id: provider_info[:insurance_id])
+        provider_insurance.update!(accepted: true)
+      else
+        provider_insurance = self.provider_insurances.find_by(insurance_id: provider_info[:insurance_id])
+        provider_insurance.update!(accepted: false)
+      end
+    end
     insurance_params.each do |insurance_info|
       provider_insurance = ProviderInsurance.find_by(insurance_id: insurance_info[:id])
       provider_insurance.update!(accepted: true)
+    end
+  end
+
+  def update_counties(counties_params)
+    counties_params.each do |county_info|
+      self.counties.update!(counties_served: county_info[:county])
     end
   end
 end
