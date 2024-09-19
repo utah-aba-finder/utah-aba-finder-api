@@ -31,6 +31,9 @@ class Api::V1::ProvidersController < ApplicationController
   def update
     provider = Provider.find(params[:id])
     provider.update!(provider_params)
+    provider.update_locations(params[:data].first[:attributes][:locations])
+    provider.update_provider_insurance(params[:data].first[:attributes][:insurance])
+    provider.update_counties(params[:data].first[:attributes][:counties_served])
     render json: ProviderSerializer.format_providers([provider])
   end
 
@@ -41,7 +44,7 @@ class Api::V1::ProvidersController < ApplicationController
 
   private
   def provider_params
-    params.permit(
+    params.require(:data).first[:attributes].permit(
       :name,
       :website,
       :email,
@@ -54,7 +57,6 @@ class Api::V1::ProvidersController < ApplicationController
       :at_home_services,
       :in_clinic_services,
       :logo
-      # :npi
-      )
+    )
   end
 end

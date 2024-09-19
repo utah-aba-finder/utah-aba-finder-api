@@ -50,7 +50,7 @@ RSpec.describe Provider, type: :model do
 
       location_params = [
         {
-          location_id: provider.locations[0].id,
+          id: provider.locations[0].id,
           name: "Update Name",
           address_1: "Updated Address",
           address_2: "Updated Address 2",
@@ -61,7 +61,7 @@ RSpec.describe Provider, type: :model do
           email: "location1@provider1.com"
         },
         {
-          location_id: provider.locations[1].id,
+          id: provider.locations[1].id,
           name: "Update Name 2",
           address_1: "Updated Address 2",
           address_2: "Updated Address 2 2",
