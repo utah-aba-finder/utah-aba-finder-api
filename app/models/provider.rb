@@ -35,10 +35,6 @@ class Provider < ApplicationRecord
         provider_insurance.update!(accepted: false)
       end
     end
-    insurance_params.each do |insurance_info|
-      provider_insurance = ProviderInsurance.find_by(insurance_id: insurance_info[:id])
-      provider_insurance.update!(accepted: true)
-    end
   end
 
   def update_counties(counties_params)
