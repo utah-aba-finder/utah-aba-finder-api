@@ -26,9 +26,7 @@ RSpec.describe Provider, type: :model do
         logo: "https://logo.com"
         )
 
-      # add second location to verify functionality for 2 locations after success
       provider.locations.create!(
-        provider: provider,
         name: "Location 1",
         address_1: "123 Main St",
         address_2: "Suite 100",
@@ -39,9 +37,20 @@ RSpec.describe Provider, type: :model do
         email: "location1@provider1.com"
       )
 
+      provider.locations.create!(
+        name: "Location 2",
+        address_1: "123 Not Main St",
+        address_2: "Suite 101",
+        city: "Salt Lake City",
+        state: "UT",
+        zip: "84101",
+        phone: "555-4321",
+        email: "location2@provider1.com"
+      )
+
       location_params = [
         {
-          location_id: provider.locations.first.id,
+          location_id: provider.locations[0].id,
           name: "Update Name",
           address_1: "Updated Address",
           address_2: "Updated Address 2",
@@ -50,10 +59,22 @@ RSpec.describe Provider, type: :model do
           zip: "84101",
           phone: "111-1111",
           email: "location1@provider1.com"
+        },
+        {
+          location_id: provider.locations[1].id,
+          name: "Update Name 2",
+          address_1: "Updated Address 2",
+          address_2: "Updated Address 2 2",
+          city: "Salt Lake City",
+          state: "UT",
+          zip: "84101",
+          phone: "222-2222",
+          email: "location2@provider1.com"
         }
       ]
 
       provider.update_locations(location_params)
+      provider.reload
 
       expect(provider.locations[0].name).to eq("Update Name")
       expect(provider.locations[0].address_1).to eq("Updated Address")
@@ -63,6 +84,15 @@ RSpec.describe Provider, type: :model do
       expect(provider.locations[0].zip).to eq("84101")
       expect(provider.locations[0].phone).to eq("111-1111")
       expect(provider.locations[0].email).to eq("location1@provider1.com")
+
+      expect(provider.locations[1].name).to eq("Update Name 2")
+      expect(provider.locations[1].address_1).to eq("Updated Address 2")
+      expect(provider.locations[1].address_2).to eq("Updated Address 2 2")
+      expect(provider.locations[1].city).to eq("Salt Lake City")
+      expect(provider.locations[1].state).to eq("UT")
+      expect(provider.locations[1].zip).to eq("84101")
+      expect(provider.locations[1].phone).to eq("222-2222")
+      expect(provider.locations[1].email).to eq("location2@provider1.com")
     end
   end
 end
