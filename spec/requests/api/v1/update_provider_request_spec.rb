@@ -185,10 +185,10 @@ RSpec.describe "Get Providers Request", type: :request do
       expect(provider_data[:attributes][:insurance]).to be_a(Array)
       expect(provider_data[:attributes][:insurance].length).to eq(2)
       expect(provider_data[:attributes][:insurance].first[:name]).to eq("Insurance A")
-      expect(provider_data[:attributes][:insurance].first[:id]).to eq(@pi1.id)
+      expect(provider_data[:attributes][:insurance].first[:id]).to eq(@pi1.insurance_id)
       expect(provider_data[:attributes][:insurance].first[:accepted]).to be true
       expect(provider_data[:attributes][:insurance][1][:name]).to eq("Insurance C")
-      expect(provider_data[:attributes][:insurance][1][:id]).to eq(@pi3.id)
+      expect(provider_data[:attributes][:insurance][1][:id]).to eq(@pi3.insurance_id)
       expect(provider_data[:attributes][:insurance].first[:accepted]).to be true
 
       #UPDATE LOCATIONS

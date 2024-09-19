@@ -28,7 +28,7 @@ class ProviderSerializer
             "insurance": provider.provider_insurances.where(accepted: true).map do |provider_insurance|
               {
                 name: provider_insurance.insurance.name, 
-                id: provider_insurance.id,
+                id: provider_insurance.insurance_id,
                 accepted: provider_insurance.accepted
               }
             end,
