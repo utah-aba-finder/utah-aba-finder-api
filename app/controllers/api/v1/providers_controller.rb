@@ -1,6 +1,6 @@
 class Api::V1::ProvidersController < ApplicationController
   def index
-    providers = Provider.all
+    providers = Provider.where.not(id: 61)
     render json: ProviderSerializer.format_providers(providers)
   end
 

@@ -137,6 +137,25 @@ RSpec.describe "Get Providers Request", type: :request do
       end
     end
 
+    it "doesn't return provider id:61" do #this is the test provider id so we can live test updates with the deployed api
+      @provider_2 = Provider.create!(name: "Provider 2", website: "https://provider2.com", email: "contact@provider2.com")
+      @provider_61 = Provider.create!(id: 61, name: "Provider 61", website: "https://provider61.com", email: "contact@provider61.com")
+      
+      get "/api/v1/providers", headers: { 'Content-Type': 'application/json', 'Authorization': @api_key, 'Accept': 'application/json' }
+
+      expect(response).to be_successful
+      expect(response.status).to eq(200)
+
+      providers_response = JSON.parse(response.body, symbolize_names: true)
+
+      expect(providers_response[:data]).to be_a(Array)
+      expect(providers_response[:data].size).to eq(2)
+      
+      provider_ids = providers_response[:data].map { |provider| provider[:id] }
+      expect(provider_ids).to include(@provider.id)
+      expect(provider_ids).to include(@provider_2.id)
+      expect(provider_ids).not_to include(61)
+    end
 
     it "it throws error if not authorized with bearer token" do
 
