@@ -10,7 +10,7 @@ RSpec.describe Provider, type: :model do
   end
 
   describe 'instance methods' do
-    xit "can update it's locations with locations params info" do
+    it "can update it's locations with locations params info" do
       provider = Provider.create!(
         name: "Provider 1",
         website: "https://provider1.com",
@@ -27,7 +27,7 @@ RSpec.describe Provider, type: :model do
         )
 
       # add second location to verify functionality for 2 locations after success
-      location1 = provider.locations.create!(
+      provider.locations.create!(
         provider: provider,
         name: "Location 1",
         address_1: "123 Main St",
@@ -41,7 +41,7 @@ RSpec.describe Provider, type: :model do
 
       location_params = [
         {
-          location_id: location1.id,
+          location_id: provider.locations.first.id,
           name: "Update Name",
           address_1: "Updated Address",
           address_2: "Updated Address 2",
@@ -53,15 +53,16 @@ RSpec.describe Provider, type: :model do
         }
       ]
 
-      expect(provider.update_locations).to eq("Locations Updated")
-      expect(location1.name).to be_a(String)
-      expect(location1.address_1).to be_a(String)
-      expect(location1.address_2).to be_a(String)
-      expect(location1.city).to be_a(String)
-      expect(location1.state).to be_a(String)
-      expect(location1.zip).to be_a(String)
-      expect(location1.phone).to be_a(String)
+      provider.update_locations(location_params)
 
+      expect(provider.locations[0].name).to eq("Update Name")
+      expect(provider.locations[0].address_1).to eq("Updated Address")
+      expect(provider.locations[0].address_2).to eq("Updated Address 2")
+      expect(provider.locations[0].city).to eq("Salt Lake City")
+      expect(provider.locations[0].state).to eq("UT")
+      expect(provider.locations[0].zip).to eq("84101")
+      expect(provider.locations[0].phone).to eq("111-1111")
+      expect(provider.locations[0].email).to eq("location1@provider1.com")
     end
   end
 end
