@@ -40,7 +40,8 @@ class ProviderSerializer
             "spanish_speakers": provider.spanish_speakers,
             "at_home_services": provider.at_home_services,
             "in_clinic_services": provider.in_clinic_services,
-            "logo": provider.logo
+            "logo": provider.logo,
+            "updated_last": provider.updated_at
           }
         }
       end
