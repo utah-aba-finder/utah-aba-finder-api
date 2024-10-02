@@ -7,8 +7,13 @@ class Provider < ApplicationRecord
 
   def update_locations(location_params)
     location_params.each do |location_info|
-      location = Location.find_by(id: location_info[:id])
-      # need to create rescue for not found
+      # location = Location.find_by(id: location_info[:id])
+      location = if location_info[:id].present?
+                  self.locations.find_by(id: location_info[:id])
+                else
+                  self.locations.new
+                end
+
       location.update!(
         name: location_info[:name] ,
         address_1: location_info[:address_1] ,
