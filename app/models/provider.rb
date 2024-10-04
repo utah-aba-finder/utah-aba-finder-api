@@ -5,9 +5,17 @@ class Provider < ApplicationRecord
   has_many :provider_insurances
   has_many :insurances, through: :provider_insurances
 
+  #should refactor into smaller methods
   def update_locations(location_params)
+    location_params_ids = location_params.map { |location| location[:id] }.compact
+
+    self.locations.each do |location|
+      unless location_params_ids.include?(location.id)
+        location.destroy
+      end
+    end
+
     location_params.each do |location_info|
-      # need to discuss how we want to handle removing a location
       location = if location_info[:id].present?
                   self.locations.find_by(id: location_info[:id])
                 else
@@ -25,6 +33,8 @@ class Provider < ApplicationRecord
         email: location_info[:email] 
       )
     end
+
+    self.reload
   end
 
   def update_provider_insurance(insurance_params)
