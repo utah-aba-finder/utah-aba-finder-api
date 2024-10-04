@@ -7,7 +7,7 @@ class Provider < ApplicationRecord
 
   def update_locations(location_params)
     location_params.each do |location_info|
-      # location = Location.find_by(id: location_info[:id])
+      # need to discuss how we want to handle removing a location
       location = if location_info[:id].present?
                   self.locations.find_by(id: location_info[:id])
                 else
