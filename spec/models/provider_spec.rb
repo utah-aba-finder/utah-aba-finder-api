@@ -70,11 +70,22 @@ RSpec.describe Provider, type: :model do
           zip: "84101",
           phone: "222-2222",
           email: "location2@provider1.com"
+        },
+        {
+          # No id provided for this new location, meaning it should be created
+          name: "New Location",
+          address_1: "789 New St",
+          address_2: "Suite 102",
+          city: "Salt Lake City",
+          state: "UT",
+          zip: "84102",
+          phone: "333-3333",
+          email: "newlocation@provider1.com"
         }
       ]
 
       provider.update_locations(location_params)
-      provider.reload
+      # provider.reload
 
       expect(provider.locations[0].name).to eq("Update Name")
       expect(provider.locations[0].address_1).to eq("Updated Address")
@@ -93,6 +104,16 @@ RSpec.describe Provider, type: :model do
       expect(provider.locations[1].zip).to eq("84101")
       expect(provider.locations[1].phone).to eq("222-2222")
       expect(provider.locations[1].email).to eq("location2@provider1.com")
+      # Validate new location creation
+      new_location = provider.locations.last
+      expect(new_location.name).to eq("New Location")
+      expect(new_location.address_1).to eq("789 New St")
+      expect(new_location.address_2).to eq("Suite 102")
+      expect(new_location.city).to eq("Salt Lake City")
+      expect(new_location.state).to eq("UT")
+      expect(new_location.zip).to eq("84102")
+      expect(new_location.phone).to eq("333-3333")
+      expect(new_location.email).to eq("newlocation@provider1.com")
     end
   end
 end
