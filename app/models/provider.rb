@@ -35,7 +35,7 @@ class Provider < ApplicationRecord
     end
 
     self.reload
-  end
+   end
 
   def update_provider_insurance(insurance_params)
     array = insurance_params.map do |param|
