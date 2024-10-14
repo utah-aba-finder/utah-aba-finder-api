@@ -11,6 +11,10 @@ Rails.application.routes.draw do
     namespace :api do
       namespace :v1 do
         resources :providers, only: [:index, :update, :show, :create]
+
+        namespace :admin do
+          resources :providers, only: [:index]
+        end
       end
     end
   end

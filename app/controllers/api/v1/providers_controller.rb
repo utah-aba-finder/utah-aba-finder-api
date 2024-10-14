@@ -1,6 +1,7 @@
 class Api::V1::ProvidersController < ApplicationController
   def index
-    providers = Provider.where.not(id: 61)
+    # providers = Provider.where.not(id: 61).where(status: :approved)
+    providers = Provider.where(status: :approved)
     render json: ProviderSerializer.format_providers(providers)
   end
 
@@ -57,7 +58,8 @@ class Api::V1::ProvidersController < ApplicationController
       :spanish_speakers,
       :at_home_services,
       :in_clinic_services,
-      :logo
+      :logo,
+      :status
     )
   end
 end
