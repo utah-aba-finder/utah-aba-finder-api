@@ -5,6 +5,7 @@ class Provider < ApplicationRecord
   has_many :provider_insurances
   has_many :insurances, through: :provider_insurances
 
+  enum status: { pending: 1, approved: 2, declined: 3 }
   #should refactor into smaller methods
   def update_locations(location_params)
     location_params_ids = location_params.map { |location| location[:id] }.compact
@@ -35,7 +36,7 @@ class Provider < ApplicationRecord
     end
 
     self.reload
-   end
+  end
 
   def update_provider_insurance(insurance_params)
     array = insurance_params.map do |param|

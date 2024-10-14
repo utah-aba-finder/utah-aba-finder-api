@@ -41,7 +41,8 @@ class ProviderSerializer
             "at_home_services": provider.at_home_services,
             "in_clinic_services": provider.in_clinic_services,
             "logo": provider.logo,
-            "updated_last": provider.updated_at
+            "updated_last": provider.updated_at,
+            "status": provider.status
           }
         }
       end
