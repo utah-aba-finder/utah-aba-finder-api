@@ -12,8 +12,6 @@ RSpec.describe "Create Provider Request", type: :request do
 
   context "post /api/v1/providers" do
     it "creates a new provider and locations with associations to counties and insurances, then returns the created provider in json format" do
-
-
       provider_attributes = {
         "data": [
           {
@@ -156,6 +154,8 @@ RSpec.describe "Create Provider Request", type: :request do
 
       expect(Provider.all.count).to eq(1)
       expect(Provider.last.name).to eq("New Provider")
+
+      expect(Provider.last.provider_insurances.count).to eq(3)
     end
   end 
 end

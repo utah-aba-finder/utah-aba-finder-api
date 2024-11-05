@@ -8,7 +8,8 @@ class Api::V1::ProvidersController < ApplicationController
   def create
     provider = Provider.new(provider_params)
     if provider.save
-      # should create method in provider model to handle extra creation/association logic
+      provider.initialize_provider_insurances
+      # should create methods in provider model to handle extra creation/association logic
       params[:data].first[:attributes][:locations].each do |location|
         provider.locations.create!(
           name: location[:name],
@@ -18,12 +19,14 @@ class Api::V1::ProvidersController < ApplicationController
           state: location[:state] ,
           zip: location[:zip] ,
           phone: location[:phone] 
-          )
-        end
+        )
+      end
       provider.counties.create!(counties_served: params[:data].first[:attributes][:counties_served])
       params[:data].first[:attributes][:insurance].each do |insurance|
         insurance_found = Insurance.find(insurance[:id])
-        ProviderInsurance.create!(provider_id: provider.id, insurance_id: insurance_found.id, accepted: true)
+        provider_insurance = ProviderInsurance.find_by(provider_id: provider.id, insurance_id: insurance_found.id)
+        # binding.pry
+        provider_insurance.update!(accepted: true) if provider_insurance
       end
 
       render json: ProviderSerializer.format_providers([provider])
