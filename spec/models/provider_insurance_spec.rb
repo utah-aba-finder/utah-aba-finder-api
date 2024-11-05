@@ -23,7 +23,7 @@ RSpec.describe ProviderInsurance, type: :model do
 
       ProviderInsurance.all.each do |provider_insurance|
         expect(provider_insurance.provider_id).to eq(provider.id)
-        expect(provider_insurance.accepted).to be_false
+        expect(provider_insurance.accepted).to be false
       end
     end
   end
