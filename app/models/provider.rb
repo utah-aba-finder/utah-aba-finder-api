@@ -38,6 +38,16 @@ class Provider < ApplicationRecord
     self.reload
   end
 
+  def initialize_provider_insurances
+    Insurance.all.each do |insurance|
+      ProviderInsurance.create!(
+        provider: self,
+        insurance: insurance,
+        accepted: false
+      )
+    end
+  end
+
   def update_provider_insurance(insurance_params)
     array = insurance_params.map do |param|
       param[:id]
