@@ -65,7 +65,8 @@ class Api::V1::ProvidersController < ApplicationController
       :at_home_services,
       :in_clinic_services,
       :logo,
-      :status
+      :status,
+      :provider_type
     )
   end
 end
