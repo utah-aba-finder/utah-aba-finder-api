@@ -1,7 +1,14 @@
 class Api::V1::ProvidersController < ApplicationController
   def index
+    # binding.pry
     # providers = Provider.where.not(id: 61).where(status: :approved)
-    providers = Provider.where(status: :approved)
+    if params[:provider_type].present?
+      providers = Provider.where(status: :approved,provider_type: params[:provider_type])
+      binding.pry
+    else
+      binding.pry
+      providers = Provider.where(status: :approved)
+    end
     render json: ProviderSerializer.format_providers(providers)
   end
 

@@ -6,6 +6,8 @@ class Provider < ApplicationRecord
   has_many :insurances, through: :provider_insurances
 
   enum status: { pending: 1, approved: 2, denied: 3 }
+  enum provider_type: { aba_therapy: 0, autism_evaluation: 1 }
+
   #should refactor into smaller methods
   def update_locations(location_params)
     location_params_ids = location_params.map { |location| location[:id] }.compact

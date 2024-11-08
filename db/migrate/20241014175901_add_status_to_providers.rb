@@ -6,7 +6,8 @@ class AddStatusToProviders < ActiveRecord::Migration[7.1]
     # Best practice to do logic in reversible block incase of rollbacks
     reversible do |dir|
       dir.up do
-        Provider.update_all(status: 2) # approved
+        # Use raw SQL to update all existing records to avoid loading the Provider model
+        execute "UPDATE providers SET status = 2"
       end
     end
   end
