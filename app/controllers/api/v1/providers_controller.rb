@@ -1,12 +1,9 @@
 class Api::V1::ProvidersController < ApplicationController
   def index
-    # binding.pry
     # providers = Provider.where.not(id: 61).where(status: :approved)
     if params[:provider_type].present?
       providers = Provider.where(status: :approved,provider_type: params[:provider_type])
-      binding.pry
     else
-      binding.pry
       providers = Provider.where(status: :approved)
     end
     render json: ProviderSerializer.format_providers(providers)
@@ -32,7 +29,6 @@ class Api::V1::ProvidersController < ApplicationController
       params[:data].first[:attributes][:insurance].each do |insurance|
         insurance_found = Insurance.find(insurance[:id])
         provider_insurance = ProviderInsurance.find_by(provider_id: provider.id, insurance_id: insurance_found.id)
-        # binding.pry
         provider_insurance.update!(accepted: true) if provider_insurance
       end
 
