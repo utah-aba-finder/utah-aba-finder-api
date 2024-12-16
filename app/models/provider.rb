@@ -4,6 +4,8 @@ class Provider < ApplicationRecord
   has_many :locations
   has_many :provider_insurances
   has_many :insurances, through: :provider_insurances
+  has_many :provider_practice_types, dependent: :destroy
+  has_many :practice_types, through: :provider_practice_types
 
   enum status: { pending: 1, approved: 2, denied: 3 }
   enum provider_type: { aba_therapy: 0, autism_evaluation: 1 }
