@@ -9,7 +9,12 @@ class ProviderSerializer
           type: "provider",
           attributes: {
             "name": provider.name,
-            "provider_type": provider.provider_type,
+            "provider_type": provider.practice_types.map do |type|
+              {
+                id: type.id,
+                name: type.name
+              }
+            end,
             "locations": provider.locations.map do |location| 
               {
               id: location.id,

@@ -5,6 +5,10 @@ RSpec.describe "Create Provider Request", type: :request do
       @insurance1 = Insurance.create!(name: "Insurance A")
       @insurance2 = Insurance.create!(name: "Insurance B")
       @insurance3 = Insurance.create!(name: "Insurance C")
+
+      @practice_types1 = PracticeType.create!(name: "ABA Therapy")
+      @practice_types2 = PracticeType.create!(name: "Autism Evaluation")
+      @practice_types3 = PracticeType.create!(name: "Speech Therapy")
   
       @client = Client.create!(name: "test_client", api_key: SecureRandom.hex)
       @api_key = @client.api_key
@@ -19,6 +23,16 @@ RSpec.describe "Create Provider Request", type: :request do
             "type": "provider",
             "attributes": {
               "name": "New Provider",
+              "provider_type": [
+                {
+                  "id": @practice_types1.id,
+                  "name": @practice_types1.name
+                },
+                {
+                  "id": @practice_types2.id,
+                  "name": @practice_types2.name
+                }
+              ],
               "locations": [
                 {
                   "id": nil,
