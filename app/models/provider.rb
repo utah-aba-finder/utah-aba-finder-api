@@ -8,15 +8,13 @@ class Provider < ApplicationRecord
   has_many :practice_types, through: :provider_practice_types
 
   enum status: { pending: 1, approved: 2, denied: 3 }
-  enum provider_type: { aba_therapy: 0, autism_evaluation: 1 }
 
   def create_practice_types(practice_type_names)
     practice_type_names.each do |param|
-      # binding.pry
-      name = param[:name] # Extract the name from ActionController::Parameters
+      name = param[:name]
       next if name.blank?
 
-      practice_type = PracticeType.find_or_create_by(name: )
+      practice_type = PracticeType.find_or_create_by(name: name)
       self.practice_types << practice_type unless self.practice_types.include?(practice_type)
     end
   end
@@ -87,19 +85,16 @@ class Provider < ApplicationRecord
   def update_practice_types(practice_type_names)
     return if practice_type_names.blank?
 
-    # Find corresponding practice types based on received names
     new_practice_types = practice_type_names.map do |params|
       PracticeType.find_by(name: params[:name])
     end.compact
 
-    # Add missing practice types
     new_practice_types.each do |practice_type|
       unless self.practice_types.include?(practice_type)
         self.practice_types << practice_type
       end
     end
 
-    # Remove practice types that are no longer part of the received array
     self.practice_types.each do |practice_type|
       unless new_practice_types.include?(practice_type)
         self.practice_types.delete(practice_type)
