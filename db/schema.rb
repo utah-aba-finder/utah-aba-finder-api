@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_11_08_212151) do
+ActiveRecord::Schema[7.1].define(version: 2024_12_16_213216) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -52,6 +52,12 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_08_212151) do
     t.index ["provider_id"], name: "index_locations_on_provider_id"
   end
 
+  create_table "practice_types", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "provider_insurances", force: :cascade do |t|
     t.bigint "provider_id", null: false
     t.bigint "insurance_id", null: false
@@ -60,6 +66,16 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_08_212151) do
     t.boolean "accepted"
     t.index ["insurance_id"], name: "index_provider_insurances_on_insurance_id"
     t.index ["provider_id"], name: "index_provider_insurances_on_provider_id"
+  end
+
+  create_table "provider_practice_types", force: :cascade do |t|
+    t.bigint "provider_id", null: false
+    t.bigint "practice_type_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["practice_type_id"], name: "index_provider_practice_types_on_practice_type_id"
+    t.index ["provider_id", "practice_type_id"], name: "idx_on_provider_id_practice_type_id_1a4497536f", unique: true
+    t.index ["provider_id"], name: "index_provider_practice_types_on_provider_id"
   end
 
   create_table "providers", force: :cascade do |t|
@@ -81,8 +97,17 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_08_212151) do
     t.integer "provider_type", default: 0, null: false
   end
 
+  create_table "states", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "abbreviation", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   add_foreign_key "counties", "providers"
   add_foreign_key "locations", "providers"
   add_foreign_key "provider_insurances", "insurances"
   add_foreign_key "provider_insurances", "providers"
+  add_foreign_key "provider_practice_types", "practice_types"
+  add_foreign_key "provider_practice_types", "providers"
 end

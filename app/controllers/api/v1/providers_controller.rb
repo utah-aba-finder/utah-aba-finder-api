@@ -32,6 +32,8 @@ class Api::V1::ProvidersController < ApplicationController
         provider_insurance.update!(accepted: true) if provider_insurance
       end
 
+      provider.create_practice_types(params[:data].first[:attributes][:provider_type])
+
       render json: ProviderSerializer.format_providers([provider])
     end
   end
@@ -42,6 +44,7 @@ class Api::V1::ProvidersController < ApplicationController
     provider.update_locations(params[:data].first[:attributes][:locations])
     provider.update_provider_insurance(params[:data].first[:attributes][:insurance])
     provider.update_counties(params[:data].first[:attributes][:counties_served])
+    provider.update_practice_types(params[:data].first[:attributes][:provider_type])
     render json: ProviderSerializer.format_providers([provider])
   end
 
