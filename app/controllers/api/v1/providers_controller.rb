@@ -24,7 +24,10 @@ class Api::V1::ProvidersController < ApplicationController
           phone: location[:phone] 
         )
       end
-      provider.counties.create!(counties_served: params[:data].first[:attributes][:counties_served])
+      # provider.old_counties.create!(counties_served: params[:data].first[:attributes][:counties_served])
+      # Update counties (new logic)
+      provider.update_counties_from_array(params[:data].first[:attributes][:counties_served].map { |county| county["county_id"] })
+
       params[:data].first[:attributes][:insurance].each do |insurance|
         insurance_found = Insurance.find(insurance[:id])
         provider_insurance = ProviderInsurance.find_by(provider_id: provider.id, insurance_id: insurance_found.id)
@@ -42,7 +45,8 @@ class Api::V1::ProvidersController < ApplicationController
     provider.update!(provider_params)
     provider.update_locations(params[:data].first[:attributes][:locations])
     provider.update_provider_insurance(params[:data].first[:attributes][:insurance])
-    provider.update_counties(params[:data].first[:attributes][:counties_served])
+    # provider.update_counties(params[:data].first[:attributes][:counties_served])
+    provider.update_counties_from_array(params[:data].first[:attributes][:counties_served].map { |county| county["county_id"] })
     provider.update_practice_types(params[:data].first[:attributes][:provider_type])
     render json: ProviderSerializer.format_providers([provider])
   end

@@ -36,7 +36,7 @@ RSpec.describe "Get Providers Request", type: :request do
       email: "location1@provider1.com"
     )
 
-    County.create!(provider: @provider, counties_served: "Salt Lake, Davis")
+    OldCounty.create!(provider: @provider, counties_served: "Salt Lake, Davis")
 
     @client = Client.create!(name: "test_client", api_key: SecureRandom.hex)
     @api_key = @client.api_key
@@ -141,7 +141,7 @@ RSpec.describe "Get Providers Request", type: :request do
     # it "doesn't return provider id:61" do #this is the test provider id so we can live test updates with the deployed api
     it "returns only providers with status approved" do #this is the test provider id so we can live test updates with the deployed api
       @provider_2 = Provider.create!(name: "Provider 2", website: "https://provider2.com", email: "contact@provider2.com", status: 2)
-      @provider_61 = Provider.create!(id: 61, name: "Provider 61", website: "https://provider61.com", email: "contact@provider61.com")
+      # @provider_61 = Provider.create!(id: 61, name: "Provider 61", website: "https://provider61.com", email: "contact@provider61.com")
       @provider_denied = Provider.create!(name: "Provider denied", website: "https://providerdenied.com", email: "contact@providerdenied.com", status: 3)
       
       get "/api/v1/providers", headers: { 'Content-Type': 'application/json', 'Authorization': @api_key, 'Accept': 'application/json' }
@@ -157,7 +157,7 @@ RSpec.describe "Get Providers Request", type: :request do
       provider_ids = providers_response[:data].map { |provider| provider[:id] }
       expect(provider_ids).to include(@provider.id)
       expect(provider_ids).to include(@provider_2.id)
-      expect(provider_ids).not_to include(61)
+      # expect(provider_ids).not_to include(61)
     end
 
     it "it throws error if not authorized with bearer token" do

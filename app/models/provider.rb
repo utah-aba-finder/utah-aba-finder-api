@@ -1,6 +1,8 @@
 class Provider < ApplicationRecord
 
-  has_many :counties
+  has_many :old_counties
+  has_many :counties_providers
+  has_many :counties, through: :counties_providers
   has_many :locations
   has_many :provider_insurances
   has_many :insurances, through: :provider_insurances
@@ -76,9 +78,19 @@ class Provider < ApplicationRecord
     end
   end
 
-  def update_counties(counties_params)
-    counties_params.each do |county_info|
-      self.counties.update!(counties_served: county_info[:county])
+  # def update_counties(counties_params)
+  #   counties_params.each do |county_info|
+  #     # self.old_counties.update!(counties_served: county_info[:county])
+  #   end
+  # end
+
+  def update_counties_from_array(county_ids)
+    counties_to_remove = self.counties.where.not(id: county_ids)
+    self.counties.delete(counties_to_remove)
+
+    county_ids.each do |county_id|
+      county = County.find_by(id: county_id)
+      self.counties << county if county && !self.counties.include?(county)
     end
   end
 

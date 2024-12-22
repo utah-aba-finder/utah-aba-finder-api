@@ -7,6 +7,7 @@ class ProviderSerializer
         {
           id: provider.id,
           type: "provider",
+          state: provider.counties.map {|county| county.state.name}.uniq,
           attributes: {
             "name": provider.name,
             "provider_type": provider.practice_types.map do |type|
@@ -38,7 +39,13 @@ class ProviderSerializer
                 accepted: provider_insurance.accepted
               }
             end,
-            "counties_served": provider.counties.map { |area| {county: area.counties_served} },
+            # "counties_served": provider.old_counties.map { |area| {county: area.counties_served} },
+            "counties_served": provider.counties.map do |area|
+              {
+                "county_id" => area.id,
+                "county_name" => area.name
+              }
+            end,
             "min_age": provider.min_age,
             "max_age": provider.max_age,
             "waitlist": provider.waitlist,

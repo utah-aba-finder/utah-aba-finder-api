@@ -85,7 +85,7 @@ RSpec.describe Provider, type: :model do
       ]
 
       provider.update_locations(location_params)
-      # provider.reload
+      provider.reload
 
       expect(provider.locations[0].name).to eq("Update Name")
       expect(provider.locations[0].address_1).to eq("Updated Address")

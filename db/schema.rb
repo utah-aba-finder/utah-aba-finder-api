@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_12_17_042653) do
+ActiveRecord::Schema[7.1].define(version: 2024_12_21_004413) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -24,11 +24,21 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_17_042653) do
   end
 
   create_table "counties", force: :cascade do |t|
-    t.bigint "provider_id", null: false
-    t.string "counties_served"
+    t.string "name", null: false
+    t.bigint "state_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["provider_id"], name: "index_counties_on_provider_id"
+    t.index ["state_id"], name: "index_counties_on_state_id"
+  end
+
+  create_table "counties_providers", id: false, force: :cascade do |t|
+    t.bigint "provider_id", null: false
+    t.bigint "county_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["county_id"], name: "index_counties_providers_on_county_id"
+    t.index ["provider_id", "county_id"], name: "index_counties_providers_on_provider_id_and_county_id", unique: true
+    t.index ["provider_id"], name: "index_counties_providers_on_provider_id"
   end
 
   create_table "insurances", force: :cascade do |t|
@@ -50,6 +60,14 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_17_042653) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["provider_id"], name: "index_locations_on_provider_id"
+  end
+
+  create_table "old_counties", force: :cascade do |t|
+    t.bigint "provider_id", null: false
+    t.string "counties_served"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider_id"], name: "index_old_counties_on_provider_id"
   end
 
   create_table "practice_types", force: :cascade do |t|
@@ -103,8 +121,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_17_042653) do
     t.datetime "updated_at", null: false
   end
 
-  add_foreign_key "counties", "providers"
+  add_foreign_key "counties", "states"
+  add_foreign_key "counties_providers", "counties"
+  add_foreign_key "counties_providers", "providers"
   add_foreign_key "locations", "providers"
+  add_foreign_key "old_counties", "providers"
   add_foreign_key "provider_insurances", "insurances"
   add_foreign_key "provider_insurances", "providers"
   add_foreign_key "provider_practice_types", "practice_types"
