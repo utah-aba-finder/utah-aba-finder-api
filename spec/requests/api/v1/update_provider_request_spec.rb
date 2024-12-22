@@ -70,10 +70,17 @@ RSpec.describe "Get Providers Request", type: :request do
       phone: "555-5678",
     )
 
-    County.create!(provider: @provider, counties_served: "Salt Lake")
+    OldCounty.create!(provider: @provider, counties_served: "Salt Lake")
 
     # County for Other Provider
-    County.create!(provider: @other_provider, counties_served: "Denver County")
+    OldCounty.create!(provider: @other_provider, counties_served: "Denver County")
+
+    @state = State.create!(name: "Utah", abbreviation: "UT")
+
+    @county1 = County.create!(name: "Salt Lake", state: @state)
+    @county2 = County.create!(name: "Denver County", state: @state)
+    @county3 = County.create!(name: "Weber", state: @state)
+
 
     @client = Client.create!(name: "test_client", api_key: SecureRandom.hex)
     @api_key = @client.api_key
@@ -114,9 +121,8 @@ RSpec.describe "Get Providers Request", type: :request do
                 }
               ],
               "counties_served": [
-                {
-                  "county": "Salt Lake, Weber"
-                }
+                { "county_id": @county1.id, "county_name": @county1.name },
+                { "county_id": @county3.id, "county_name": @county3.name }
               ],
               "min_age": 2.0,
               "max_age": 16.0,
@@ -205,7 +211,7 @@ RSpec.describe "Get Providers Request", type: :request do
       #UPDATE COUNTIES
       expect(provider_data[:attributes]).to have_key(:counties_served)
       expect(provider_data[:attributes][:counties_served]).to be_a(Array)
-      expect(provider_data[:attributes][:counties_served][0][:county]).to eq("Salt Lake, Weber")
+      expect(provider_data[:attributes][:counties_served]).to eq([{:county_id=>@county1.id, :county_name=>"Salt Lake"}, {:county_id=>@county3.id, :county_name=>"Weber"}])
 
       # Verify Other Provider is Unchanged
       @other_provider.reload

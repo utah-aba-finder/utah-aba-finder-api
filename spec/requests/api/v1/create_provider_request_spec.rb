@@ -9,6 +9,11 @@ RSpec.describe "Create Provider Request", type: :request do
       @practice_types1 = PracticeType.create!(name: "ABA Therapy")
       @practice_types2 = PracticeType.create!(name: "Autism Evaluation")
       @practice_types3 = PracticeType.create!(name: "Speech Therapy")
+
+      @state = State.create!(name: "Utah", abbreviation: "UT")
+
+      @county1 = County.create!(name: "Salt Lake", state: @state)
+      @county2 = County.create!(name: "Weber", state: @state)
   
       @client = Client.create!(name: "test_client", api_key: SecureRandom.hex)
       @api_key = @client.api_key
@@ -59,9 +64,8 @@ RSpec.describe "Create Provider Request", type: :request do
                 }
               ],
               "counties_served": [
-                {
-                  "county": "Salt Lake, Weber"
-                }
+                { "county_id": @county1.id, "county_name": @county1.name },
+                { "county_id": @county2.id, "county_name": @county2.name }
               ],
               "min_age": 2.0,
               "max_age": 16.0,
@@ -158,12 +162,10 @@ RSpec.describe "Create Provider Request", type: :request do
 
       expect(provider_response[:data].first[:attributes]).to have_key(:counties_served)
       expect(provider_response[:data].first[:attributes][:counties_served]).to be_a(Array)
-      expect(provider_response[:data].first[:attributes][:counties_served].length).to eq(1)
+      expect(provider_response[:data].first[:attributes][:counties_served].length).to eq(2)
 
       provider_response[:data].first[:attributes][:counties_served].each do |area_served|
         expect(area_served).to be_a(Hash)
-        expect(area_served).to have_key(:county)
-        expect(area_served[:county]).to be_a(String)
       end
 
       expect(Provider.all.count).to eq(1)
