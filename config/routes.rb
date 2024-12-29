@@ -15,6 +15,10 @@ Rails.application.routes.draw do
         namespace :admin do
           resources :providers, only: [:index]
         end
+
+        resources :states, only: [:index] do
+          resources :counties, only: [:index]
+        end
       end
     end
   end
