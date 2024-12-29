@@ -7,7 +7,7 @@ class ProviderSerializer
         {
           id: provider.id,
           type: "provider",
-          state: provider.counties.map {|county| county.state.name}.uniq,
+          states: provider.counties.map {|county| county.state.name}.uniq,
           attributes: {
             "name": provider.name,
             "provider_type": provider.practice_types.map do |type|
