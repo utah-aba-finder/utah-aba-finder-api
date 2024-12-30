@@ -18,6 +18,7 @@ Rails.application.routes.draw do
 
         resources :states, only: [:index] do
           resources :counties, only: [:index]
+          resources :providers, only: [:index], action: :index, controller: '/api/v1/states/providers'
         end
       end
     end
