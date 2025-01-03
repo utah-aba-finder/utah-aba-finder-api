@@ -8,6 +8,7 @@ class Api::V1::InsurancesController < ApplicationController
     insurance = Insurance.find_or_create_by(name: params.require(:data).first[:attributes][:name])
 
     if insurance.save
+      insurance.initialize_provider_insurance
       render json: InsuranceSerializer.format_insurances([insurance]), status: :created
     else
       render json: { errors: insurance.errors.full_messages }, status: :unprocessable_entity
