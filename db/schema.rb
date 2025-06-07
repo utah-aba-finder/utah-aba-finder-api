@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_12_29_000918) do
+ActiveRecord::Schema[7.1].define(version: 2025_06_07_010337) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -60,6 +60,16 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_29_000918) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["provider_id"], name: "index_locations_on_provider_id"
+  end
+
+  create_table "locations_practice_types", force: :cascade do |t|
+    t.bigint "location_id", null: false
+    t.bigint "practice_type_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["location_id", "practice_type_id"], name: "index_location_practice_type_on_location_and_practice_type", unique: true
+    t.index ["location_id"], name: "index_locations_practice_types_on_location_id"
+    t.index ["practice_type_id"], name: "index_locations_practice_types_on_practice_type_id"
   end
 
   create_table "old_counties", force: :cascade do |t|
@@ -125,6 +135,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_29_000918) do
   add_foreign_key "counties_providers", "counties"
   add_foreign_key "counties_providers", "providers"
   add_foreign_key "locations", "providers"
+  add_foreign_key "locations_practice_types", "locations"
+  add_foreign_key "locations_practice_types", "practice_types"
   add_foreign_key "old_counties", "providers"
   add_foreign_key "provider_insurances", "insurances"
   add_foreign_key "provider_insurances", "providers"
