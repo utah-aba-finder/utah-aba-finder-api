@@ -25,7 +25,13 @@ class ProviderSerializer
               city: location.city,
               state: location.state,
               zip: location.zip,
-              phone: location.phone
+              phone: location.phone,
+              services: location.practice_types.map do |type|
+                {
+                  id: type.id,
+                  name: type.name
+                }
+              end
               }
             end,
             "website": provider.website,

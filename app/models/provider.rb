@@ -48,6 +48,9 @@ class Provider < ApplicationRecord
         phone: location_info[:phone] ,
         email: location_info[:email] 
       )
+
+      # location services update
+      update_location_services(location, location_info[:services])
     end
 
     self.reload
@@ -110,6 +113,30 @@ class Provider < ApplicationRecord
     self.practice_types.each do |practice_type|
       unless new_practice_types.include?(practice_type)
         self.practice_types.delete(practice_type)
+      end
+    end
+  end
+
+  private
+
+  def update_location_services(location, services_params)
+    return if services_params.blank?
+
+    # Get the practice type IDs from the services params
+    service_ids = services_params.map { |service| service[:id] }.compact
+
+    # Remove practice types that are no longer associated with this location
+    location.practice_types.each do |practice_type|
+      unless service_ids.include?(practice_type.id)
+        location.practice_types.delete(practice_type)
+      end
+    end
+
+    # Add new practice types to the location
+    service_ids.each do |service_id|
+      practice_type = PracticeType.find_by(id: service_id)
+      if practice_type && !location.practice_types.include?(practice_type)
+        location.practice_types << practice_type
       end
     end
   end
