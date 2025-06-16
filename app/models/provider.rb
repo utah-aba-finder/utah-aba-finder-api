@@ -46,7 +46,9 @@ class Provider < ApplicationRecord
         state: location_info[:state] ,
         zip: location_info[:zip] ,
         phone: location_info[:phone] ,
-        email: location_info[:email] 
+        email: location_info[:email] ,
+        in_home_waitlist: location_info[:in_home_waitlist],
+        in_clinic_waitlist: location_info[:in_clinic_waitlist]
       )
 
       # location services update

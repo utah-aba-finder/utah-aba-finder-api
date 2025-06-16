@@ -31,7 +31,9 @@ class ProviderSerializer
                   id: type.id,
                   name: type.name
                 }
-              end
+              end,
+              in_home_waitlist: location.in_home_waitlist,
+              in_clinic_waitlist: location.in_clinic_waitlist
               }
             end,
             "website": provider.website,
