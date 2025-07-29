@@ -1,9 +1,13 @@
 class Provider < ApplicationRecord
 
-  has_many :counties
+  has_many :old_counties
+  has_many :counties_providers
+  has_many :counties, through: :counties_providers
   has_many :locations
   has_many :provider_insurances
   has_many :insurances, through: :provider_insurances
+  has_many :provider_practice_types, dependent: :destroy
+  has_many :practice_types, through: :provider_practice_types
 
   enum status: { pending: 1, approved: 2, denied: 3 }
 
@@ -51,11 +55,26 @@ class Provider < ApplicationRecord
         state: location_info[:state] ,
         zip: location_info[:zip] ,
         phone: location_info[:phone] ,
-        email: location_info[:email] 
+        email: location_info[:email] ,
+        in_home_waitlist: location_info[:in_home_waitlist],
+        in_clinic_waitlist: location_info[:in_clinic_waitlist]
       )
+
+      # location services update
+      update_location_services(location, location_info[:services])
     end
 
     self.reload
+  end
+
+  def initialize_provider_insurances
+    Insurance.all.each do |insurance|
+      ProviderInsurance.create!(
+        provider: self,
+        insurance: insurance,
+        accepted: false
+      )
+    end
   end
 
   def update_provider_insurance(insurance_params)
@@ -73,9 +92,63 @@ class Provider < ApplicationRecord
     end
   end
 
-  def update_counties(counties_params)
-    counties_params.each do |county_info|
-      self.counties.update!(counties_served: county_info[:county])
+  # def update_counties(counties_params)
+  #   counties_params.each do |county_info|
+  #     # self.old_counties.update!(counties_served: county_info[:county])
+  #   end
+  # end
+
+  def update_counties_from_array(county_ids)
+    counties_to_remove = self.counties.where.not(id: county_ids)
+    self.counties.delete(counties_to_remove)
+
+    county_ids.each do |county_id|
+      county = County.find_by(id: county_id)
+      self.counties << county if county && !self.counties.include?(county)
+    end
+  end
+
+  def update_practice_types(practice_type_names)
+    return if practice_type_names.blank?
+
+    new_practice_types = practice_type_names.map do |params|
+      PracticeType.find_by(name: params[:name])
+    end.compact
+
+    new_practice_types.each do |practice_type|
+      unless self.practice_types.include?(practice_type)
+        self.practice_types << practice_type
+      end
+    end
+
+    self.practice_types.each do |practice_type|
+      unless new_practice_types.include?(practice_type)
+        self.practice_types.delete(practice_type)
+      end
+    end
+  end
+
+  private
+
+  def update_location_services(location, services_params)
+    return if services_params.blank?
+
+    # Get the practice type IDs from the services params
+    service_ids = services_params.map { |service| service[:id] }.compact
+
+    # Remove practice types that are no longer associated with this location
+    location.practice_types.each do |practice_type|
+      unless service_ids.include?(practice_type.id)
+        location.practice_types.delete(practice_type)
+      end
+    end
+
+    # Add new practice types to the location
+    service_ids.each do |service_id|
+      practice_type = PracticeType.find_by(id: service_id)
+      if practice_type && !location.practice_types.include?(practice_type)
+        location.practice_types << practice_type
+      end
     end
   end
 

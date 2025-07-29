@@ -24,11 +24,21 @@ ActiveRecord::Schema[7.1].define(version: 2025_07_29_133216) do
   end
 
   create_table "counties", force: :cascade do |t|
-    t.bigint "provider_id", null: false
-    t.string "counties_served"
+    t.string "name", null: false
+    t.bigint "state_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["provider_id"], name: "index_counties_on_provider_id"
+    t.index ["state_id"], name: "index_counties_on_state_id"
+  end
+
+  create_table "counties_providers", id: false, force: :cascade do |t|
+    t.bigint "provider_id", null: false
+    t.bigint "county_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["county_id"], name: "index_counties_providers_on_county_id"
+    t.index ["provider_id", "county_id"], name: "index_counties_providers_on_provider_id_and_county_id", unique: true
+    t.index ["provider_id"], name: "index_counties_providers_on_provider_id"
   end
 
   create_table "insurances", force: :cascade do |t|
@@ -49,7 +59,33 @@ ActiveRecord::Schema[7.1].define(version: 2025_07_29_133216) do
     t.string "zip"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "in_home_waitlist", default: false
+    t.boolean "in_clinic_waitlist", default: false
     t.index ["provider_id"], name: "index_locations_on_provider_id"
+  end
+
+  create_table "locations_practice_types", force: :cascade do |t|
+    t.bigint "location_id", null: false
+    t.bigint "practice_type_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["location_id", "practice_type_id"], name: "index_location_practice_type_on_location_and_practice_type", unique: true
+    t.index ["location_id"], name: "index_locations_practice_types_on_location_id"
+    t.index ["practice_type_id"], name: "index_locations_practice_types_on_practice_type_id"
+  end
+
+  create_table "old_counties", force: :cascade do |t|
+    t.bigint "provider_id", null: false
+    t.string "counties_served"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider_id"], name: "index_old_counties_on_provider_id"
+  end
+
+  create_table "practice_types", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "provider_insurances", force: :cascade do |t|
@@ -60,6 +96,16 @@ ActiveRecord::Schema[7.1].define(version: 2025_07_29_133216) do
     t.boolean "accepted"
     t.index ["insurance_id"], name: "index_provider_insurances_on_insurance_id"
     t.index ["provider_id"], name: "index_provider_insurances_on_provider_id"
+  end
+
+  create_table "provider_practice_types", force: :cascade do |t|
+    t.bigint "provider_id", null: false
+    t.bigint "practice_type_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["practice_type_id"], name: "index_provider_practice_types_on_practice_type_id"
+    t.index ["provider_id", "practice_type_id"], name: "idx_on_provider_id_practice_type_id_1a4497536f", unique: true
+    t.index ["provider_id"], name: "index_provider_practice_types_on_provider_id"
   end
 
   create_table "providers", force: :cascade do |t|
@@ -83,8 +129,22 @@ ActiveRecord::Schema[7.1].define(version: 2025_07_29_133216) do
     t.json "service_area", default: {"states_served"=>[], "counties_served"=>[]}
   end
 
-  add_foreign_key "counties", "providers"
+  create_table "states", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "abbreviation", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  add_foreign_key "counties", "states"
+  add_foreign_key "counties_providers", "counties"
+  add_foreign_key "counties_providers", "providers"
   add_foreign_key "locations", "providers"
+  add_foreign_key "locations_practice_types", "locations"
+  add_foreign_key "locations_practice_types", "practice_types"
+  add_foreign_key "old_counties", "providers"
   add_foreign_key "provider_insurances", "insurances"
   add_foreign_key "provider_insurances", "providers"
+  add_foreign_key "provider_practice_types", "practice_types"
+  add_foreign_key "provider_practice_types", "providers"
 end

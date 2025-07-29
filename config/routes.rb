@@ -15,6 +15,13 @@ Rails.application.routes.draw do
         namespace :admin do
           resources :providers, only: [:index]
         end
+
+        resources :states, only: [:index] do
+          resources :counties, only: [:index]
+          resources :providers, only: [:index], action: :index, controller: '/api/v1/states/providers'
+        end
+
+        resources :insurances, only: [:index, :create, :update, :destroy]
       end
     end
   end
