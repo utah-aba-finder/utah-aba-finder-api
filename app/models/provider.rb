@@ -128,6 +128,17 @@ class Provider < ApplicationRecord
     end
   end
 
+  def create_practice_types(practice_type_names)
+    return if practice_type_names.blank?
+
+    practice_type_names.each do |params|
+      practice_type = PracticeType.find_by(name: params[:name])
+      if practice_type && !self.practice_types.include?(practice_type)
+        self.practice_types << practice_type
+      end
+    end
+  end
+
   private
 
   def update_location_services(location, services_params)
