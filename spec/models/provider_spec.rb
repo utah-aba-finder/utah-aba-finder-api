@@ -23,9 +23,13 @@ RSpec.describe Provider, type: :model do
         at_home_services: "Available",
         in_clinic_services: "Available",
         spanish_speakers: "Yes",
-        logo: "https://logo.com"
+        logo: "https://logo.com",
+        in_home_only: false,
+        service_delivery: { 'in_home' => true, 'in_clinic' => true, 'telehealth' => true },
+        service_area: { 'states_served' => ['UT'], 'counties_served' => [] }
         )
 
+      # Create locations after provider creation to satisfy validation
       provider.locations.create!(
         name: "Location 1",
         address_1: "123 Main St",

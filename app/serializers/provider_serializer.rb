@@ -63,7 +63,10 @@ class ProviderSerializer
             "in_clinic_services": provider.in_clinic_services,
             "logo": provider.logo,
             "updated_last": provider.updated_at,
-            "status": provider.status
+            "status": provider.status,
+            "in_home_only": provider.in_home_only,
+            "service_delivery": provider.service_delivery,
+            "service_area": provider.service_area
           }
         }
       end
