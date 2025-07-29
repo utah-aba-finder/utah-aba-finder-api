@@ -72,9 +72,7 @@ class Api::V1::ProvidersController < ApplicationController
       :in_clinic_services,
       :logo,
       :status,
-      :in_home_only,
-      service_delivery: {},
-      service_area: {}
+      :provider_type
     )
   end
 end
