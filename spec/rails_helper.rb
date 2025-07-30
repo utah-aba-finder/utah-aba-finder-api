@@ -70,16 +70,6 @@ RSpec.configure do |config|
     ActiveStorage::Attachment.delete_all
   end
 
-  # Ensure clean database state
-  config.before(:suite) do
-    DatabaseCleaner.strategy = :truncation
-    DatabaseCleaner.clean_with(:truncation)
-  end
-
-  config.after(:each) do
-    DatabaseCleaner.clean
-  end
-
   # Disable message verification in tests
   config.before(:each) do
     ActionController::Base.allow_forgery_protection = false

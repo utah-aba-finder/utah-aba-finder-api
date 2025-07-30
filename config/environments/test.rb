@@ -44,7 +44,7 @@ Rails.application.configure do
   config.secret_key_base = 'test_secret_key_base_for_ci'
 
   # Disable sessions in test environment to avoid message verification issues
-  config.action_controller.session_store = :disabled
+  # Note: API controllers don't use session_store, so we skip this
 
   # Disable message verification in test environment
   config.action_controller.permit_all_parameters = true
