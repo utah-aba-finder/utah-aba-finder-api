@@ -37,19 +37,24 @@ class Api::V1::ProvidersController < ApplicationController
       provider.create_practice_types(params[:data].first[:attributes][:provider_type])
 
       render json: ProviderSerializer.format_providers([provider])
+    else
+      render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
   def update
     provider = Provider.find(params[:id])
-    provider.update!(provider_params)
-    provider.update_locations(params[:data].first[:attributes][:locations])
-    provider.update_provider_insurance(params[:data].first[:attributes][:insurance])
-    # provider.update_counties(params[:data].first[:attributes][:counties_served])
-    provider.update_counties_from_array(params[:data].first[:attributes][:counties_served].map { |county| county["county_id"] })
-    provider.update_practice_types(params[:data].first[:attributes][:provider_type])
-    provider.touch # Ensure updated_at is updated
-    render json: ProviderSerializer.format_providers([provider])
+    if provider.update(provider_params)
+      provider.update_locations(params[:data].first[:attributes][:locations])
+      provider.update_provider_insurance(params[:data].first[:attributes][:insurance])
+      # provider.update_counties(params[:data].first[:attributes][:counties_served])
+      provider.update_counties_from_array(params[:data].first[:attributes][:counties_served].map { |county| county["county_id"] })
+      provider.update_practice_types(params[:data].first[:attributes][:provider_type])
+      provider.touch # Ensure updated_at is updated
+      render json: ProviderSerializer.format_providers([provider])
+    else
+      render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
+    end
   end
 
   def remove_logo
@@ -78,10 +83,10 @@ class Api::V1::ProvidersController < ApplicationController
       :spanish_speakers,
       :at_home_services,
       :in_clinic_services,
-      :logo,
       :status,
       :provider_type,
       :in_home_only,
+      logo: [],
       service_delivery: {}
     )
   end

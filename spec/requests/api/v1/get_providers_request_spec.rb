@@ -40,7 +40,7 @@ RSpec.describe "Get Providers Request", type: :request do
 
     OldCounty.create!(provider: @provider, counties_served: "Salt Lake, Davis")
 
-    @client = Client.create!(name: "test_client", api_key: SecureRandom.hex)
+          @client = create(:client, name: "test_client")
     @api_key = @client.api_key
   end
 

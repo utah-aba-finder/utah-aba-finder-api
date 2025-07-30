@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_07_30_130829) do
+ActiveRecord::Schema[7.1].define(version: 2025_07_30_214622) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_trgm"
   enable_extension "plpgsql"
@@ -48,8 +48,15 @@ ActiveRecord::Schema[7.1].define(version: 2025_07_30_130829) do
     t.string "api_key", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "email", default: "", null: false
+    t.string "encrypted_password", default: "", null: false
+    t.string "reset_password_token"
+    t.datetime "reset_password_sent_at"
+    t.datetime "remember_created_at"
     t.index ["api_key"], name: "index_clients_on_api_key", unique: true
+    t.index ["email"], name: "index_clients_on_email", unique: true
     t.index ["name"], name: "index_clients_on_name", unique: true
+    t.index ["reset_password_token"], name: "index_clients_on_reset_password_token", unique: true
   end
 
   create_table "counties", force: :cascade do |t|

@@ -29,7 +29,7 @@ Rails.application.configure do
   # config.action_dispatch.x_sendfile_header = "X-Sendfile" # for Apache
   # config.action_dispatch.x_sendfile_header = "X-Accel-Redirect" # for NGINX
 
-  # Store uploaded files on the local file system (see config/storage.yml for options).
+  # Store uploaded files on Amazon S3 (see config/storage.yml for options).
   config.active_storage.service = :local
 
   # Mount Action Cable outside main process or domain.
@@ -48,6 +48,21 @@ Rails.application.configure do
   config.logger = ActiveSupport::Logger.new(STDOUT)
     .tap  { |logger| logger.formatter = ::Logger::Formatter.new }
     .then { |logger| ActiveSupport::TaggedLogging.new(logger) }
+
+  # Devise mailer configuration
+  config.action_mailer.default_url_options = { host: 'autismserviceslocator.com' }
+  
+  # Email configuration
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    address:              'smtp.gmail.com',
+    port:                 587,
+    domain:               'utah-aba-finder-api-c9d143f02ce8.herokuapp.com',
+    user_name:            ENV['GMAIL_USERNAME'],
+    password:             ENV['GMAIL_APP_PASSWORD'],
+    authentication:       'plain',
+    enable_starttls_auto: true
+  }
 
   # Prepend all log lines with the following tags.
   config.log_tags = [ :request_id ]
