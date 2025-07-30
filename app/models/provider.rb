@@ -11,6 +11,16 @@ class Provider < ApplicationRecord
 
   enum status: { pending: 1, approved: 2, denied: 3 }
 
+  # Validations
+  validates :in_home_only, inclusion: { in: [true, false] }
+  validates :service_delivery, presence: true
+  validates :service_area, presence: true
+
+  # Custom validation for in-home only providers
+  validate :locations_required_unless_in_home_only
+  validate :validate_service_delivery_structure
+  validate :validate_service_area_structure
+
   def create_practice_types(practice_type_names)
     practice_type_names.each do |param|
       name = param[:name]
@@ -151,6 +161,35 @@ class Provider < ApplicationRecord
       if practice_type && !location.practice_types.include?(practice_type)
         location.practice_types << practice_type
       end
+    end
+  end
+
+  def locations_required_unless_in_home_only
+    return if new_record?
+    return if in_home_only?
+    if locations.empty?
+      errors.add(:locations, 'are required unless provider offers in-home services only')
+    end
+  end
+
+  private
+
+  def validate_service_delivery_structure
+    return unless service_delivery.present?
+    unless service_delivery.is_a?(Hash) && 
+           service_delivery.key?('in_home') && 
+           service_delivery.key?('in_clinic') && 
+           service_delivery.key?('telehealth')
+      errors.add(:service_delivery, 'must have in_home, in_clinic, and telehealth keys')
+    end
+  end
+
+  def validate_service_area_structure
+    return unless service_area.present?
+    unless service_area.is_a?(Hash) && 
+           service_area.key?('states_served') && 
+           service_area.key?('counties_served')
+      errors.add(:service_area, 'must have states_served and counties_served keys')
     end
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_06_16_001340) do
+ActiveRecord::Schema[7.1].define(version: 2025_07_30_005326) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -124,6 +124,9 @@ ActiveRecord::Schema[7.1].define(version: 2025_06_16_001340) do
     t.datetime "updated_at", null: false
     t.string "logo"
     t.integer "status", default: 1, null: false
+    t.boolean "in_home_only", default: false, null: false
+    t.json "service_delivery", default: {"in_home"=>false, "in_clinic"=>false, "telehealth"=>false}
+    t.json "service_area", default: {"states_served"=>[], "counties_served"=>[]}
   end
 
   create_table "states", force: :cascade do |t|
