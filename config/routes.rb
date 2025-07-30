@@ -10,7 +10,11 @@ Rails.application.routes.draw do
   Rails.application.routes.draw do
     namespace :api do
       namespace :v1 do
-        resources :providers, only: [:index, :update, :show, :create]
+        resources :providers, only: [:index, :update, :show, :create] do
+          member do
+            delete :remove_logo
+          end
+        end
 
         namespace :admin do
           resources :providers, only: [:index]

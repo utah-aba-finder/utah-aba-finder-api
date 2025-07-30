@@ -48,7 +48,15 @@ class Api::V1::ProvidersController < ApplicationController
     # provider.update_counties(params[:data].first[:attributes][:counties_served])
     provider.update_counties_from_array(params[:data].first[:attributes][:counties_served].map { |county| county["county_id"] })
     provider.update_practice_types(params[:data].first[:attributes][:provider_type])
+    provider.touch # Ensure updated_at is updated
     render json: ProviderSerializer.format_providers([provider])
+  end
+
+  def remove_logo
+    provider = Provider.find(params[:id])
+    provider.remove_logo
+    provider.touch # Update the timestamp
+    render json: { message: 'Logo removed successfully' }
   end
 
   def show
@@ -74,8 +82,7 @@ class Api::V1::ProvidersController < ApplicationController
       :status,
       :provider_type,
       :in_home_only,
-      service_delivery: {},
-      service_area: {}
+      service_delivery: {}
     )
   end
 end
