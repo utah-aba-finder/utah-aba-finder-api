@@ -10,8 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_07_30_020342) do
+ActiveRecord::Schema[7.1].define(version: 2025_07_30_130829) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension "pg_trgm"
   enable_extension "plpgsql"
 
   create_table "active_storage_attachments", force: :cascade do |t|
@@ -153,7 +154,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_07_30_020342) do
     t.string "logo"
     t.integer "status", default: 1, null: false
     t.boolean "in_home_only", default: false, null: false
-    t.json "service_delivery", default: {"in_home"=>false, "in_clinic"=>false, "telehealth"=>false}
+    t.jsonb "service_delivery", default: {"in_home"=>false, "in_clinic"=>false, "telehealth"=>false}
   end
 
   create_table "states", force: :cascade do |t|
