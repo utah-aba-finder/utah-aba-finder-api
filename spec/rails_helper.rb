@@ -80,6 +80,11 @@ RSpec.configure do |config|
     DatabaseCleaner.clean
   end
 
+  # Disable message verification in tests
+  config.before(:each) do
+    ActionController::Base.allow_forgery_protection = false
+  end
+
 
   Shoulda::Matchers.configure do |shoulda_config|
     shoulda_config.integrate do |with|

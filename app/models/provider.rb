@@ -15,7 +15,7 @@ class Provider < ApplicationRecord
   # Validations
   validates :in_home_only, inclusion: { in: [true, false] }
   validates :service_delivery, presence: true
-  validates :logo, content_type: ['image/png', 'image/jpeg', 'image/gif'], size: { less_than: 5.megabytes }, if: -> { defined?(ActiveStorageValidations) && Rails.env != 'test' }
+  validates :logo, content_type: ['image/png', 'image/jpeg', 'image/gif'], size: { less_than: 5.megabytes }, if: -> { defined?(ActiveStorageValidations) }
 
   # Custom validation for in-home only providers
   validate :locations_required_unless_in_home_only

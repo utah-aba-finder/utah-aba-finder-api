@@ -37,6 +37,9 @@ Rails.application.configure do
   # Store uploaded files on the local file system in a temporary directory.
   config.active_storage.service = :test
 
+  # Disable Active Storage in test environment to avoid message verification issues
+  config.active_storage.resolve_model_to_route = :rails_storage_proxy
+
   # Ensure consistent secret key base for tests
   config.secret_key_base = 'test_secret_key_base_for_ci'
 
@@ -45,6 +48,10 @@ Rails.application.configure do
 
   # Disable message verification in test environment
   config.action_controller.permit_all_parameters = true
+
+  # Disable message verification entirely in test environment
+  config.action_controller.allow_forgery_protection = false
+  config.action_controller.forgery_protection_origin_check = false
 
   config.action_mailer.perform_caching = false
 
