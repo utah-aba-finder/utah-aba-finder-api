@@ -40,6 +40,9 @@ Rails.application.configure do
   # Ensure consistent secret key base for tests
   config.secret_key_base = 'test_secret_key_base_for_ci'
 
+  # Disable sessions in test environment to avoid message verification issues
+  config.action_controller.session_store = :disabled
+
   config.action_mailer.perform_caching = false
 
   # Tell Action Mailer not to deliver emails to the real world.

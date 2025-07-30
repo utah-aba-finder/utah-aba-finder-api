@@ -64,6 +64,12 @@ RSpec.configure do |config|
   # arbitrary gems may also be filtered via:
   # config.filter_gems_from_backtrace("gem name")
 
+  # Clear Active Storage before each test to avoid message verification issues
+  config.before(:each) do
+    ActiveStorage::Blob.delete_all
+    ActiveStorage::Attachment.delete_all
+  end
+
 
   Shoulda::Matchers.configure do |shoulda_config|
     shoulda_config.integrate do |with|
