@@ -1,7 +1,7 @@
 class Api::V1::ProvidersController < ApplicationController
   def index
     if params[:provider_type].present?
-      providers = Provider.where(status: :approved,provider_type: params[:provider_type])
+      providers = Provider.where(status: :approved, provider_type: params[:provider_type])
     else
       providers = Provider.where(status: :approved)
     end
