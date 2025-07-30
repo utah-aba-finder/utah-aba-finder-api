@@ -49,6 +49,9 @@ Rails.application.configure do
     .tap  { |logger| logger.formatter = ::Logger::Formatter.new }
     .then { |logger| ActiveSupport::TaggedLogging.new(logger) }
 
+  # Devise mailer configuration
+  config.action_mailer.default_url_options = { host: 'utah-aba-finder-api-c9d143f02ce8.herokuapp.com' }
+
   # Prepend all log lines with the following tags.
   config.log_tags = [ :request_id ]
 

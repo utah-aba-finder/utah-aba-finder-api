@@ -1,4 +1,8 @@
 class Client < ApplicationRecord
+  # Include default devise modules. Others available are:
+  # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
+  devise :database_authenticatable, :registerable,
+         :recoverable, :rememberable, :validatable
   before_validation :generate_api_key, on: :create
 
   validates :name, presence: true, uniqueness: true
