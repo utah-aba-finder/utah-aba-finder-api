@@ -58,8 +58,8 @@ Rails.application.configure do
     address:              'smtp.gmail.com',
     port:                 587,
     domain:               'utah-aba-finder-api-c9d143f02ce8.herokuapp.com',
-    user_name:            ENV['SMTP_USERNAME'],
-    password:             ENV['SMTP_PASSWORD'],
+    user_name:            ENV['GMAIL_USERNAME'],
+    password:             ENV['GMAIL_APP_PASSWORD'],
     authentication:       'plain',
     enable_starttls_auto: true
   }
