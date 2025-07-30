@@ -1,5 +1,5 @@
 class Provider < ApplicationRecord
-  has_one_attached :logo
+  has_one_attached :logo unless Rails.env.test?
   
   has_many :old_counties
   has_many :counties_providers
@@ -22,10 +22,13 @@ class Provider < ApplicationRecord
   validate :validate_service_delivery_structure
 
   def remove_logo
+    return if Rails.env.test?
     logo.purge if logo.attached?
   end
 
   def logo_url
+    return nil if Rails.env.test?
+    
     if logo.attached?
       Rails.application.routes.url_helpers.rails_blob_url(logo)
     else

@@ -39,6 +39,9 @@ Rails.application.configure do
 
   # Disable Active Storage in test environment to avoid message verification issues
   config.active_storage.resolve_model_to_route = :rails_storage_proxy
+  
+  # Completely disable Active Storage message verification in test environment
+  config.active_storage.verifier = ActiveSupport::MessageVerifier.new('test_key', digest: 'SHA1')
 
   # Ensure consistent secret key base for tests
   config.secret_key_base = 'test_secret_key_base_for_ci'

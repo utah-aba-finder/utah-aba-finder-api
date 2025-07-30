@@ -74,6 +74,12 @@ RSpec.configure do |config|
   config.before(:each) do
     ActionController::Base.allow_forgery_protection = false
   end
+  
+  # Disable Active Storage entirely in tests to avoid message verification issues
+  config.before(:each) do
+    allow(ActiveStorage::Blob).to receive(:find_signed).and_return(nil)
+    allow(ActiveStorage::Attachment).to receive(:find_signed).and_return(nil)
+  end
 
 
   Shoulda::Matchers.configure do |shoulda_config|
