@@ -70,6 +70,16 @@ RSpec.configure do |config|
     ActiveStorage::Attachment.delete_all
   end
 
+  # Ensure clean database state
+  config.before(:suite) do
+    DatabaseCleaner.strategy = :truncation
+    DatabaseCleaner.clean_with(:truncation)
+  end
+
+  config.after(:each) do
+    DatabaseCleaner.clean
+  end
+
 
   Shoulda::Matchers.configure do |shoulda_config|
     shoulda_config.integrate do |with|

@@ -51,6 +51,7 @@ group :development, :test do
   gem "factory_bot_rails"
   gem "rspec-mocks"
   gem "pry"
+  gem "database_cleaner-active_record"
 end
 
 group :test do

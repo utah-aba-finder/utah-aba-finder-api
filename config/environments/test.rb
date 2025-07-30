@@ -43,6 +43,9 @@ Rails.application.configure do
   # Disable sessions in test environment to avoid message verification issues
   config.action_controller.session_store = :disabled
 
+  # Disable message verification in test environment
+  config.action_controller.permit_all_parameters = true
+
   config.action_mailer.perform_caching = false
 
   # Tell Action Mailer not to deliver emails to the real world.
