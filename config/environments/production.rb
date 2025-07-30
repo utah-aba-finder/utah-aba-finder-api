@@ -50,7 +50,7 @@ Rails.application.configure do
     .then { |logger| ActiveSupport::TaggedLogging.new(logger) }
 
   # Devise mailer configuration
-  config.action_mailer.default_url_options = { host: 'utah-aba-finder-api-c9d143f02ce8.herokuapp.com' }
+  config.action_mailer.default_url_options = { host: 'utah-aba-finder.vercel.app' }
   
   # Email configuration
   config.action_mailer.delivery_method = :smtp
