@@ -37,6 +37,9 @@ Rails.application.configure do
   # Store uploaded files on the local file system in a temporary directory.
   config.active_storage.service = :test
 
+  # Ensure consistent secret key base for tests
+  config.secret_key_base = 'test_secret_key_base_for_ci'
+
   config.action_mailer.perform_caching = false
 
   # Tell Action Mailer not to deliver emails to the real world.
