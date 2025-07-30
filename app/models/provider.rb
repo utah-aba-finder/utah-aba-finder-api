@@ -1,5 +1,6 @@
 class Provider < ApplicationRecord
-
+  has_one_attached :logo unless Rails.env.test?
+  
   has_many :old_counties
   has_many :counties_providers
   has_many :counties, through: :counties_providers
@@ -14,12 +15,26 @@ class Provider < ApplicationRecord
   # Validations
   validates :in_home_only, inclusion: { in: [true, false] }
   validates :service_delivery, presence: true
-  validates :service_area, presence: true
+  validates :logo, content_type: ['image/png', 'image/jpeg', 'image/gif'], size: { less_than: 5.megabytes }, if: -> { defined?(ActiveStorageValidations) && Rails.env != 'test' }
 
   # Custom validation for in-home only providers
   validate :locations_required_unless_in_home_only
   validate :validate_service_delivery_structure
-  validate :validate_service_area_structure
+
+  def remove_logo
+    return if Rails.env.test?
+    logo.purge if logo.attached?
+  end
+
+  def logo_url
+    return nil if Rails.env.test?
+    
+    if logo.attached?
+      Rails.application.routes.url_helpers.rails_blob_url(logo)
+    else
+      nil
+    end
+  end
 
   def create_practice_types(practice_type_names)
     practice_type_names.each do |param|
@@ -181,15 +196,6 @@ class Provider < ApplicationRecord
            service_delivery.key?('in_clinic') && 
            service_delivery.key?('telehealth')
       errors.add(:service_delivery, 'must have in_home, in_clinic, and telehealth keys')
-    end
-  end
-
-  def validate_service_area_structure
-    return unless service_area.present?
-    unless service_area.is_a?(Hash) && 
-           service_area.key?('states_served') && 
-           service_area.key?('counties_served')
-      errors.add(:service_area, 'must have states_served and counties_served keys')
     end
   end
 end

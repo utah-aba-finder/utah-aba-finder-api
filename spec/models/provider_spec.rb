@@ -23,7 +23,9 @@ RSpec.describe Provider, type: :model do
         at_home_services: "Available",
         in_clinic_services: "Available",
         spanish_speakers: "Yes",
-        logo: "https://logo.com"
+        logo: "https://logo.com",
+        in_home_only: false,
+        service_delivery: { in_home: false, in_clinic: false, telehealth: false }
         )
 
       provider.locations.create!(

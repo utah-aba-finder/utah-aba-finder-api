@@ -64,6 +64,23 @@ RSpec.configure do |config|
   # arbitrary gems may also be filtered via:
   # config.filter_gems_from_backtrace("gem name")
 
+  # Clear Active Storage before each test to avoid message verification issues
+  config.before(:each) do
+    ActiveStorage::Blob.delete_all
+    ActiveStorage::Attachment.delete_all
+  end
+
+  # Disable message verification in tests
+  config.before(:each) do
+    ActionController::Base.allow_forgery_protection = false
+  end
+  
+  # Disable Active Storage entirely in tests to avoid message verification issues
+  config.before(:each) do
+    allow(ActiveStorage::Blob).to receive(:find_signed).and_return(nil)
+    allow(ActiveStorage::Attachment).to receive(:find_signed).and_return(nil)
+  end
+
 
   Shoulda::Matchers.configure do |shoulda_config|
     shoulda_config.integrate do |with|

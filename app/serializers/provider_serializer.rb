@@ -61,12 +61,11 @@ class ProviderSerializer
             "spanish_speakers": provider.spanish_speakers,
             "at_home_services": provider.at_home_services,
             "in_clinic_services": provider.in_clinic_services,
-            "logo": provider.logo,
+            "logo": provider.logo_url,
             "updated_last": provider.updated_at,
             "status": provider.status,
             "in_home_only": provider.in_home_only,
-            "service_delivery": provider.service_delivery,
-            "service_area": provider.service_area
+            "service_delivery": provider.service_delivery
           }
         }
       end

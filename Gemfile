@@ -38,6 +38,7 @@ gem "bootsnap", require: false
 gem "jsonapi-serializer"
 gem "faraday"
 gem "pagy"
+gem "active_storage_validations"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -50,6 +51,7 @@ group :development, :test do
   gem "factory_bot_rails"
   gem "rspec-mocks"
   gem "pry"
+  gem "database_cleaner-active_record"
 end
 
 group :test do
