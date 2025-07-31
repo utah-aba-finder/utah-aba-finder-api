@@ -1,9 +1,8 @@
 class Api::V1::PasswordResetsController < ApplicationController
   skip_before_action :authenticate_client, only: [:create, :update, :validate_token]
 
-  # POST /api/v1/password_resets
-  # Request password reset
   def create
+    # Use the exact same email verification logic as the AuthenticationController login
     user = User.find_by(email: params[:email])
     
     if user
@@ -15,45 +14,36 @@ class Api::V1::PasswordResetsController < ApplicationController
         render json: { error: 'Failed to send password reset email. Please try again later.' }, status: :internal_server_error
       end
     else
-      render json: { error: 'Email not found' }, status: :not_found
+      # Use the same response logic as login - don't reveal if email exists or not
+      render json: { error: 'If the email exists, password reset instructions have been sent' }, status: :ok
     end
   end
 
-  # PUT /api/v1/password_resets
-  # Reset password with token
   def update
-    begin
-      user = User.reset_password_by_token(
-        reset_password_token: params[:reset_password_token],
-        password: params[:password],
-        password_confirmation: params[:password_confirmation]
-      )
-
-      if user.errors.empty?
-        render json: { message: 'Password successfully reset' }, status: :ok
-      else
-        render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
-      end
-    rescue => e
-      Rails.logger.error "Password reset failed: #{e.message}"
-      render json: { error: 'Failed to reset password. Please try again.' }, status: :internal_server_error
+    # Use the exact same user lookup logic as the AuthenticationController login
+    user = User.reset_password_by_token(reset_password_params)
+    
+    if user.errors.empty?
+      render json: { message: 'Password updated successfully' }, status: :ok
+    else
+      render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
-  # GET /api/v1/password_resets/validate_token
-  # Validate reset token
   def validate_token
-    begin
-      user = User.find_by(reset_password_token: params[:reset_password_token])
-      
-      if user && user.reset_password_period_valid?
-        render json: { valid: true }, status: :ok
-      else
-        render json: { valid: false, error: 'Invalid or expired token' }, status: :unprocessable_entity
-      end
-    rescue => e
-      Rails.logger.error "Token validation failed: #{e.message}"
-      render json: { valid: false, error: 'Failed to validate token' }, status: :internal_server_error
+    # Use the exact same user lookup logic as the AuthenticationController login
+    user = User.find_by(reset_password_token: params[:token])
+    
+    if user && user.reset_password_period_valid?
+      render json: { valid: true, message: 'Token is valid' }, status: :ok
+    else
+      render json: { valid: false, message: 'Token is invalid or expired' }, status: :unprocessable_entity
     end
+  end
+
+  private
+
+  def reset_password_params
+    params.permit(:reset_password_token, :password, :password_confirmation)
   end
 end
