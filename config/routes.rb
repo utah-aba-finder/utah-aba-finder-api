@@ -1,5 +1,11 @@
 Rails.application.routes.draw do
+  devise_for :users
   devise_for :clients
+  
+  # Custom signup route to match production
+  devise_scope :user do
+    post '/signup', to: 'devise/registrations#create'
+  end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -27,6 +33,9 @@ Rails.application.routes.draw do
       end
 
       resources :insurances, only: [:index, :create, :update, :destroy]
+      
+      # User management routes (for Super Admin)
+      resources :users, only: [:index, :show, :create]
       
       # Password reset routes
       resources :password_resets, only: [:create, :update] do
