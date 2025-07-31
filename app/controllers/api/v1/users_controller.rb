@@ -1,5 +1,5 @@
 class Api::V1::UsersController < ApplicationController
-  skip_before_action :authenticate_client, only: [:index, :show, :create]
+  skip_before_action :authenticate_client, only: [:index, :show, :create, :check_user_exists, :debug_lookup]
 
   # GET /api/v1/users
   # List all users (for Super Admin)
@@ -46,6 +46,69 @@ class Api::V1::UsersController < ApplicationController
     else
       render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
     end
+  end
+
+  # POST /api/v1/users/check_user_exists
+  # Check if a user exists by email (for password reset verification)
+  def check_user_exists
+    email = params[:email]
+    
+    if email.blank?
+      render json: { error: 'Email is required' }, status: :bad_request
+      return
+    end
+
+    # Use the same user lookup logic as the login system
+    user = User.find_by(email: email)
+    
+    if user
+      render json: { 
+        exists: true,
+        message: 'User found',
+        user: {
+          id: user.id,
+          email: user.email,
+          created_at: user.created_at
+        }
+      }, status: :ok
+    else
+      render json: { 
+        exists: false,
+        message: 'User not found',
+        email: email
+      }, status: :not_found
+    end
+  end
+
+  # GET /api/v1/users/debug_lookup
+  # Debug endpoint to check where users might be stored
+  def debug_lookup
+    email = params[:email]
+    
+    if email.blank?
+      render json: { error: 'Email is required' }, status: :bad_request
+      return
+    end
+
+    results = {
+      email: email,
+      checks: {}
+    }
+
+    # Check users table
+    user = User.find_by(email: email)
+    results[:checks][:users_table] = user ? { found: true, id: user.id } : { found: false }
+
+    # Check clients table
+    client = Client.find_by(email: email)
+    results[:checks][:clients_table] = client ? { found: true, id: client.id } : { found: false }
+
+    # Check if any table has this email
+    any_found = user || client
+    results[:any_user_found] = any_found
+    results[:message] = any_found ? 'User found in one or more tables' : 'User not found in any table'
+
+    render json: results, status: any_found ? :ok : :not_found
   end
 
   private

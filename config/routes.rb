@@ -1,11 +1,14 @@
 Rails.application.routes.draw do
-  devise_for :users
+  devise_for :users, controllers: {
+    sessions: 'users/sessions',
+    registrations: 'users/registrations'
+  }
   devise_for :clients
   
-  # Custom signup route to match production
-  devise_scope :user do
-    post '/signup', to: 'devise/registrations#create'
-  end
+  # Authentication routes that bypass API key requirement
+  post '/signup', to: 'auth#signup'
+  post '/login', to: 'auth#login'
+  
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -24,7 +27,7 @@ Rails.application.routes.draw do
       end
 
       namespace :admin do
-        resources :providers, only: [:index]
+        resources :providers, only: [:index, :update]
       end
 
       resources :states, only: [:index] do
@@ -35,7 +38,12 @@ Rails.application.routes.draw do
       resources :insurances, only: [:index, :create, :update, :destroy]
       
       # User management routes (for Super Admin)
-      resources :users, only: [:index, :show, :create]
+      resources :users, only: [:index, :show, :create] do
+        collection do
+          post :check_user_exists
+          get :debug_lookup
+        end
+      end
       
       # Password reset routes
       resources :password_resets, only: [:create, :update] do
