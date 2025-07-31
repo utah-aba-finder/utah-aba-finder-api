@@ -1,5 +1,5 @@
 class ApplicationController < ActionController::API
-  before_action :authenticate_client
+  before_action :authenticate_client, unless: :devise_controller?
 
   private
 
@@ -10,5 +10,10 @@ class ApplicationController < ActionController::API
     unless client
       render json: { error: 'Unauthorized' }, status: :unauthorized
     end
+  end
+
+  def devise_controller?
+    # Skip authentication for Devise controllers
+    controller_name.start_with?('sessions', 'registrations', 'passwords', 'confirmations', 'unlocks')
   end
 end
