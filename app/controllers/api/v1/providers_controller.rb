@@ -44,31 +44,46 @@ class Api::V1::ProvidersController < ApplicationController
 
   def update
     provider = Provider.find(params[:id])
-    if provider.update(provider_params)
-      # Only update locations if locations data is provided
-      if params[:data].first[:attributes].key?(:locations) && params[:data].first[:attributes][:locations].present?
-        provider.update_locations(params[:data].first[:attributes][:locations])
-      end
+
+    if request.content_type&.include?('multipart/form-data')
+      # Handle multipart form data (for logo uploads)
+      provider.assign_attributes(multipart_provider_params)
+      provider.logo.attach(params[:logo]) if params[:logo].present?
       
-      # Only update insurance if insurance data is provided
-      if params[:data].first[:attributes].key?(:insurance) && params[:data].first[:attributes][:insurance].present?
-        provider.update_provider_insurance(params[:data].first[:attributes][:insurance])
+      if provider.save
+        provider.touch
+        render json: ProviderSerializer.format_providers([provider])
+      else
+        render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
       end
-      
-      # Only update counties if counties data is provided
-      if params[:data].first[:attributes].key?(:counties_served) && params[:data].first[:attributes][:counties_served].present?
-        provider.update_counties_from_array(params[:data].first[:attributes][:counties_served].map { |county| county["county_id"] })
-      end
-      
-      # Only update practice types if practice type data is provided
-      if params[:data].first[:attributes].key?(:provider_type) && params[:data].first[:attributes][:provider_type].present?
-        provider.update_practice_types(params[:data].first[:attributes][:provider_type])
-      end
-      
-      provider.touch # Ensure updated_at is updated
-      render json: ProviderSerializer.format_providers([provider])
     else
-      render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
+      # Handle JSON data (for regular updates)
+      if provider.update(provider_params)
+        # Only update locations if locations data is provided
+        if params[:data].first[:attributes].key?(:locations) && params[:data].first[:attributes][:locations].present?
+          provider.update_locations(params[:data].first[:attributes][:locations])
+        end
+        
+        # Only update insurance if insurance data is provided
+        if params[:data].first[:attributes].key?(:insurance) && params[:data].first[:attributes][:insurance].present?
+          provider.update_provider_insurance(params[:data].first[:attributes][:insurance])
+        end
+        
+        # Only update counties if counties data is provided
+        if params[:data].first[:attributes].key?(:counties_served) && params[:data].first[:attributes][:counties_served].present?
+          provider.update_counties_from_array(params[:data].first[:attributes][:counties_served].map { |county| county["county_id"] })
+        end
+        
+        # Only update practice types if practice type data is provided
+        if params[:data].first[:attributes].key?(:provider_type) && params[:data].first[:attributes][:provider_type].present?
+          provider.update_practice_types(params[:data].first[:attributes][:provider_type])
+        end
+        
+        provider.touch # Ensure updated_at is updated
+        render json: ProviderSerializer.format_providers([provider])
+      else
+        render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
+      end
     end
   end
 
@@ -85,6 +100,27 @@ class Api::V1::ProvidersController < ApplicationController
   end
 
   private
+  
+  def multipart_provider_params
+    params.permit(
+      :name,
+      :website,
+      :email,
+      :cost,
+      :min_age,
+      :max_age,
+      :waitlist,
+      :telehealth_services,
+      :spanish_speakers,
+      :at_home_services,
+      :in_clinic_services,
+      :status,
+      :provider_type,
+      :in_home_only,
+      service_delivery: {}
+    )
+  end
+
   def provider_params
     params.require(:data).first[:attributes].permit(
       :name,
