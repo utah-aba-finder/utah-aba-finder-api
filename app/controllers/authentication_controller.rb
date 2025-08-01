@@ -9,7 +9,9 @@ class AuthenticationController < ActionController::API
         message: 'Login successful',
         user: {
           id: user.id,
-          email: user.email
+          email: user.email,
+          role: user.role,
+          provider_id: user.provider_id
         }
       }, status: :ok
     else
