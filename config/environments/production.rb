@@ -52,15 +52,15 @@ Rails.application.configure do
   # Devise mailer configuration
   config.action_mailer.default_url_options = { host: 'autismserviceslocator.com' }
   
-  # Email configuration
+  # Email configuration for Outlook/Microsoft 365
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
-    address:              'smtp.gmail.com',
+    address:              'smtp-mail.outlook.com',
     port:                 587,
-    domain:               'utah-aba-finder-api-c9d143f02ce8.herokuapp.com',
-    user_name:            ENV['GMAIL_USERNAME'],
-    password:             ENV['GMAIL_APP_PASSWORD'],
-    authentication:       'plain',
+    domain:               'autismserviceslocator.com',
+    user_name:            ENV['OUTLOOK_USERNAME'],
+    password:             ENV['OUTLOOK_PASSWORD'],
+    authentication:       'login',
     enable_starttls_auto: true
   }
 
