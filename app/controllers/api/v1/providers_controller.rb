@@ -127,6 +127,7 @@ class Api::V1::ProvidersController < ApplicationController
       :status,
       :provider_type,
       :in_home_only,
+      :logo,
       service_delivery: {}
     )
   end
