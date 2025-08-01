@@ -14,6 +14,6 @@ class ApplicationController < ActionController::API
 
   def devise_controller?
     # Skip authentication for Devise controllers
-    controller_name.start_with?('sessions', 'registrations', 'passwords', 'confirmations', 'unlocks')
+    controller_name.start_with?('sessions', 'registrations', 'passwords', 'password_resets', 'confirmations', 'unlocks')
   end
 end
