@@ -5,8 +5,12 @@ class ApplicationController < ActionController::API
 
   def authenticate_client
     api_key = request.headers['Authorization']
+    Rails.logger.info "API key received: #{api_key}"
+    Rails.logger.info "All headers: #{request.headers.to_h}"
+    
     client = Client.find_by(api_key: api_key)
-
+    Rails.logger.info "Client found: #{client.present?}"
+    
     unless client
       render json: { error: 'Unauthorized' }, status: :unauthorized
     end

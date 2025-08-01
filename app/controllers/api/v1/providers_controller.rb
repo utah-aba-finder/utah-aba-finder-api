@@ -45,11 +45,26 @@ class Api::V1::ProvidersController < ApplicationController
   def update
     provider = Provider.find(params[:id])
     if provider.update(provider_params)
-      provider.update_locations(params[:data].first[:attributes][:locations])
-      provider.update_provider_insurance(params[:data].first[:attributes][:insurance])
-      # provider.update_counties(params[:data].first[:attributes][:counties_served])
-      provider.update_counties_from_array(params[:data].first[:attributes][:counties_served].map { |county| county["county_id"] })
-      provider.update_practice_types(params[:data].first[:attributes][:provider_type])
+      # Only update locations if locations data is provided
+      if params[:data].first[:attributes][:locations].present?
+        provider.update_locations(params[:data].first[:attributes][:locations])
+      end
+      
+      # Only update insurance if insurance data is provided
+      if params[:data].first[:attributes][:insurance].present?
+        provider.update_provider_insurance(params[:data].first[:attributes][:insurance])
+      end
+      
+      # Only update counties if counties data is provided
+      if params[:data].first[:attributes][:counties_served].present?
+        provider.update_counties_from_array(params[:data].first[:attributes][:counties_served].map { |county| county["county_id"] })
+      end
+      
+      # Only update practice types if practice type data is provided
+      if params[:data].first[:attributes][:provider_type].present?
+        provider.update_practice_types(params[:data].first[:attributes][:provider_type])
+      end
+      
       provider.touch # Ensure updated_at is updated
       render json: ProviderSerializer.format_providers([provider])
     else
