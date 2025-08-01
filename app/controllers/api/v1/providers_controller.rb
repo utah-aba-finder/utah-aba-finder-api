@@ -45,7 +45,12 @@ class Api::V1::ProvidersController < ApplicationController
   def update
     provider = Provider.find(params[:id])
 
+    Rails.logger.info "Content-Type: #{request.content_type}"
+    Rails.logger.info "Logo present: #{params[:logo].present?}"
+    Rails.logger.info "Multipart condition: #{request.content_type&.include?('multipart/form-data') || params[:logo].present?}"
+
     if request.content_type&.include?('multipart/form-data') || params[:logo].present?
+      Rails.logger.info "Using multipart path"
       # Handle multipart form data (for logo uploads)
       provider.assign_attributes(multipart_provider_params)
       provider.logo.attach(params[:logo]) if params[:logo].present?
@@ -61,6 +66,7 @@ class Api::V1::ProvidersController < ApplicationController
         render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
       end
     else
+      Rails.logger.info "Using JSON path"
       # Handle JSON data (for regular updates)
       if provider.update(provider_params)
         # Only update locations if locations data is provided
