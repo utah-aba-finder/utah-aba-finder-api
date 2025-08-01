@@ -126,23 +126,45 @@ class Api::V1::ProvidersController < ApplicationController
   end
 
   def provider_params
-    params.require(:data).first[:attributes].permit(
-      :name,
-      :website,
-      :email,
-      :cost,
-      :min_age,
-      :max_age,
-      :waitlist,
-      :telehealth_services,
-      :spanish_speakers,
-      :at_home_services,
-      :in_clinic_services,
-      :status,
-      :provider_type,
-      :in_home_only,
-      logo: [],
-      service_delivery: {}
-    )
+    if params[:data]&.first&.dig(:attributes)
+      params[:data].first[:attributes].permit(
+        :name,
+        :website,
+        :email,
+        :cost,
+        :min_age,
+        :max_age,
+        :waitlist,
+        :telehealth_services,
+        :spanish_speakers,
+        :at_home_services,
+        :in_clinic_services,
+        :status,
+        :provider_type,
+        :in_home_only,
+        logo: [],
+        service_delivery: {}
+      )
+    else
+      # Fallback for simple updates
+      params.permit(
+        :name,
+        :website,
+        :email,
+        :cost,
+        :min_age,
+        :max_age,
+        :waitlist,
+        :telehealth_services,
+        :spanish_speakers,
+        :at_home_services,
+        :in_clinic_services,
+        :status,
+        :provider_type,
+        :in_home_only,
+        logo: [],
+        service_delivery: {}
+      )
+    end
   end
 end
