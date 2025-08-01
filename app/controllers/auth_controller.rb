@@ -37,6 +37,24 @@ class AuthController < ActionController::API
     end
   end
 
+  def password_reset
+    # Use the exact same email verification logic as the AuthenticationController login
+    user = User.find_by(email: params[:email])
+    
+    if user
+      begin
+        user.send_reset_password_instructions
+        render json: { message: 'Password reset instructions sent to your email' }, status: :ok
+      rescue => e
+        Rails.logger.error "Email sending failed: #{e.message}"
+        render json: { error: 'Failed to send password reset email. Please try again later.' }, status: :internal_server_error
+      end
+    else
+      # Use the same response logic as login - don't reveal if email exists or not
+      render json: { error: 'If the email exists, password reset instructions have been sent' }, status: :ok
+    end
+  end
+
   private
 
   def user_params
