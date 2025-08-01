@@ -48,6 +48,8 @@ class Provider < ApplicationRecord
 
   #should refactor into smaller methods
   def update_locations(location_params)
+    return if location_params.blank?
+
     location_params_ids = location_params.map { |location| location[:id] }.compact
 
     self.locations.each do |location|
@@ -94,6 +96,8 @@ class Provider < ApplicationRecord
   end
 
   def update_provider_insurance(insurance_params)
+    return if insurance_params.blank?
+
     array = insurance_params.map do |param|
       param[:id]
     end
@@ -115,6 +119,8 @@ class Provider < ApplicationRecord
   # end
 
   def update_counties_from_array(county_ids)
+    return if county_ids.blank?
+
     counties_to_remove = self.counties.where.not(id: county_ids)
     self.counties.delete(counties_to_remove)
 
