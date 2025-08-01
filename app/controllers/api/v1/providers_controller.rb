@@ -45,7 +45,7 @@ class Api::V1::ProvidersController < ApplicationController
   def update
     provider = Provider.find(params[:id])
 
-    if request.content_type&.include?('multipart/form-data')
+    if request.content_type&.include?('multipart/form-data') || params[:logo].present?
       # Handle multipart form data (for logo uploads)
       provider.assign_attributes(multipart_provider_params)
       provider.logo.attach(params[:logo]) if params[:logo].present?
