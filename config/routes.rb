@@ -1,16 +1,17 @@
 Rails.application.routes.draw do
-  devise_for :users, controllers: {
-    sessions: 'users/sessions',
-    registrations: 'users/registrations'
-  }
-  devise_for :clients
-  
   # Authentication routes that bypass API key requirement
   post '/signup', to: 'auth#signup'
   post '/login', to: 'auth#login'
   
   # Simple password reset endpoint (alternative to API namespace)
   post '/password_reset', to: 'auth#password_reset'
+  
+  # Devise routes (moved to bottom to avoid conflicts)
+  devise_for :users, controllers: {
+    sessions: 'users/sessions',
+    registrations: 'users/registrations'
+  }
+  devise_for :clients
   
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
