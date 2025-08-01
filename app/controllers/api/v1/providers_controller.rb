@@ -50,6 +50,10 @@ class Api::V1::ProvidersController < ApplicationController
       provider.assign_attributes(multipart_provider_params)
       provider.logo.attach(params[:logo]) if params[:logo].present?
       
+      # Ensure required fields are preserved if not provided
+      provider.in_home_only = provider.in_home_only unless params[:in_home_only].present?
+      provider.service_delivery = provider.service_delivery unless params[:service_delivery].present?
+      
       if provider.save
         provider.touch
         render json: ProviderSerializer.format_providers([provider])
