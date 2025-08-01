@@ -6,6 +6,12 @@ class Api::V1::PasswordResetsController < ApplicationController
     user = User.find_by(email: params[:email])
     
     if user
+      # Check if a password reset was recently sent (within last 5 minutes)
+      if user.reset_password_sent_at && user.reset_password_sent_at > 5.minutes.ago
+        render json: { message: 'Password reset instructions already sent. Please check your email.' }, status: :ok
+        return
+      end
+      
       begin
         user.send_reset_password_instructions
         render json: { message: 'Password reset instructions sent to your email' }, status: :ok
