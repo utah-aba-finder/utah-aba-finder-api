@@ -64,22 +64,22 @@ class Api::V1::ProvidersController < ApplicationController
       # Handle JSON data (for regular updates)
       if provider.update(provider_params)
         # Only update locations if locations data is provided
-        if params[:data].first[:attributes].key?(:locations) && params[:data].first[:attributes][:locations].present?
+        if params[:data]&.first&.dig(:attributes, :locations)&.present?
           provider.update_locations(params[:data].first[:attributes][:locations])
         end
         
         # Only update insurance if insurance data is provided
-        if params[:data].first[:attributes].key?(:insurance) && params[:data].first[:attributes][:insurance].present?
+        if params[:data]&.first&.dig(:attributes, :insurance)&.present?
           provider.update_provider_insurance(params[:data].first[:attributes][:insurance])
         end
         
         # Only update counties if counties data is provided
-        if params[:data].first[:attributes].key?(:counties_served) && params[:data].first[:attributes][:counties_served].present?
+        if params[:data]&.first&.dig(:attributes, :counties_served)&.present?
           provider.update_counties_from_array(params[:data].first[:attributes][:counties_served].map { |county| county["county_id"] })
         end
         
         # Only update practice types if practice type data is provided
-        if params[:data].first[:attributes].key?(:provider_type) && params[:data].first[:attributes][:provider_type].present?
+        if params[:data]&.first&.dig(:attributes, :provider_type)&.present?
           provider.update_practice_types(params[:data].first[:attributes][:provider_type])
         end
         
