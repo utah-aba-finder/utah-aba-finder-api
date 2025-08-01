@@ -9,6 +9,9 @@ Rails.application.routes.draw do
   post '/signup', to: 'auth#signup'
   post '/login', to: 'auth#login'
   
+  # Simple password reset endpoint (alternative to API namespace)
+  post '/password_reset', to: 'auth#password_reset'
+  
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
