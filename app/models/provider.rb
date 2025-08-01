@@ -30,7 +30,13 @@ class Provider < ApplicationRecord
     return nil if Rails.env.test?
     
     if logo.attached?
-      Rails.application.routes.url_helpers.rails_blob_url(logo)
+      begin
+        Rails.application.routes.url_helpers.rails_blob_url(logo)
+      rescue ArgumentError => e
+        # If host is not configured, return nil instead of crashing
+        Rails.logger.warn "Could not generate logo URL: #{e.message}"
+        nil
+      end
     else
       nil
     end
