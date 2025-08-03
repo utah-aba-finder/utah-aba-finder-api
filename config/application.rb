@@ -41,7 +41,7 @@ module UtahAbaFinderApi
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
     
-    # Configure Active Storage URL generation
-    config.active_storage.default_url_options = { host: ENV.fetch('HOST', 'localhost:3000') }
+    # Configure Active Storage URL generation (will be overridden by environment-specific configs)
+    config.active_storage.default_url_options = { host: ENV.fetch('HOST', 'localhost:3001') }
   end
 end

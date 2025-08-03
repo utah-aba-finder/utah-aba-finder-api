@@ -53,7 +53,7 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: 'autismserviceslocator.com' }
   
   # Active Storage URL configuration
-  config.active_storage.default_url_options = { host: 'autismserviceslocator.com' }
+  config.active_storage.default_url_options = { host: ENV.fetch('HOST', 'utah-aba-finder-api-c9d143f02ce8.herokuapp.com') }
   
   # Email configuration
   config.action_mailer.delivery_method = :smtp
