@@ -54,11 +54,11 @@ class Api::V1::ProvidersController < ApplicationController
       # Handle multipart form data (for logo uploads)
       provider.assign_attributes(multipart_provider_params)
       
-      # Handle logo upload - save as string URL for now
+      # Handle logo upload using Active Storage
       if params[:logo].present?
         Rails.logger.info "Logo file received: #{params[:logo].original_filename}"
-        # Save to the database field directly, bypassing Active Storage
-        provider[:logo] = "uploaded_#{params[:logo].original_filename}"
+        # Attach the logo file to Active Storage
+        provider.logo.attach(params[:logo])
       end
       
       # Ensure required fields are preserved if not provided
@@ -133,6 +133,7 @@ class Api::V1::ProvidersController < ApplicationController
       :status,
       :provider_type,
       :in_home_only,
+      :logo,
       service_delivery: {}
     )
   end

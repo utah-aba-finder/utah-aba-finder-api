@@ -30,12 +30,7 @@ class Provider < ApplicationRecord
   def logo_url
     return nil if Rails.env.test?
     
-    # First check if there's a logo string in the database (legacy format)
-    if self[:logo].present?
-      return self[:logo]
-    end
-    
-    # Then check if there's an Active Storage attachment
+    # First check if there's an Active Storage attachment (new format)
     if logo.attached?
       begin
         # Get the configured host for Active Storage
@@ -63,6 +58,9 @@ class Provider < ApplicationRecord
         Rails.logger.error "Unexpected error generating logo URL for provider #{id}: #{e.message}"
         nil
       end
+    # Then check if there's a logo string in the database (legacy format)
+    elsif self[:logo].present?
+      return self[:logo]
     else
       nil
     end
