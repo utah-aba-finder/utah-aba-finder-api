@@ -50,8 +50,9 @@ Rails.application.routes.draw do
       end
       
       # Password reset routes
-      resources :password_resets, only: [:create, :update] do
+      resources :password_resets, only: [:create] do
         collection do
+          patch :update
           get :validate_token
         end
       end

@@ -26,13 +26,23 @@ class Api::V1::PasswordResetsController < ApplicationController
   end
 
   def update
-    # Use the exact same user lookup logic as the AuthenticationController login
-    user = User.reset_password_by_token(reset_password_params)
+    # Find user by reset token
+    user = User.find_by(reset_password_token: reset_password_params[:reset_password_token])
     
-    if user.errors.empty?
-      render json: { message: 'Password updated successfully' }, status: :ok
+    if user && user.reset_password_period_valid?
+      # Update password manually
+      if user.update(
+        password: reset_password_params[:password],
+        password_confirmation: reset_password_params[:password_confirmation],
+        reset_password_token: nil,
+        reset_password_sent_at: nil
+      )
+        render json: { message: 'Password updated successfully' }, status: :ok
+      else
+        render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
+      end
     else
-      render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: ['Reset password token is invalid or expired'] }, status: :unprocessable_entity
     end
   end
 
@@ -50,6 +60,11 @@ class Api::V1::PasswordResetsController < ApplicationController
   private
 
   def reset_password_params
-    params.permit(:reset_password_token, :password, :password_confirmation)
+    # Handle both flat and nested parameter structures
+    if params[:password_reset].present?
+      params.require(:password_reset).permit(:reset_password_token, :password, :password_confirmation)
+    else
+      params.permit(:reset_password_token, :password, :password_confirmation)
+    end
   end
 end
