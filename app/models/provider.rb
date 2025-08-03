@@ -30,6 +30,8 @@ class Provider < ApplicationRecord
   def logo_url
     return nil if Rails.env.test?
     
+    Rails.logger.debug "Generating logo URL for provider #{id}"
+    
     # First check if there's an Active Storage attachment (new format)
     if logo.attached?
       begin
@@ -38,9 +40,11 @@ class Provider < ApplicationRecord
         
         if host.present?
           # Try to generate the URL with explicit host configuration
+          Rails.logger.debug "Generating URL with host: #{host}"
           Rails.application.routes.url_helpers.rails_blob_url(logo, host: host)
         else
           # Fallback: try without explicit host
+          Rails.logger.debug "Generating URL without explicit host"
           Rails.application.routes.url_helpers.rails_blob_url(logo)
         end
       rescue ArgumentError => e

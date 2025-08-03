@@ -54,12 +54,19 @@ class Api::V1::ProvidersController < ApplicationController
       # Handle multipart form data (for logo uploads)
       provider.assign_attributes(multipart_provider_params)
       
-      # Handle logo upload using Active Storage
-      if params[:logo].present?
-        Rails.logger.info "Logo file received: #{params[:logo].original_filename}"
-        # Attach the logo file to Active Storage
-        provider.logo.attach(params[:logo])
-      end
+          # Handle logo upload using Active Storage
+    if params[:logo].present?
+      Rails.logger.info "Logo file received: #{params[:logo].original_filename}"
+      Rails.logger.info "Params logo content type: #{params[:logo].content_type}"
+      Rails.logger.info "Params logo original filename: #{params[:logo].original_filename}"
+      Rails.logger.info "Params logo content length: #{params[:logo].size}"
+      Rails.logger.info "Active Storage attached before?: #{provider.logo.attached?}"
+      
+      # Attach the logo file to Active Storage
+      provider.logo.attach(params[:logo])
+      
+      Rails.logger.info "Active Storage attached after?: #{provider.logo.attached?}"
+    end
       
       # Ensure required fields are preserved if not provided
       provider.in_home_only = provider.in_home_only unless params[:in_home_only].present?
@@ -67,8 +74,10 @@ class Api::V1::ProvidersController < ApplicationController
       
       if provider.save
         provider.touch
+        Rails.logger.info "Provider saved successfully. Logo URL: #{provider.logo_url}"
         render json: ProviderSerializer.format_providers([provider])
       else
+        Rails.logger.error "Provider save failed: #{provider.errors.full_messages}"
         render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
       end
     else
