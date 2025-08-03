@@ -53,7 +53,13 @@ class Api::V1::ProvidersController < ApplicationController
       Rails.logger.info "Using multipart path"
       # Handle multipart form data (for logo uploads)
       provider.assign_attributes(multipart_provider_params)
-      provider.logo.attach(params[:logo]) if params[:logo].present?
+      
+      # Handle logo upload - save as string URL for now
+      if params[:logo].present?
+        Rails.logger.info "Logo file received: #{params[:logo].original_filename}"
+        # Save to the database field directly, bypassing Active Storage
+        provider[:logo] = "uploaded_#{params[:logo].original_filename}"
+      end
       
       # Ensure required fields are preserved if not provided
       provider.in_home_only = provider.in_home_only unless params[:in_home_only].present?
@@ -127,7 +133,6 @@ class Api::V1::ProvidersController < ApplicationController
       :status,
       :provider_type,
       :in_home_only,
-      :logo,
       service_delivery: {}
     )
   end
