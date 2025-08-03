@@ -52,6 +52,9 @@ Rails.application.configure do
   # Devise mailer configuration
   config.action_mailer.default_url_options = { host: 'autismserviceslocator.com' }
   
+  # Active Storage URL configuration
+  config.active_storage.default_url_options = { host: 'autismserviceslocator.com' }
+  
   # Email configuration
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {

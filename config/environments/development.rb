@@ -40,6 +40,9 @@ Rails.application.configure do
 
   # Devise mailer configuration
   config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }
+  
+  # Active Storage URL configuration
+  config.active_storage.default_url_options = { host: 'localhost', port: 3000 }
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log

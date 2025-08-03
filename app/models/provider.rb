@@ -29,12 +29,37 @@ class Provider < ApplicationRecord
   def logo_url
     return nil if Rails.env.test?
     
+    # First check if there's a logo string in the database (legacy format)
+    if self[:logo].present?
+      return self[:logo]
+    end
+    
+    # Then check if there's an Active Storage attachment
     if logo.attached?
       begin
-        Rails.application.routes.url_helpers.rails_blob_url(logo)
+        # Get the configured host for Active Storage
+        host = Rails.application.config.active_storage.default_url_options&.dig(:host)
+        
+        if host.present?
+          # Try to generate the URL with explicit host configuration
+          Rails.application.routes.url_helpers.rails_blob_url(logo, host: host)
+        else
+          # Fallback: try without explicit host
+          Rails.application.routes.url_helpers.rails_blob_url(logo)
+        end
       rescue ArgumentError => e
-        # If host is not configured, return nil instead of crashing
-        Rails.logger.warn "Could not generate logo URL: #{e.message}"
+        # If host is not configured, try with a fallback
+        Rails.logger.warn "Could not generate logo URL for provider #{id}: #{e.message}"
+        begin
+          # Try with localhost as fallback
+          Rails.application.routes.url_helpers.rails_blob_url(logo, host: 'localhost:3000')
+        rescue => e2
+          Rails.logger.error "Fallback logo URL generation failed for provider #{id}: #{e2.message}"
+          nil
+        end
+      rescue => e
+        # Catch any other errors that might occur
+        Rails.logger.error "Unexpected error generating logo URL for provider #{id}: #{e.message}"
         nil
       end
     else
