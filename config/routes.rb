@@ -47,6 +47,10 @@ Rails.application.routes.draw do
           post :check_user_exists
           get :debug_lookup
         end
+        member do
+          post :link_to_provider
+          delete :unlink_from_provider
+        end
       end
       
       # Password reset routes
