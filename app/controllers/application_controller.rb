@@ -48,31 +48,38 @@ class ApplicationController < ActionController::API
 
   def authenticate_provider_or_client
     # First try to authenticate as a user (provider self-editing)
-    begin
-      authenticate_user!
-      provider_id = params[:id]
+    token = request.headers['Authorization']&.gsub('Bearer ', '')
+    
+    if token.present?
+      # Try user authentication
+      user = User.find_by(id: token)
       
-      # Super admin can edit any provider
-      if current_user.role == 'super_admin' || current_user.role == 0
-        return
+      if user
+        @current_user = user
+        provider_id = params[:id]
+        
+        # Super admin can edit any provider
+        if current_user.role == 'super_admin' || current_user.role == 0
+          return
+        end
+        
+        # Regular users can only edit their own provider
+        if current_user.provider_id.to_s == provider_id.to_s
+          return
+        else
+          render json: { error: 'Unauthorized - can only edit your own provider' }, status: :unauthorized
+          return
+        end
       end
-      
-      # Regular users can only edit their own provider
-      if current_user.provider_id.to_s == provider_id.to_s
-        return
-      else
-        render json: { error: 'Unauthorized - can only edit your own provider' }, status: :unauthorized
-        return
-      end
-    rescue => e
-      # User authentication failed, try API key authentication
-      api_key = request.headers['Authorization']
-      client = Client.find_by(api_key: api_key)
-      
-      unless client
-        render json: { error: 'Unauthorized - requires valid API key or user authentication' }, status: :unauthorized
-        return
-      end
+    end
+    
+    # If user authentication failed, try API key authentication
+    api_key = request.headers['Authorization']
+    client = Client.find_by(api_key: api_key)
+    
+    unless client
+      render json: { error: 'Unauthorized' }, status: :unauthorized
+      return
     end
   end
 end

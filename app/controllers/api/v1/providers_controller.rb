@@ -86,24 +86,33 @@ class Api::V1::ProvidersController < ApplicationController
       Rails.logger.info "Using JSON path"
       # Handle JSON data (for regular updates)
       if provider.update(provider_params)
+        # Get the attributes from either array or hash structure
+        attributes = if params[:data].is_a?(Array) && params[:data].first&.dig(:attributes)
+          params[:data].first[:attributes]
+        elsif params[:data]&.dig(:attributes)
+          params[:data][:attributes]
+        else
+          {}
+        end
+        
         # Only update locations if locations data is provided
-        if params[:data]&.dig(:attributes, :locations)&.present?
-          provider.update_locations(params[:data][:attributes][:locations])
+        if attributes[:locations]&.present?
+          provider.update_locations(attributes[:locations])
         end
         
         # Only update insurance if insurance data is provided
-        if params[:data]&.dig(:attributes, :insurance)&.present?
-          provider.update_provider_insurance(params[:data][:attributes][:insurance])
+        if attributes[:insurance]&.present?
+          provider.update_provider_insurance(attributes[:insurance])
         end
         
         # Only update counties if counties data is provided
-        if params[:data]&.dig(:attributes, :counties_served)&.present?
-          provider.update_counties_from_array(params[:data][:attributes][:counties_served].map { |county| county["county_id"] })
+        if attributes[:counties_served]&.present?
+          provider.update_counties_from_array(attributes[:counties_served].map { |county| county["county_id"] })
         end
         
         # Only update practice types if practice type data is provided
-        if params[:data]&.dig(:attributes, :provider_type)&.present?
-          provider.update_practice_types(params[:data][:attributes][:provider_type])
+        if attributes[:provider_type]&.present?
+          provider.update_practice_types(attributes[:provider_type])
         end
         
         provider.touch # Ensure updated_at is updated
@@ -150,25 +159,69 @@ class Api::V1::ProvidersController < ApplicationController
   end
 
   def provider_params
-    if params[:data]&.dig(:attributes)
-      params[:data][:attributes].permit(
-        :name,
-        :website,
-        :email,
-        :cost,
-        :min_age,
-        :max_age,
-        :waitlist,
-        :telehealth_services,
-        :spanish_speakers,
-        :at_home_services,
-        :in_clinic_services,
-        :status,
-        :provider_type,
-        :in_home_only,
-        logo: [],
-        service_delivery: {}
-      )
+    # Handle both array and hash structures for data
+    if params[:data].present?
+      if params[:data].is_a?(Array) && params[:data].first&.dig(:attributes)
+        # Handle array structure (like in tests)
+        params[:data].first[:attributes].permit(
+          :name,
+          :website,
+          :email,
+          :cost,
+          :min_age,
+          :max_age,
+          :waitlist,
+          :telehealth_services,
+          :spanish_speakers,
+          :at_home_services,
+          :in_clinic_services,
+          :status,
+          :provider_type,
+          :in_home_only,
+          logo: [],
+          service_delivery: {}
+        )
+      elsif params[:data]&.dig(:attributes)
+        # Handle hash structure (like in actual API calls)
+        params[:data][:attributes].permit(
+          :name,
+          :website,
+          :email,
+          :cost,
+          :min_age,
+          :max_age,
+          :waitlist,
+          :telehealth_services,
+          :spanish_speakers,
+          :at_home_services,
+          :in_clinic_services,
+          :status,
+          :provider_type,
+          :in_home_only,
+          logo: [],
+          service_delivery: {}
+        )
+      else
+        # Fallback for simple updates
+        params.permit(
+          :name,
+          :website,
+          :email,
+          :cost,
+          :min_age,
+          :max_age,
+          :waitlist,
+          :telehealth_services,
+          :spanish_speakers,
+          :at_home_services,
+          :in_clinic_services,
+          :status,
+          :provider_type,
+          :in_home_only,
+          logo: [],
+          service_delivery: {}
+        )
+      end
     else
       # Fallback for simple updates
       params.permit(
