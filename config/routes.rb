@@ -24,7 +24,7 @@ Rails.application.routes.draw do
   
   namespace :api do
     namespace :v1 do
-      resources :providers, only: [:index, :update, :show, :create] do
+      resources :providers, only: [:index, :update, :show, :create, :put] do
         member do
           delete :remove_logo
         end
