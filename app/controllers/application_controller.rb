@@ -50,9 +50,13 @@ class ApplicationController < ActionController::API
     # First try to authenticate as a user (provider self-editing)
     token = request.headers['Authorization']&.gsub('Bearer ', '')
     
+    Rails.logger.info "Provider auth - Token: #{token}"
+    Rails.logger.info "Provider auth - Params ID: #{params[:id]}"
+    
     if token.present?
       # Try user authentication first
       user = User.find_by(id: token)
+      Rails.logger.info "Provider auth - User found: #{user.present?}"
       
       if user
         @current_user = user
@@ -60,13 +64,16 @@ class ApplicationController < ActionController::API
         
         # Super admin can edit any provider
         if current_user.role == 'super_admin' || current_user.role == 0
+          Rails.logger.info "Provider auth - Super admin access granted"
           return
         end
         
         # Regular users can only edit their own provider
         if current_user.provider_id.to_s == provider_id.to_s
+          Rails.logger.info "Provider auth - User provider access granted"
           return
         else
+          Rails.logger.info "Provider auth - User provider access denied"
           render json: { error: 'Unauthorized - can only edit your own provider' }, status: :unauthorized
           return
         end
@@ -74,13 +81,17 @@ class ApplicationController < ActionController::API
       
       # If no user found, try provider ID authentication (frontend sends provider ID directly)
       provider = Provider.find_by(id: token)
+      Rails.logger.info "Provider auth - Provider found: #{provider.present?}"
+      
       if provider
         provider_id = params[:id]
         
         # Provider can only edit themselves
         if provider.id.to_s == provider_id.to_s
+          Rails.logger.info "Provider auth - Provider self access granted"
           return
         else
+          Rails.logger.info "Provider auth - Provider self access denied"
           render json: { error: 'Unauthorized - can only edit your own provider' }, status: :unauthorized
           return
         end
@@ -90,8 +101,10 @@ class ApplicationController < ActionController::API
     # If user/provider authentication failed, try API key authentication
     api_key = request.headers['Authorization']
     client = Client.find_by(api_key: api_key)
+    Rails.logger.info "Provider auth - Client found: #{client.present?}"
     
     unless client
+      Rails.logger.info "Provider auth - All authentication methods failed"
       render json: { error: 'Unauthorized' }, status: :unauthorized
       return
     end
