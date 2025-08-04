@@ -26,17 +26,16 @@ class Api::V1::PasswordResetsController < ApplicationController
   end
 
   def update
-    # Find user by reset token
-    user = User.find_by(reset_password_token: reset_password_params[:reset_password_token])
+    Rails.logger.info "Password reset params: #{reset_password_params.inspect}"
+    
+    # Use Devise's proper method to find user by reset token
+    user = User.with_reset_password_token(reset_password_params[:reset_password_token])
+    
+    Rails.logger.info "User found: #{user.inspect}" if user
     
     if user && user.reset_password_period_valid?
-      # Update password manually
-      if user.update(
-        password: reset_password_params[:password],
-        password_confirmation: reset_password_params[:password_confirmation],
-        reset_password_token: nil,
-        reset_password_sent_at: nil
-      )
+      # Use Devise's reset_password method which handles token clearing automatically
+      if user.reset_password(reset_password_params[:password], reset_password_params[:password_confirmation])
         render json: { message: 'Password updated successfully' }, status: :ok
       else
         render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
@@ -47,8 +46,8 @@ class Api::V1::PasswordResetsController < ApplicationController
   end
 
   def validate_token
-    # Use the exact same user lookup logic as the AuthenticationController login
-    user = User.find_by(reset_password_token: params[:token])
+    # Use Devise's proper method to find user by reset token
+    user = User.with_reset_password_token(params[:token])
     
     if user && user.reset_password_period_valid?
       render json: { valid: true, message: 'Token is valid' }, status: :ok
