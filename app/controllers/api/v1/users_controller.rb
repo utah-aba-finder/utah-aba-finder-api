@@ -6,7 +6,15 @@ class Api::V1::UsersController < ApplicationController
   def index
     users = User.all
     render json: {
-      users: users.map { |user| { id: user.id, email: user.email, created_at: user.created_at } }
+      users: users.map { |user| 
+        { 
+          id: user.id, 
+          email: user.email, 
+          role: user.role,
+          provider_id: user.provider_id,
+          created_at: user.created_at 
+        } 
+      }
     }, status: :ok
   end
 
