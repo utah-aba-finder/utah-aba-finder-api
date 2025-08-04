@@ -103,10 +103,13 @@ class ApplicationController < ActionController::API
     client = Client.find_by(api_key: api_key)
     Rails.logger.info "Provider auth - Client found: #{client.present?}"
     
-    unless client
-      Rails.logger.info "Provider auth - All authentication methods failed"
-      render json: { error: 'Unauthorized' }, status: :unauthorized
+    if client
+      @current_client = client
+      Rails.logger.info "Provider auth - API key authentication successful"
       return
     end
+    
+    Rails.logger.info "Provider auth - All authentication methods failed"
+    render json: { error: 'Unauthorized' }, status: :unauthorized
   end
 end
