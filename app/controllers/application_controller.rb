@@ -73,9 +73,9 @@ class ApplicationController < ActionController::API
           Rails.logger.info "Provider auth - User provider access granted"
           return
         else
-          Rails.logger.info "Provider auth - User provider access denied"
-          render json: { error: 'Unauthorized - can only edit your own provider' }, status: :unauthorized
-          return
+          Rails.logger.info "Provider auth - User provider access denied, trying provider ID auth"
+          # If user auth fails, try provider ID authentication instead
+          # Don't return error yet, let it fall through to provider ID check
         end
       end
       
