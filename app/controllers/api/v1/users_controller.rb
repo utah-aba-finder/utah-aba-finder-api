@@ -38,51 +38,10 @@ class Api::V1::UsersController < ApplicationController
     end
   end
 
-  # New action for manually linking users to providers
-  def link_to_provider
-    user = User.find(params[:user_id])
-    provider = Provider.find(params[:provider_id])
-    
-    user.update!(provider_id: provider.id)
-    
-    render json: { 
-      message: "User #{user.email} linked to provider #{provider.name}",
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        provider_id: user.provider_id
-      }
-    }, status: :ok
-  rescue ActiveRecord::RecordNotFound => e
-    render json: { error: e.message }, status: :not_found
-  rescue => e
-    render json: { error: e.message }, status: :unprocessable_entity
-  end
-
-  # New action to unlink user from provider
-  def unlink_from_provider
-    user = User.find(params[:user_id])
-    
-    user.update!(provider_id: nil)
-    
-    render json: { 
-      message: "User #{user.email} unlinked from provider",
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        provider_id: user.provider_id
-      }
-    }, status: :ok
-  rescue ActiveRecord::RecordNotFound => e
-    render json: { error: e.message }, status: :not_found
-  rescue => e
-    render json: { error: e.message }, status: :unprocessable_entity
-  end
-
   def check_user_exists
-    user = User.find_by(email: params[:email])
+    email = params[:email]
+    user = User.find_by(email: email)
+    
     if user
       render json: { 
         exists: true, 
@@ -92,14 +51,16 @@ class Api::V1::UsersController < ApplicationController
           role: user.role,
           provider_id: user.provider_id
         }
-      }
+      }, status: :ok
     else
-      render json: { exists: false }
+      render json: { exists: false }, status: :ok
     end
   end
 
   def debug_lookup
-    user = User.find_by(email: params[:email])
+    email = params[:email]
+    user = User.find_by(email: email)
+    
     if user
       render json: { 
         found: true, 
@@ -107,13 +68,188 @@ class Api::V1::UsersController < ApplicationController
           id: user.id,
           email: user.email,
           role: user.role,
-          provider_id: user.provider_id,
-          encrypted_password: user.encrypted_password.present? ? 'Set' : 'Not set'
+          provider_id: user.provider_id
         }
-      }
+      }, status: :ok
     else
-      render json: { found: false }
+      render json: { found: false, message: "No user found with email: #{email}" }, status: :ok
     end
+  end
+
+  def link_to_provider
+    user = User.find(params[:id])
+    provider_id = params[:provider_id]
+    
+    begin
+      provider = Provider.find(provider_id)
+      user.update!(provider_id: provider_id)
+      
+      render json: { 
+        message: "User successfully linked to provider",
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          provider_id: user.provider_id
+        },
+        provider: {
+          id: provider.id,
+          name: provider.name,
+          email: provider.email
+        }
+      }, status: :ok
+    rescue ActiveRecord::RecordNotFound => e
+      render json: { error: "Provider not found with ID: #{provider_id}" }, status: :not_found
+    rescue => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    end
+  end
+
+  def unlink_from_provider
+    user = User.find(params[:id])
+    user.update!(provider_id: nil)
+    
+    render json: { 
+      message: "User successfully unlinked from provider",
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        provider_id: user.provider_id
+      }
+    }, status: :ok
+  end
+
+  # New endpoint for frontend manual linking
+  def manual_link
+    user_email = params[:user_email]
+    provider_id = params[:provider_id]
+    
+    begin
+      user = User.find_by(email: user_email)
+      provider = Provider.find(provider_id)
+      
+      if user.nil?
+        render json: { error: "User not found with email: #{user_email}" }, status: :not_found
+        return
+      end
+      
+      user.update!(provider_id: provider_id)
+      
+      render json: { 
+        success: true,
+        message: "User successfully linked to provider",
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          provider_id: user.provider_id
+        },
+        provider: {
+          id: provider.id,
+          name: provider.name,
+          email: provider.email
+        }
+      }, status: :ok
+    rescue ActiveRecord::RecordNotFound => e
+      render json: { error: "Provider not found with ID: #{provider_id}" }, status: :not_found
+    rescue => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    end
+  end
+
+  # New endpoint to get all unlinked users
+  def unlinked_users
+    users = User.where(provider_id: nil)
+    render json: {
+      users: users.map { |user| 
+        { 
+          id: user.id, 
+          email: user.email, 
+          role: user.role,
+          created_at: user.created_at 
+        } 
+      }
+    }, status: :ok
+  end
+
+  # New endpoint to get all providers
+  def providers_list
+    providers = Provider.all
+    render json: {
+      providers: providers.map { |provider| 
+        { 
+          id: provider.id, 
+          name: provider.name, 
+          email: provider.email 
+        } 
+      }
+    }, status: :ok
+  end
+
+  # New endpoint to switch a user from one provider to another
+  def switch_provider
+    user_email = params[:user_email]
+    new_provider_id = params[:new_provider_id]
+    
+    begin
+      user = User.find_by(email: user_email)
+      
+      if user.nil?
+        render json: { error: "User not found with email: #{user_email}" }, status: :not_found
+        return
+      end
+      
+      new_provider = Provider.find(new_provider_id)
+      old_provider_id = user.provider_id
+      old_provider = old_provider_id ? Provider.find(old_provider_id) : nil
+      
+      user.update!(provider_id: new_provider_id)
+      
+      render json: { 
+        success: true,
+        message: "User successfully switched providers",
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          provider_id: user.provider_id
+        },
+        old_provider: old_provider ? {
+          id: old_provider.id,
+          name: old_provider.name,
+          email: old_provider.email
+        } : nil,
+        new_provider: {
+          id: new_provider.id,
+          name: new_provider.name,
+          email: new_provider.email
+        }
+      }, status: :ok
+    rescue ActiveRecord::RecordNotFound => e
+      render json: { error: "Provider not found with ID: #{new_provider_id}" }, status: :not_found
+    rescue => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    end
+  end
+
+  # New endpoint to get all users with their current provider associations
+  def users_with_providers
+    users = User.all.includes(:provider)
+    render json: {
+      users: users.map { |user| 
+        provider = user.provider
+        { 
+          id: user.id, 
+          email: user.email, 
+          role: user.role,
+          provider_id: user.provider_id,
+          provider_name: provider ? provider.name : nil,
+          provider_email: provider ? provider.email : nil,
+          created_at: user.created_at 
+        } 
+      }
+    }, status: :ok
   end
 
   private

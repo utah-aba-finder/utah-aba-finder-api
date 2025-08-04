@@ -46,6 +46,11 @@ Rails.application.routes.draw do
         collection do
           post :check_user_exists
           get :debug_lookup
+          post :manual_link
+          post :switch_provider
+          get :unlinked_users
+          get :providers_list
+          get :users_with_providers
         end
         member do
           post :link_to_provider
