@@ -8,11 +8,11 @@ class AuthController < ActionController::API
       # Convert string role to numeric for frontend compatibility
       numeric_role = case user.role
       when 'super_admin'
-        1
+        0
       when 'user'
-        0
+        1
       else
-        0
+        1
       end
       
       render json: { 
@@ -36,11 +36,11 @@ class AuthController < ActionController::API
       # Convert string role to numeric for frontend compatibility
       numeric_role = case user.role
       when 'super_admin'
-        1
+        0
       when 'user'
-        0
+        1
       else
-        0
+        1
       end
       
       render json: { 
