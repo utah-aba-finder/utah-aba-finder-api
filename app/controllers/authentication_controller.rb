@@ -9,7 +9,9 @@ class AuthenticationController < ActionController::API
         message: 'Login successful',
         user: {
           id: user.id,
-          email: user.email
+          email: user.email,
+          role: user.role,
+          provider_id: user.provider_id
         }
       }, status: :ok
     else
@@ -19,6 +21,8 @@ class AuthenticationController < ActionController::API
 
   def signup
     user = User.new(user_params)
+    # Set default role to 1 (regular provider) unless explicitly set to 0 (super admin)
+    user.role = 1 unless user.role == 0
     
     if user.save
       render json: { 
@@ -38,6 +42,6 @@ class AuthenticationController < ActionController::API
   private
 
   def user_params
-    params.require(:user).permit(:email, :password, :password_confirmation, :provider_id, :role)
+    params.require(:user).permit(:email, :password, :password_confirmation, :provider_id)
   end
 end 

@@ -15,7 +15,8 @@ class Provider < ApplicationRecord
   # Validations
   validates :in_home_only, inclusion: { in: [true, false] }
   validates :service_delivery, presence: true
-  validates :logo, content_type: ['image/png', 'image/jpeg', 'image/gif'], size: { less_than: 5.megabytes }, if: -> { defined?(ActiveStorageValidations) && Rails.env != 'test' }
+  # Only validate logo if it's an Active Storage attachment
+  validates :logo, content_type: ['image/png', 'image/jpeg', 'image/gif'], size: { less_than: 5.megabytes }, if: -> { logo.attached? && defined?(ActiveStorageValidations) && Rails.env != 'test' }
 
   # Custom validation for in-home only providers
   validate :locations_required_unless_in_home_only
@@ -29,8 +30,41 @@ class Provider < ApplicationRecord
   def logo_url
     return nil if Rails.env.test?
     
+    Rails.logger.debug "Generating logo URL for provider #{id}"
+    
+    # First check if there's an Active Storage attachment (new format)
     if logo.attached?
-      Rails.application.routes.url_helpers.rails_blob_url(logo)
+      begin
+        # Get the configured host for Active Storage
+        host = Rails.application.config.active_storage.default_url_options&.dig(:host)
+        
+        if host.present?
+          # Try to generate the URL with explicit host configuration
+          Rails.logger.debug "Generating URL with host: #{host}"
+          Rails.application.routes.url_helpers.rails_blob_url(logo, host: host)
+        else
+          # Fallback: try without explicit host
+          Rails.logger.debug "Generating URL without explicit host"
+          Rails.application.routes.url_helpers.rails_blob_url(logo)
+        end
+      rescue ArgumentError => e
+        # If host is not configured, try with a fallback
+        Rails.logger.warn "Could not generate logo URL for provider #{id}: #{e.message}"
+        begin
+          # Try with localhost as fallback
+          Rails.application.routes.url_helpers.rails_blob_url(logo, host: 'localhost:3000')
+        rescue => e2
+          Rails.logger.error "Fallback logo URL generation failed for provider #{id}: #{e2.message}"
+          nil
+        end
+      rescue => e
+        # Catch any other errors that might occur
+        Rails.logger.error "Unexpected error generating logo URL for provider #{id}: #{e.message}"
+        nil
+      end
+    # Then check if there's a logo string in the database (legacy format)
+    elsif self[:logo].present?
+      return self[:logo]
     else
       nil
     end
@@ -48,6 +82,8 @@ class Provider < ApplicationRecord
 
   #should refactor into smaller methods
   def update_locations(location_params)
+    return if location_params.blank?
+
     location_params_ids = location_params.map { |location| location[:id] }.compact
 
     self.locations.each do |location|
@@ -94,6 +130,8 @@ class Provider < ApplicationRecord
   end
 
   def update_provider_insurance(insurance_params)
+    return if insurance_params.blank?
+
     array = insurance_params.map do |param|
       param[:id]
     end
@@ -115,6 +153,8 @@ class Provider < ApplicationRecord
   # end
 
   def update_counties_from_array(county_ids)
+    return if county_ids.blank?
+
     counties_to_remove = self.counties.where.not(id: county_ids)
     self.counties.delete(counties_to_remove)
 

@@ -1,4 +1,6 @@
 class Api::V1::ProvidersController < ApplicationController
+  skip_before_action :authenticate_client, only: [:update, :remove_logo]
+  before_action :authenticate_provider_or_client, only: [:update, :remove_logo]
   def index
     if params[:provider_type].present?
       providers = Provider.where(status: :approved, provider_type: params[:provider_type])
@@ -44,16 +46,71 @@ class Api::V1::ProvidersController < ApplicationController
 
   def update
     provider = Provider.find(params[:id])
-    if provider.update(provider_params)
-      provider.update_locations(params[:data].first[:attributes][:locations])
-      provider.update_provider_insurance(params[:data].first[:attributes][:insurance])
-      # provider.update_counties(params[:data].first[:attributes][:counties_served])
-      provider.update_counties_from_array(params[:data].first[:attributes][:counties_served].map { |county| county["county_id"] })
-      provider.update_practice_types(params[:data].first[:attributes][:provider_type])
-      provider.touch # Ensure updated_at is updated
-      render json: ProviderSerializer.format_providers([provider])
+
+    Rails.logger.info "Content-Type: #{request.content_type}"
+    Rails.logger.info "Logo present: #{params[:logo].present?}"
+    Rails.logger.info "Multipart condition: #{request.content_type&.include?('multipart/form-data') || params[:logo].present?}"
+
+    if request.content_type&.include?('multipart/form-data') || params[:logo].present?
+      Rails.logger.info "Using multipart path"
+      # Handle multipart form data (for logo uploads)
+      provider.assign_attributes(multipart_provider_params)
+      
+          # Handle logo upload using Active Storage
+    if params[:logo].present?
+      Rails.logger.info "Logo file received: #{params[:logo].original_filename}"
+      Rails.logger.info "Params logo content type: #{params[:logo].content_type}"
+      Rails.logger.info "Params logo original filename: #{params[:logo].original_filename}"
+      Rails.logger.info "Params logo content length: #{params[:logo].size}"
+      Rails.logger.info "Active Storage attached before?: #{provider.logo.attached?}"
+      
+      # Attach the logo file to Active Storage
+      provider.logo.attach(params[:logo])
+      
+      Rails.logger.info "Active Storage attached after?: #{provider.logo.attached?}"
+    end
+      
+      # Ensure required fields are preserved if not provided
+      provider.in_home_only = provider.in_home_only unless params[:in_home_only].present?
+      provider.service_delivery = provider.service_delivery unless params[:service_delivery].present?
+      
+      if provider.save
+        provider.touch
+        Rails.logger.info "Provider saved successfully. Logo URL: #{provider.logo_url}"
+        render json: ProviderSerializer.format_providers([provider])
+      else
+        Rails.logger.error "Provider save failed: #{provider.errors.full_messages}"
+        render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
+      end
     else
-      render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
+      Rails.logger.info "Using JSON path"
+      # Handle JSON data (for regular updates)
+      if provider.update(provider_params)
+        # Only update locations if locations data is provided
+        if params[:data]&.dig(:attributes, :locations)&.present?
+          provider.update_locations(params[:data][:attributes][:locations])
+        end
+        
+        # Only update insurance if insurance data is provided
+        if params[:data]&.dig(:attributes, :insurance)&.present?
+          provider.update_provider_insurance(params[:data][:attributes][:insurance])
+        end
+        
+        # Only update counties if counties data is provided
+        if params[:data]&.dig(:attributes, :counties_served)&.present?
+          provider.update_counties_from_array(params[:data][:attributes][:counties_served].map { |county| county["county_id"] })
+        end
+        
+        # Only update practice types if practice type data is provided
+        if params[:data]&.dig(:attributes, :provider_type)&.present?
+          provider.update_practice_types(params[:data][:attributes][:provider_type])
+        end
+        
+        provider.touch # Ensure updated_at is updated
+        render json: ProviderSerializer.format_providers([provider])
+      else
+        render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
+      end
     end
   end
 
@@ -70,8 +127,9 @@ class Api::V1::ProvidersController < ApplicationController
   end
 
   private
-  def provider_params
-    params.require(:data).first[:attributes].permit(
+  
+  def multipart_provider_params
+    params.permit(
       :name,
       :website,
       :email,
@@ -86,8 +144,51 @@ class Api::V1::ProvidersController < ApplicationController
       :status,
       :provider_type,
       :in_home_only,
-      logo: [],
+      :logo,
       service_delivery: {}
     )
+  end
+
+  def provider_params
+    if params[:data]&.dig(:attributes)
+      params[:data][:attributes].permit(
+        :name,
+        :website,
+        :email,
+        :cost,
+        :min_age,
+        :max_age,
+        :waitlist,
+        :telehealth_services,
+        :spanish_speakers,
+        :at_home_services,
+        :in_clinic_services,
+        :status,
+        :provider_type,
+        :in_home_only,
+        logo: [],
+        service_delivery: {}
+      )
+    else
+      # Fallback for simple updates
+      params.permit(
+        :name,
+        :website,
+        :email,
+        :cost,
+        :min_age,
+        :max_age,
+        :waitlist,
+        :telehealth_services,
+        :spanish_speakers,
+        :at_home_services,
+        :in_clinic_services,
+        :status,
+        :provider_type,
+        :in_home_only,
+        logo: [],
+        service_delivery: {}
+      )
+    end
   end
 end
