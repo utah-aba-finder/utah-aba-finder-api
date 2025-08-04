@@ -16,7 +16,7 @@ class Provider < ApplicationRecord
   validates :in_home_only, inclusion: { in: [true, false] }
   validates :service_delivery, presence: true
   # Only validate logo if it's an Active Storage attachment
-  validates :logo, content_type: ['image/png', 'image/jpeg', 'image/gif'], size: { less_than: 5.megabytes }, if: -> { logo.attached? && defined?(ActiveStorageValidations) && Rails.env != 'test' }
+  validates :logo, content_type: ['image/png', 'image/jpeg', 'image/gif'], size: { less_than: 5.megabytes }, if: -> { logo.present? && logo.respond_to?(:attached?) && logo.attached? && defined?(ActiveStorageValidations) && Rails.env != 'test' }
 
   # Custom validation for in-home only providers
   validate :locations_required_unless_in_home_only
