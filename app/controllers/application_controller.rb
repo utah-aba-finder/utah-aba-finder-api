@@ -53,7 +53,7 @@ class ApplicationController < ActionController::API
       provider_id = params[:id]
       
       # Super admin can edit any provider
-      if current_user.role == 'super_admin'
+      if current_user.role == 'super_admin' || current_user.role == 0
         return
       end
       
