@@ -181,9 +181,13 @@ class Api::V1::UsersController < ApplicationController
           id: user.id, 
           email: user.email, 
           role: user.role,
-          created_at: user.created_at 
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+          last_sign_in_at: user.last_sign_in_at,
+          sign_in_count: user.sign_in_count
         } 
-      }
+      },
+      total_count: users.count
     }, status: :ok
   end
 
@@ -199,6 +203,111 @@ class Api::V1::UsersController < ApplicationController
         } 
       }
     }, status: :ok
+  end
+
+  # New endpoint for bulk user assignment
+  def bulk_assign_users
+    user_ids = params[:user_ids]
+    provider_id = params[:provider_id]
+    
+    if user_ids.blank? || provider_id.blank?
+      render json: { error: "Both user_ids and provider_id are required" }, status: :bad_request
+      return
+    end
+    
+    begin
+      provider = Provider.find(provider_id)
+      users = User.where(id: user_ids)
+      
+      if users.count != user_ids.count
+        found_ids = users.pluck(:id)
+        missing_ids = user_ids - found_ids
+        render json: { 
+          error: "Some users not found", 
+          missing_user_ids: missing_ids,
+          found_user_ids: found_ids
+        }, status: :not_found
+        return
+      end
+      
+      # Update all users
+      updated_users = []
+      users.each do |user|
+        user.update!(provider_id: provider_id)
+        updated_users << {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          provider_id: user.provider_id
+        }
+      end
+      
+      render json: { 
+        success: true,
+        message: "Successfully assigned #{updated_users.count} users to provider",
+        provider: {
+          id: provider.id,
+          name: provider.name,
+          email: provider.email
+        },
+        users: updated_users
+      }, status: :ok
+    rescue ActiveRecord::RecordNotFound => e
+      render json: { error: "Provider not found with ID: #{provider_id}" }, status: :not_found
+    rescue => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    end
+  end
+
+  # New endpoint to assign user by email
+  def assign_user_by_email
+    user_email = params[:user_email]
+    provider_id = params[:provider_id]
+    
+    if user_email.blank? || provider_id.blank?
+      render json: { error: "Both user_email and provider_id are required" }, status: :bad_request
+      return
+    end
+    
+    begin
+      user = User.find_by(email: user_email)
+      provider = Provider.find(provider_id)
+      
+      if user.nil?
+        render json: { error: "User not found with email: #{user_email}" }, status: :not_found
+        return
+      end
+      
+      old_provider_id = user.provider_id
+      old_provider = old_provider_id ? Provider.find(old_provider_id) : nil
+      
+      user.update!(provider_id: provider_id)
+      
+      render json: { 
+        success: true,
+        message: "User successfully assigned to provider",
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          provider_id: user.provider_id
+        },
+        old_provider: old_provider ? {
+          id: old_provider.id,
+          name: old_provider.name,
+          email: old_provider.email
+        } : nil,
+        new_provider: {
+          id: provider.id,
+          name: provider.name,
+          email: provider.email
+        }
+      }, status: :ok
+    rescue ActiveRecord::RecordNotFound => e
+      render json: { error: "Provider not found with ID: #{provider_id}" }, status: :not_found
+    rescue => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    end
   end
 
   # New endpoint to switch a user from one provider to another
