@@ -56,6 +56,13 @@ Rails.application.routes.draw do
           get :validate_token
         end
       end
+      
+      # Provider self-editing routes (for logged-in providers)
+      resource :provider_self, only: [:show, :update] do
+        member do
+          delete :remove_logo
+        end
+      end
     end
   end
 end
