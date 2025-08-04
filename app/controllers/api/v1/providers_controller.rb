@@ -1,6 +1,6 @@
 class Api::V1::ProvidersController < ApplicationController
-  skip_before_action :authenticate_client, only: [:show, :update, :remove_logo]
-  before_action :authenticate_provider_or_client, only: [:show, :update, :remove_logo]
+  skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo]
+  before_action :authenticate_provider_or_client, only: [:show, :update, :put, :remove_logo]
   def index
     if params[:provider_type].present?
       providers = Provider.where(status: :approved, provider_type: params[:provider_type])
@@ -120,6 +120,38 @@ class Api::V1::ProvidersController < ApplicationController
       else
         render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
       end
+    end
+  end
+
+  def put
+    # PUT method for provider self logo upload (same as update but specifically for logo)
+    provider = Provider.find(params[:id])
+    
+    Rails.logger.info "PUT method - Content-Type: #{request.content_type}"
+    Rails.logger.info "PUT method - Logo present: #{params[:logo].present?}"
+    
+    if request.content_type&.include?('multipart/form-data') || params[:logo].present?
+      Rails.logger.info "PUT method - Using multipart path"
+      # Handle multipart form data (for logo uploads)
+      provider.assign_attributes(multipart_provider_params)
+      
+      # Handle logo upload using Active Storage
+      if params[:logo].present?
+        Rails.logger.info "PUT method - Logo file received: #{params[:logo].original_filename}"
+        provider.logo.attach(params[:logo])
+      end
+      
+      if provider.save
+        provider.touch
+        Rails.logger.info "PUT method - Provider saved successfully"
+        render json: ProviderSerializer.format_providers([provider])
+      else
+        Rails.logger.error "PUT method - Provider save failed: #{provider.errors.full_messages}"
+        render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
+      end
+    else
+      Rails.logger.info "PUT method - No logo provided"
+      render json: { error: 'No logo file provided' }, status: :unprocessable_entity
     end
   end
 
