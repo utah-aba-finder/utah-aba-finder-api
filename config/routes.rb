@@ -67,7 +67,7 @@ Rails.application.routes.draw do
       end
       
       # Provider self-editing routes (for logged-in providers)
-      resource :provider_self, only: [:show, :update] do
+      resource :provider_self, only: [:show, :update], controller: 'provider_self' do
         member do
           delete :remove_logo
         end
