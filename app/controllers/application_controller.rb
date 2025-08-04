@@ -51,7 +51,7 @@ class ApplicationController < ActionController::API
     token = request.headers['Authorization']&.gsub('Bearer ', '')
     
     if token.present?
-      # Try user authentication
+      # Try user authentication first
       user = User.find_by(id: token)
       
       if user
@@ -71,9 +71,23 @@ class ApplicationController < ActionController::API
           return
         end
       end
+      
+      # If no user found, try provider ID authentication (frontend sends provider ID directly)
+      provider = Provider.find_by(id: token)
+      if provider
+        provider_id = params[:id]
+        
+        # Provider can only edit themselves
+        if provider.id.to_s == provider_id.to_s
+          return
+        else
+          render json: { error: 'Unauthorized - can only edit your own provider' }, status: :unauthorized
+          return
+        end
+      end
     end
     
-    # If user authentication failed, try API key authentication
+    # If user/provider authentication failed, try API key authentication
     api_key = request.headers['Authorization']
     client = Client.find_by(api_key: api_key)
     
