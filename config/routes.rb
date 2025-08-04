@@ -51,6 +51,7 @@ Rails.application.routes.draw do
           get :unlinked_users
           get :providers_list
           get :users_with_providers
+          get :admin_users
         end
         member do
           post :link_to_provider

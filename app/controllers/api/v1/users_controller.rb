@@ -2,29 +2,43 @@ class Api::V1::UsersController < ApplicationController
   before_action :authenticate_client
 
   def index
-    users = User.all
+    users = User.all.includes(:provider)
     render json: {
       users: users.map { |user| 
+        provider = user.provider
         { 
           id: user.id, 
           email: user.email, 
           role: user.role,
           provider_id: user.provider_id,
-          created_at: user.created_at 
+          provider_name: provider ? provider.name : nil,
+          provider_email: provider ? provider.email : nil,
+          created_at: user.created_at,
+          updated_at: user.updated_at
         } 
-      }
+      },
+      total_count: users.count,
+      linked_users: users.where.not(provider_id: nil).count,
+      unlinked_users: users.where(provider_id: nil).count
     }, status: :ok
   end
 
   def show
-    user = User.find(params[:id])
+    user = User.includes(:provider).find(params[:id])
+    provider = user.provider
+    
     render json: {
       user: {
         id: user.id,
         email: user.email,
         role: user.role,
         provider_id: user.provider_id,
-        created_at: user.created_at
+        provider_name: provider ? provider.name : nil,
+        provider_email: provider ? provider.email : nil,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        last_sign_in_at: user.last_sign_in_at,
+        sign_in_count: user.sign_in_count
       }
     }, status: :ok
   end
@@ -248,6 +262,55 @@ class Api::V1::UsersController < ApplicationController
           provider_email: provider ? provider.email : nil,
           created_at: user.created_at 
         } 
+      }
+    }, status: :ok
+  end
+
+  # New endpoint for comprehensive user management with filtering
+  def admin_users
+    page = params[:page] || 1
+    per_page = params[:per_page] || 25
+    role_filter = params[:role]
+    provider_filter = params[:provider_id]
+    search = params[:search]
+    
+    users = User.includes(:provider)
+    
+    # Apply filters
+    users = users.where(role: role_filter) if role_filter.present?
+    users = users.where(provider_id: provider_filter) if provider_filter.present?
+    users = users.where("email ILIKE ?", "%#{search}%") if search.present?
+    
+    # Pagination
+    total_count = users.count
+    users = users.offset((page.to_i - 1) * per_page.to_i).limit(per_page.to_i)
+    
+    render json: {
+      users: users.map { |user| 
+        provider = user.provider
+        { 
+          id: user.id, 
+          email: user.email, 
+          role: user.role,
+          provider_id: user.provider_id,
+          provider_name: provider ? provider.name : nil,
+          provider_email: provider ? provider.email : nil,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+          last_sign_in_at: user.last_sign_in_at,
+          sign_in_count: user.sign_in_count
+        } 
+      },
+      pagination: {
+        page: page.to_i,
+        per_page: per_page.to_i,
+        total_count: total_count,
+        total_pages: (total_count.to_f / per_page.to_i).ceil
+      },
+      filters: {
+        role: role_filter,
+        provider_id: provider_filter,
+        search: search
       }
     }, status: :ok
   end
