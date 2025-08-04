@@ -1,6 +1,6 @@
 class Api::V1::ProvidersController < ApplicationController
-  skip_before_action :authenticate_client, only: [:update, :remove_logo]
-  before_action :authenticate_provider_or_client, only: [:update, :remove_logo]
+  skip_before_action :authenticate_client, only: [:show, :update, :remove_logo]
+  before_action :authenticate_provider_or_client, only: [:show, :update, :remove_logo]
   def index
     if params[:provider_type].present?
       providers = Provider.where(status: :approved, provider_type: params[:provider_type])

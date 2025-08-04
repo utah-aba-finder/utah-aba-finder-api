@@ -72,6 +72,13 @@ Rails.application.routes.draw do
           delete :remove_logo
         end
       end
+      
+      # Payment routes
+      resources :payments, only: [] do
+        collection do
+          post :create_payment_intent
+        end
+      end
     end
   end
 end
