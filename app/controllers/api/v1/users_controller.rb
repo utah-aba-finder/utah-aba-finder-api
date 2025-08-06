@@ -424,6 +424,71 @@ class Api::V1::UsersController < ApplicationController
     }, status: :ok
   end
 
+  # New method to unassign a provider from a user
+  def unassign_provider_from_user
+    provider_id = params[:provider_id]
+    
+    begin
+      provider = Provider.find(provider_id)
+      old_user = provider.user
+      
+      provider.update!(user_id: nil)
+      
+      render json: { 
+        success: true,
+        message: "Provider successfully unassigned from user",
+        provider: {
+          id: provider.id,
+          name: provider.name,
+          email: provider.email
+        },
+        old_user: old_user ? {
+          id: old_user.id,
+          email: old_user.email
+        } : nil
+      }, status: :ok
+    rescue ActiveRecord::RecordNotFound => e
+      render json: { error: "Provider not found" }, status: :not_found
+    rescue => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    end
+  end
+
+  # New method to unlink a user from a provider (alternative endpoint)
+  def unlink_user_from_provider
+    user_id = params[:user_id]
+    provider_id = params[:provider_id]
+    
+    begin
+      user = User.find(user_id)
+      provider = Provider.find(provider_id)
+      
+      if provider.user_id == user_id
+        provider.update!(user_id: nil)
+        
+        render json: { 
+          success: true,
+          message: "User successfully unlinked from provider",
+          user: {
+            id: user.id,
+            email: user.email
+          },
+          provider: {
+            id: provider.id,
+            name: provider.name,
+            email: provider.email
+          }
+        }, status: :ok
+      else
+        render json: { error: "User is not linked to this provider" }, status: :bad_request
+      end
+    rescue ActiveRecord::RecordNotFound => e
+      render json: { error: "User or Provider not found" }, status: :not_found
+    rescue => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    end
+  end
+
   private
 
   def user_params

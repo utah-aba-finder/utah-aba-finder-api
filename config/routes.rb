@@ -59,6 +59,8 @@ Rails.application.routes.draw do
           get :admin_users
           post :bulk_assign_users
           post :assign_user_by_email
+          post :unassign_provider_from_user
+          post :unlink_user_from_provider
         end
         member do
           post :link_to_provider
