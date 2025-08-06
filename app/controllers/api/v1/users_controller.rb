@@ -456,14 +456,19 @@ class Api::V1::UsersController < ApplicationController
 
   # New method to unlink a user from a provider (alternative endpoint)
   def unlink_user_from_provider
-    user_id = params[:user_id]
+    user_email = params[:user_email]
     provider_id = params[:provider_id]
     
     begin
-      user = User.find(user_id)
+      user = User.find_by(email: user_email)
       provider = Provider.find(provider_id)
       
-      if provider.user_id == user_id
+      if user.nil?
+        render json: { error: "User not found with email: #{user_email}" }, status: :not_found
+        return
+      end
+      
+      if provider.user_id == user.id
         provider.update!(user_id: nil)
         
         render json: { 
@@ -483,7 +488,7 @@ class Api::V1::UsersController < ApplicationController
         render json: { error: "User is not linked to this provider" }, status: :bad_request
       end
     rescue ActiveRecord::RecordNotFound => e
-      render json: { error: "User or Provider not found" }, status: :not_found
+      render json: { error: "Provider not found" }, status: :not_found
     rescue => e
       render json: { error: e.message }, status: :unprocessable_entity
     end
