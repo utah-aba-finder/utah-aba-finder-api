@@ -9,6 +9,9 @@ class Provider < ApplicationRecord
   has_many :insurances, through: :provider_insurances
   has_many :provider_practice_types, dependent: :destroy
   has_many :practice_types, through: :provider_practice_types
+  
+  # New relationship for user management
+  belongs_to :user, optional: true
 
   enum status: { pending: 1, approved: 2, denied: 3 }
 

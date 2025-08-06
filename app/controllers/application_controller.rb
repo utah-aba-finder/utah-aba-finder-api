@@ -72,6 +72,12 @@ class ApplicationController < ActionController::API
         if current_user.provider_id.to_s == provider_id.to_s
           Rails.logger.info "Provider auth - User provider access granted"
           return
+        end
+        
+        # Check if user manages this provider through the new relationship
+        if current_user.managed_providers.exists?(id: provider_id)
+          Rails.logger.info "Provider auth - User managed provider access granted"
+          return
         else
           Rails.logger.info "Provider auth - User provider access denied, trying provider ID auth"
           # If user auth fails, try provider ID authentication instead

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_07_31_172441) do
+ActiveRecord::Schema[7.1].define(version: 2025_08_06_184654) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_trgm"
   enable_extension "plpgsql"
@@ -162,6 +162,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_07_31_172441) do
     t.integer "status", default: 1, null: false
     t.boolean "in_home_only", default: false, null: false
     t.jsonb "service_delivery", default: {"in_home"=>false, "in_clinic"=>false, "telehealth"=>false}
+    t.bigint "user_id"
+    t.index ["user_id"], name: "index_providers_on_user_id"
   end
 
   create_table "states", force: :cascade do |t|
@@ -198,4 +200,5 @@ ActiveRecord::Schema[7.1].define(version: 2025_07_31_172441) do
   add_foreign_key "provider_insurances", "providers"
   add_foreign_key "provider_practice_types", "practice_types"
   add_foreign_key "provider_practice_types", "providers"
+  add_foreign_key "providers", "users"
 end
