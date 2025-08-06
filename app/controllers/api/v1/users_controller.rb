@@ -430,22 +430,29 @@ class Api::V1::UsersController < ApplicationController
     
     begin
       provider = Provider.find(provider_id)
-      old_user = provider.user
       
-      provider.update!(user_id: nil)
+      # Find users linked via old system
+      users_linked_via_old_system = User.where(provider_id: provider_id)
+      
+      # Find user linked via new system
+      user_linked_via_new_system = provider.user
+      
+      # Unlink from old system
+      users_linked_via_old_system.update_all(provider_id: nil) if users_linked_via_old_system.any?
+      
+      # Unlink from new system
+      provider.update!(user_id: nil) if user_linked_via_new_system
       
       render json: { 
         success: true,
-        message: "Provider successfully unassigned from user",
+        message: "Provider successfully unassigned from all users",
         provider: {
           id: provider.id,
           name: provider.name,
           email: provider.email
         },
-        old_user: old_user ? {
-          id: old_user.id,
-          email: old_user.email
-        } : nil
+        unlinked_users_old_system: users_linked_via_old_system.map { |u| { id: u.id, email: u.email } },
+        unlinked_user_new_system: user_linked_via_new_system ? { id: user_linked_via_new_system.id, email: user_linked_via_new_system.email } : nil
       }, status: :ok
     rescue ActiveRecord::RecordNotFound => e
       render json: { error: "Provider not found" }, status: :not_found
@@ -468,8 +475,20 @@ class Api::V1::UsersController < ApplicationController
         return
       end
       
-      if provider.user_id == user.id
-        provider.update!(user_id: nil)
+      # Check both old and new systems
+      linked_via_old_system = user.provider_id == provider_id
+      linked_via_new_system = provider.user_id == user.id
+      
+      if linked_via_old_system || linked_via_new_system
+        # Unlink from old system
+        if linked_via_old_system
+          user.update!(provider_id: nil)
+        end
+        
+        # Unlink from new system
+        if linked_via_new_system
+          provider.update!(user_id: nil)
+        end
         
         render json: { 
           success: true,
@@ -482,7 +501,9 @@ class Api::V1::UsersController < ApplicationController
             id: provider.id,
             name: provider.name,
             email: provider.email
-          }
+          },
+          unlinked_from_old_system: linked_via_old_system,
+          unlinked_from_new_system: linked_via_new_system
         }, status: :ok
       else
         render json: { error: "User is not linked to this provider" }, status: :bad_request
