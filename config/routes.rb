@@ -25,6 +25,11 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resources :providers, only: [:index, :update, :show, :create, :put] do
+        collection do
+          get :my_providers
+          post :assign_provider_to_user
+          post :unassign_provider_from_user
+        end
         member do
           delete :remove_logo
         end

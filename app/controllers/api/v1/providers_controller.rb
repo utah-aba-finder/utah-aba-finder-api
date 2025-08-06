@@ -276,4 +276,76 @@ class Api::V1::ProvidersController < ApplicationController
       )
     end
   end
+
+  # New method for users to get all providers they can manage
+  def my_providers
+    if @current_user
+      # Get all providers this user can manage (both legacy and new relationships)
+      providers = @current_user.all_managed_providers
+      render json: ProviderSerializer.format_providers(providers)
+    else
+      render json: { error: 'User not authenticated' }, status: :unauthorized
+    end
+  end
+
+  # New method to assign a provider to a user
+  def assign_provider_to_user
+    provider_id = params[:provider_id]
+    user_id = params[:user_id]
+    
+    begin
+      provider = Provider.find(provider_id)
+      user = User.find(user_id)
+      
+      provider.update!(user_id: user_id)
+      
+      render json: { 
+        success: true,
+        message: "Provider successfully assigned to user",
+        provider: {
+          id: provider.id,
+          name: provider.name,
+          email: provider.email
+        },
+        user: {
+          id: user.id,
+          email: user.email
+        }
+      }, status: :ok
+    rescue ActiveRecord::RecordNotFound => e
+      render json: { error: "Provider or User not found" }, status: :not_found
+    rescue => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    end
+  end
+
+  # New method to unassign a provider from a user
+  def unassign_provider_from_user
+    provider_id = params[:provider_id]
+    
+    begin
+      provider = Provider.find(provider_id)
+      old_user = provider.user
+      
+      provider.update!(user_id: nil)
+      
+      render json: { 
+        success: true,
+        message: "Provider successfully unassigned from user",
+        provider: {
+          id: provider.id,
+          name: provider.name,
+          email: provider.email
+        },
+        old_user: old_user ? {
+          id: old_user.id,
+          email: old_user.email
+        } : nil
+      }, status: :ok
+    rescue ActiveRecord::RecordNotFound => e
+      render json: { error: "Provider not found" }, status: :not_found
+    rescue => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    end
+  end
 end
