@@ -70,9 +70,9 @@ class Api::V1::ProviderSelfController < ApplicationController
   private
 
   def set_provider
-    @provider = current_user.provider
+    @provider = current_user.active_provider
     unless @provider
-      render json: { error: 'No provider associated with this user' }, status: :not_found
+      render json: { error: 'No active provider found. Please set an active provider first.' }, status: :not_found
     end
   end
 

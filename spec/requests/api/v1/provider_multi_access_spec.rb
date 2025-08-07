@@ -1,0 +1,100 @@
+require 'rails_helper'
+
+RSpec.describe 'Multi-Provider Access', type: :request do
+  let(:user) { create(:user) }
+  let(:provider1) { create(:provider, name: 'Provider One') }
+  let(:provider2) { create(:provider, name: 'Provider Two') }
+  
+  before do
+    # Assign both providers to the user
+    provider1.update!(user_id: user.id)
+    provider2.update!(user_id: user.id)
+    
+    # Set provider1 as the active provider
+    user.update!(provider_id: provider1.id)
+  end
+
+  describe 'GET /api/v1/providers/accessible_providers' do
+    it 'returns all providers the user can access' do
+      get '/api/v1/providers/accessible_providers', headers: { 'Authorization' => "Bearer #{user.generate_jwt}" }
+      
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      
+      expect(json['providers'].length).to eq(2)
+      expect(json['current_provider_id']).to eq(provider1.id)
+      expect(json['total_count']).to eq(2)
+      
+      provider_names = json['providers'].map { |p| p['name'] }
+      expect(provider_names).to include('Provider One', 'Provider Two')
+    end
+  end
+
+  describe 'POST /api/v1/providers/set_active_provider' do
+    it 'changes the active provider' do
+      post '/api/v1/providers/set_active_provider', 
+           params: { provider_id: provider2.id },
+           headers: { 'Authorization' => "Bearer #{user.generate_jwt}" }
+      
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      
+      expect(json['success']).to be true
+      expect(json['active_provider']['id']).to eq(provider2.id)
+      expect(json['active_provider']['name']).to eq('Provider Two')
+      
+      # Verify the user's active provider was updated
+      user.reload
+      expect(user.active_provider).to eq(provider2)
+    end
+
+    it 'rejects setting a provider the user cannot access' do
+      unauthorized_provider = create(:provider, name: 'Unauthorized Provider')
+      
+      post '/api/v1/providers/set_active_provider', 
+           params: { provider_id: unauthorized_provider.id },
+           headers: { 'Authorization' => "Bearer #{user.generate_jwt}" }
+      
+      expect(response).to have_http_status(:unprocessable_entity)
+      json = JSON.parse(response.body)
+      expect(json['error']).to include('Unable to set active provider')
+    end
+  end
+
+  describe 'Provider self operations with active provider context' do
+    it 'uses the active provider for self operations' do
+      # Set provider2 as active
+      user.update!(provider_id: provider2.id)
+      
+      get '/api/v1/provider_self', headers: { 'Authorization' => "Bearer #{user.generate_jwt}" }
+      
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      
+      expect(json['data']['id']).to eq(provider2.id.to_s)
+      expect(json['data']['attributes']['name']).to eq('Provider Two')
+    end
+  end
+
+  describe 'Provider update authorization' do
+    it 'allows updating providers the user has access to' do
+      patch "/api/v1/providers/#{provider1.id}", 
+            params: { name: 'Updated Provider One' },
+            headers: { 'Authorization' => "Bearer #{user.generate_jwt}" }
+      
+      expect(response).to have_http_status(:ok)
+    end
+
+    it 'denies updating providers the user cannot access' do
+      unauthorized_provider = create(:provider, name: 'Unauthorized Provider')
+      
+      patch "/api/v1/providers/#{unauthorized_provider.id}", 
+            params: { name: 'Updated Unauthorized Provider' },
+            headers: { 'Authorization' => "Bearer #{user.generate_jwt}" }
+      
+      expect(response).to have_http_status(:forbidden)
+      json = JSON.parse(response.body)
+      expect(json['error']).to include('Access denied')
+    end
+  end
+end 

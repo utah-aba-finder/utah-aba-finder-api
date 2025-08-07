@@ -17,4 +17,24 @@ class User < ApplicationRecord
     providers += managed_providers
     providers.uniq
   end
+
+  # Method to set the current active provider context
+  def set_active_provider(provider_id)
+    target_provider = all_managed_providers.find { |p| p.id == provider_id.to_i }
+    return false unless target_provider
+    
+    # Update the legacy relationship to set the active provider
+    update!(provider_id: target_provider.id)
+    true
+  end
+
+  # Method to get the currently active provider
+  def active_provider
+    provider
+  end
+
+  # Method to check if user can access a specific provider
+  def can_access_provider?(provider_id)
+    all_managed_providers.any? { |p| p.id == provider_id.to_i }
+  end
 end

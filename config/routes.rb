@@ -27,8 +27,10 @@ Rails.application.routes.draw do
       resources :providers, only: [:index, :update, :show, :create, :put] do
         collection do
           get :my_providers
+          get :accessible_providers
           post :assign_provider_to_user
           post :unassign_provider_from_user
+          post :set_active_provider
         end
         member do
           delete :remove_logo

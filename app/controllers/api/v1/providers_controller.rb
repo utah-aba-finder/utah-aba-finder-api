@@ -1,5 +1,5 @@
 class Api::V1::ProvidersController < ApplicationController
-  skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo]
+  skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo, :assign_provider_to_user, :unassign_provider_from_user, :accessible_providers, :set_active_provider]
   before_action :authenticate_provider_or_client, only: [:show, :update, :put, :remove_logo]
   def index
     if params[:provider_type].present?
@@ -46,6 +46,12 @@ class Api::V1::ProvidersController < ApplicationController
 
   def update
     provider = Provider.find(params[:id])
+    
+    # Check if current user can access this provider
+    unless @current_user&.can_access_provider?(provider.id)
+      render json: { error: 'Access denied. You can only update providers you have access to.' }, status: :forbidden
+      return
+    end
 
     Rails.logger.info "Content-Type: #{request.content_type}"
     Rails.logger.info "Logo present: #{params[:logo].present?}"
@@ -127,6 +133,12 @@ class Api::V1::ProvidersController < ApplicationController
     # PUT method for provider self logo upload (same as update but specifically for logo)
     provider = Provider.find(params[:id])
     
+    # Check if current user can access this provider
+    unless @current_user&.can_access_provider?(provider.id)
+      render json: { error: 'Access denied. You can only update providers you have access to.' }, status: :forbidden
+      return
+    end
+    
     Rails.logger.info "PUT method - Content-Type: #{request.content_type}"
     Rails.logger.info "PUT method - Logo present: #{params[:logo].present?}"
     
@@ -157,6 +169,12 @@ class Api::V1::ProvidersController < ApplicationController
 
   def remove_logo
     provider = Provider.find(params[:id])
+    
+    # Check if current user can access this provider
+    unless @current_user&.can_access_provider?(provider.id)
+      render json: { error: 'Access denied. You can only update providers you have access to.' }, status: :forbidden
+      return
+    end
     provider.remove_logo
     provider.touch # Update the timestamp
     render json: { message: 'Logo removed successfully' }
@@ -290,6 +308,33 @@ class Api::V1::ProvidersController < ApplicationController
 
   # New method to assign a provider to a user
   def assign_provider_to_user
+    # Try to authenticate as user first, then fall back to API key auth
+    token = request.headers['Authorization']&.gsub('Bearer ', '')
+    
+    if token.present?
+      # Try user authentication first
+      user = User.find_by(id: token)
+      if user
+        @current_user = user
+        # Only super admins can assign providers to users
+        unless @current_user.role == 'super_admin' || @current_user.role == 0
+          render json: { error: 'Access denied. Only super admins can assign providers to users.' }, status: :forbidden
+          return
+        end
+      else
+        # If no user found, try API key authentication
+        client = Client.find_by(api_key: token)
+        unless client
+          render json: { error: 'Invalid authorization token' }, status: :unauthorized
+          return
+        end
+        @current_client = client
+      end
+    else
+      render json: { error: 'No authorization token provided' }, status: :unauthorized
+      return
+    end
+    
     provider_id = params[:provider_id]
     user_id = params[:user_id]
     
@@ -321,6 +366,33 @@ class Api::V1::ProvidersController < ApplicationController
 
   # New method to unassign a provider from a user
   def unassign_provider_from_user
+    # Try to authenticate as user first, then fall back to API key auth
+    token = request.headers['Authorization']&.gsub('Bearer ', '')
+    
+    if token.present?
+      # Try user authentication first
+      user = User.find_by(id: token)
+      if user
+        @current_user = user
+        # Only super admins can unassign providers from users
+        unless @current_user.role == 'super_admin' || @current_user.role == 0
+          render json: { error: 'Access denied. Only super admins can unassign providers from users.' }, status: :forbidden
+          return
+        end
+      else
+        # If no user found, try API key authentication
+        client = Client.find_by(api_key: token)
+        unless client
+          render json: { error: 'Invalid authorization token' }, status: :unauthorized
+          return
+        end
+        @current_client = client
+      end
+    else
+      render json: { error: 'No authorization token provided' }, status: :unauthorized
+      return
+    end
+    
     provider_id = params[:provider_id]
     
     begin
@@ -346,6 +418,102 @@ class Api::V1::ProvidersController < ApplicationController
       render json: { error: "Provider not found" }, status: :not_found
     rescue => e
       render json: { error: e.message }, status: :unprocessable_entity
+    end
+  end
+
+  # New method to get all accessible providers with current active provider
+  def accessible_providers
+    # Try to authenticate as user first, then fall back to API key auth
+    token = request.headers['Authorization']&.gsub('Bearer ', '')
+    
+    if token.present?
+      # Try user authentication first
+      user = User.find_by(id: token)
+      if user
+        @current_user = user
+      else
+        # If no user found, try API key authentication
+        client = Client.find_by(api_key: token)
+        unless client
+          render json: { error: 'Invalid authorization token' }, status: :unauthorized
+          return
+        end
+        @current_client = client
+        render json: { error: 'API key authentication not supported for this endpoint' }, status: :unauthorized
+        return
+      end
+    else
+      render json: { error: 'No authorization token provided' }, status: :unauthorized
+      return
+    end
+    
+    if @current_user
+      all_providers = @current_user.all_managed_providers
+      current_provider = @current_user.provider
+      
+      providers_data = all_providers.map do |provider|
+        {
+          id: provider.id,
+          name: provider.name,
+          email: provider.email,
+          status: provider.status,
+          is_current: provider == current_provider
+        }
+      end
+      
+      render json: {
+        providers: providers_data,
+        current_provider_id: current_provider&.id,
+        total_count: all_providers.count
+      }
+    else
+      render json: { error: 'User not authenticated' }, status: :unauthorized
+    end
+  end
+
+  # New method to set the active provider context
+  def set_active_provider
+    # Try to authenticate as user first, then fall back to API key auth
+    token = request.headers['Authorization']&.gsub('Bearer ', '')
+    
+    if token.present?
+      # Try user authentication first
+      user = User.find_by(id: token)
+      if user
+        @current_user = user
+      else
+        # If no user found, try API key authentication
+        client = Client.find_by(api_key: token)
+        unless client
+          render json: { error: 'Invalid authorization token' }, status: :unauthorized
+          return
+        end
+        @current_client = client
+        render json: { error: 'API key authentication not supported for this endpoint' }, status: :unauthorized
+        return
+      end
+    else
+      render json: { error: 'No authorization token provided' }, status: :unauthorized
+      return
+    end
+    
+    provider_id = params[:provider_id]
+    
+    if @current_user&.set_active_provider(provider_id)
+      new_active_provider = @current_user.active_provider
+      render json: {
+        success: true,
+        message: "Active provider updated successfully",
+        active_provider: {
+          id: new_active_provider.id,
+          name: new_active_provider.name,
+          email: new_active_provider.email
+        }
+      }
+    else
+      render json: { 
+        error: "Unable to set active provider. User may not have access to this provider." 
+      }, status: :unprocessable_entity
     end
   end
 end
