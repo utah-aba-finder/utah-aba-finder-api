@@ -36,6 +36,12 @@ Rails.application.routes.draw do
           delete :remove_logo
         end
       end
+      
+      # Individual routes for multi-provider functionality
+      get '/api/v1/providers/accessible_providers', to: 'api/v1/providers#accessible_providers'
+      post '/api/v1/providers/assign_provider_to_user', to: 'api/v1/providers#assign_provider_to_user'
+      post '/api/v1/providers/unassign_provider_from_user', to: 'api/v1/providers#unassign_provider_from_user'
+      post '/api/v1/providers/set_active_provider', to: 'api/v1/providers#set_active_provider'
 
       namespace :admin do
         resources :providers, only: [:index, :update]
