@@ -1,5 +1,5 @@
 class Api::V1::ProvidersController < ApplicationController
-  skip_before_action :authenticate_client
+  skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo, :assign_provider_to_user, :unassign_provider_from_user, :accessible_providers, :set_active_provider, :my_providers]
   before_action :authenticate_provider_or_client, only: [:show, :update, :put, :remove_logo]
   def index
     if params[:provider_type].present?
@@ -316,52 +316,7 @@ class Api::V1::ProvidersController < ApplicationController
 
   # New method to get all accessible providers with current active provider
   def accessible_providers
-    # Try to authenticate as user first, then fall back to API key auth
-    token = request.headers['Authorization']&.gsub('Bearer ', '')
-    
-    if token.present?
-      # Try user authentication first
-      user = User.find_by(id: token)
-      if user
-        @current_user = user
-      else
-        # If no user found, try API key authentication
-        client = Client.find_by(api_key: token)
-        unless client
-          render json: { error: 'Invalid authorization token' }, status: :unauthorized
-          return
-        end
-        @current_client = client
-        render json: { error: 'API key authentication not supported for this endpoint' }, status: :unauthorized
-        return
-      end
-    else
-      render json: { error: 'No authorization token provided' }, status: :unauthorized
-      return
-    end
-    
-    if @current_user
-      all_providers = @current_user.all_managed_providers
-      current_provider = @current_user.provider
-      
-      providers_data = all_providers.map do |provider|
-        {
-          id: provider.id,
-          name: provider.name,
-          email: provider.email,
-          status: provider.status,
-          is_current: provider == current_provider
-        }
-      end
-      
-      render json: {
-        providers: providers_data,
-        current_provider_id: current_provider&.id,
-        total_count: all_providers.count
-      }
-    else
-      render json: { error: 'User not authenticated' }, status: :unauthorized
-    end
+    render json: { test: "Hello World" }
   end
 
   # New method to set the active provider context
