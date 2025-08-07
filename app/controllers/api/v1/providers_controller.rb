@@ -1,5 +1,5 @@
 class Api::V1::ProvidersController < ApplicationController
-  skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo, :assign_provider_to_user, :unassign_provider_from_user, :accessible_providers, :set_active_provider]
+  skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo]
   before_action :authenticate_provider_or_client, only: [:show, :update, :put, :remove_logo]
   def index
     if params[:provider_type].present?
