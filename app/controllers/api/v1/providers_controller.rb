@@ -199,6 +199,30 @@ class Api::V1::ProvidersController < ApplicationController
 
   # Multi-provider management methods
   def my_providers
+    # Try to authenticate as user first, then fall back to API key auth
+    token = request.headers['Authorization']&.gsub('Bearer ', '')
+    
+    if token.present?
+      # Try user authentication first
+      user = User.find_by(id: token)
+      if user
+        @current_user = user
+      else
+        # If no user found, try API key authentication
+        client = Client.find_by(api_key: token)
+        unless client
+          render json: { error: 'Invalid authorization token' }, status: :unauthorized
+          return
+        end
+        @current_client = client
+        render json: { error: 'API key authentication not supported for this endpoint' }, status: :unauthorized
+        return
+      end
+    else
+      render json: { error: 'No authorization token provided' }, status: :unauthorized
+      return
+    end
+    
     if @current_user
       # Get all providers this user can manage (both legacy and new relationships)
       providers = @current_user.all_managed_providers
