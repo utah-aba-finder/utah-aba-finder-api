@@ -2,8 +2,8 @@ require 'rails_helper'
 
 RSpec.describe 'Multi-Provider Access', type: :request do
   let(:user) { create(:user) }
-  let(:provider1) { create(:provider, name: 'Provider One') }
-  let(:provider2) { create(:provider, name: 'Provider Two') }
+  let(:provider1) { create(:provider, name: 'Provider One', in_home_only: true) }
+  let(:provider2) { create(:provider, name: 'Provider Two', in_home_only: true) }
   
   before do
     # Assign both providers to the user
@@ -16,7 +16,7 @@ RSpec.describe 'Multi-Provider Access', type: :request do
 
   describe 'GET /api/v1/providers/accessible_providers' do
     it 'returns all providers the user can access' do
-      get '/api/v1/providers/accessible_providers', headers: { 'Authorization' => "Bearer #{user.generate_jwt}" }
+      get '/api/v1/providers/accessible_providers', headers: { 'Authorization' => user.id.to_s }
       
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
@@ -34,7 +34,7 @@ RSpec.describe 'Multi-Provider Access', type: :request do
     it 'changes the active provider' do
       post '/api/v1/providers/set_active_provider', 
            params: { provider_id: provider2.id },
-           headers: { 'Authorization' => "Bearer #{user.generate_jwt}" }
+           headers: { 'Authorization' => user.id.to_s }
       
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
@@ -49,11 +49,11 @@ RSpec.describe 'Multi-Provider Access', type: :request do
     end
 
     it 'rejects setting a provider the user cannot access' do
-      unauthorized_provider = create(:provider, name: 'Unauthorized Provider')
+      unauthorized_provider = create(:provider, name: 'Unauthorized Provider', in_home_only: true)
       
       post '/api/v1/providers/set_active_provider', 
            params: { provider_id: unauthorized_provider.id },
-           headers: { 'Authorization' => "Bearer #{user.generate_jwt}" }
+           headers: { 'Authorization' => user.id.to_s }
       
       expect(response).to have_http_status(:unprocessable_entity)
       json = JSON.parse(response.body)
@@ -66,7 +66,7 @@ RSpec.describe 'Multi-Provider Access', type: :request do
       # Set provider2 as active
       user.update!(provider_id: provider2.id)
       
-      get '/api/v1/provider_self', headers: { 'Authorization' => "Bearer #{user.generate_jwt}" }
+      get '/api/v1/provider_self', headers: { 'Authorization' => user.id.to_s }
       
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
@@ -80,17 +80,17 @@ RSpec.describe 'Multi-Provider Access', type: :request do
     it 'allows updating providers the user has access to' do
       patch "/api/v1/providers/#{provider1.id}", 
             params: { name: 'Updated Provider One' },
-            headers: { 'Authorization' => "Bearer #{user.generate_jwt}" }
+            headers: { 'Authorization' => user.id.to_s }
       
       expect(response).to have_http_status(:ok)
     end
 
     it 'denies updating providers the user cannot access' do
-      unauthorized_provider = create(:provider, name: 'Unauthorized Provider')
+      unauthorized_provider = create(:provider, name: 'Unauthorized Provider', in_home_only: true)
       
       patch "/api/v1/providers/#{unauthorized_provider.id}", 
             params: { name: 'Updated Unauthorized Provider' },
-            headers: { 'Authorization' => "Bearer #{user.generate_jwt}" }
+            headers: { 'Authorization' => user.id.to_s }
       
       expect(response).to have_http_status(:forbidden)
       json = JSON.parse(response.body)
