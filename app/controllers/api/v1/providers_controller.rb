@@ -47,11 +47,14 @@ class Api::V1::ProvidersController < ApplicationController
   def update
     provider = Provider.find(params[:id])
     
-    # Check if current user can access this provider
-    unless @current_user&.can_access_provider?(provider.id)
+    # Check if current user can access this provider (for user authentication)
+    if @current_user && !@current_user.can_access_provider?(provider.id)
       render json: { error: 'Access denied. You can only update providers you have access to.' }, status: :forbidden
       return
     end
+    
+    # For API key authentication (@current_client), allow access (legacy behavior)
+    # @current_client is set by authenticate_provider_or_client when using API key
 
     Rails.logger.info "Content-Type: #{request.content_type}"
     Rails.logger.info "Logo present: #{params[:logo].present?}"
@@ -133,11 +136,14 @@ class Api::V1::ProvidersController < ApplicationController
     # PUT method for provider self logo upload (same as update but specifically for logo)
     provider = Provider.find(params[:id])
     
-    # Check if current user can access this provider
-    unless @current_user&.can_access_provider?(provider.id)
+    # Check if current user can access this provider (for user authentication)
+    if @current_user && !@current_user.can_access_provider?(provider.id)
       render json: { error: 'Access denied. You can only update providers you have access to.' }, status: :forbidden
       return
     end
+    
+    # For API key authentication (@current_client), allow access (legacy behavior)
+    # @current_client is set by authenticate_provider_or_client when using API key
     
     Rails.logger.info "PUT method - Content-Type: #{request.content_type}"
     Rails.logger.info "PUT method - Logo present: #{params[:logo].present?}"
@@ -170,11 +176,14 @@ class Api::V1::ProvidersController < ApplicationController
   def remove_logo
     provider = Provider.find(params[:id])
     
-    # Check if current user can access this provider
-    unless @current_user&.can_access_provider?(provider.id)
+    # Check if current user can access this provider (for user authentication)
+    if @current_user && !@current_user.can_access_provider?(provider.id)
       render json: { error: 'Access denied. You can only update providers you have access to.' }, status: :forbidden
       return
     end
+    
+    # For API key authentication (@current_client), allow access (legacy behavior)
+    # @current_client is set by authenticate_provider_or_client when using API key
     provider.remove_logo
     provider.touch # Update the timestamp
     render json: { message: 'Logo removed successfully' }
