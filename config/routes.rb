@@ -24,12 +24,17 @@ Rails.application.routes.draw do
   
   namespace :api do
     namespace :v1 do
+      # Provider assignments (RESTful)
+      resources :provider_assignments, only: [:create, :destroy, :index]
+      
+      # Provider context management
+      post "provider_context", to: "provider_context#set"
+      get "provider_context", to: "provider_context#show"
+      
       resources :providers, only: [:index, :update, :show, :create, :put] do
         collection do
           get :my_providers
           get :accessible_providers
-          post :assign_provider_to_user
-          post :unassign_provider_from_user
           post :set_active_provider
         end
         member do
