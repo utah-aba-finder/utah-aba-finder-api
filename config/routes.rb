@@ -36,6 +36,7 @@ Rails.application.routes.draw do
           get :my_providers
           get :accessible_providers
           post :set_active_provider
+          post :assign_provider_to_user
         end
         member do
           delete :remove_logo
