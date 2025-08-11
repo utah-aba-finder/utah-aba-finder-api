@@ -36,7 +36,17 @@ class Provider < ApplicationRecord
     return nil if Rails.env.test?
     
     if logo.attached?
-      Rails.application.routes.url_helpers.rails_blob_url(logo)
+      # Use the configured host from development.rb
+      host = Rails.application.config.active_storage.default_url_options&.dig(:host)
+      port = Rails.application.config.active_storage.default_url_options&.dig(:port)
+      
+      if host.present?
+        host_with_port = port.present? ? "#{host}:#{port}" : host
+        Rails.application.routes.url_helpers.rails_blob_url(logo, host: host_with_port)
+      else
+        # Fallback to default behavior
+        Rails.application.routes.url_helpers.rails_blob_url(logo)
+      end
     elsif self[:logo].present?
       # Legacy logo field
       self[:logo]
