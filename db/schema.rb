@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_08_06_184654) do
+ActiveRecord::Schema[7.1].define(version: 2025_08_11_011504) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_trgm"
   enable_extension "plpgsql"
@@ -124,6 +124,19 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_06_184654) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "provider_assignments", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "provider_id", null: false
+    t.string "assigned_by", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assigned_by"], name: "index_provider_assignments_on_assigned_by"
+    t.index ["provider_id"], name: "index_provider_assignments_on_provider_id"
+    t.index ["user_id", "provider_id"], name: "index_provider_assignments_on_user_id_and_provider_id", unique: true
+    t.index ["user_id"], name: "index_provider_assignments_on_user_id"
+  end
+
   create_table "provider_insurances", force: :cascade do |t|
     t.bigint "provider_id", null: false
     t.bigint "insurance_id", null: false
@@ -183,6 +196,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_06_184654) do
     t.datetime "updated_at", null: false
     t.integer "provider_id"
     t.string "role"
+    t.integer "active_provider_id"
+    t.index ["active_provider_id"], name: "index_users_on_active_provider_id"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
@@ -196,9 +211,12 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_06_184654) do
   add_foreign_key "locations_practice_types", "locations"
   add_foreign_key "locations_practice_types", "practice_types"
   add_foreign_key "old_counties", "providers"
+  add_foreign_key "provider_assignments", "providers"
+  add_foreign_key "provider_assignments", "users"
   add_foreign_key "provider_insurances", "insurances"
   add_foreign_key "provider_insurances", "providers"
   add_foreign_key "provider_practice_types", "practice_types"
   add_foreign_key "provider_practice_types", "providers"
   add_foreign_key "providers", "users"
+  add_foreign_key "users", "providers", column: "active_provider_id"
 end

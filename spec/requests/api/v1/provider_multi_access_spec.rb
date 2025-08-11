@@ -6,12 +6,12 @@ RSpec.describe 'Multi-Provider Access', type: :request do
   let(:provider2) { create(:provider, name: 'Provider Two', in_home_only: true) }
   
   before do
-    # Assign both providers to the user
-    provider1.update!(user_id: user.id)
-    provider2.update!(user_id: user.id)
+    # Create provider assignments for both providers
+    ProviderAssignment.create!(user: user, provider: provider1, assigned_by: 'test')
+    ProviderAssignment.create!(user: user, provider: provider2, assigned_by: 'test')
     
     # Set provider1 as the active provider
-    user.update!(provider_id: provider1.id)
+    user.update!(active_provider_id: provider1.id)
   end
 
   describe 'GET /api/v1/providers/accessible_providers' do
@@ -21,11 +21,11 @@ RSpec.describe 'Multi-Provider Access', type: :request do
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       
-      expect(json['providers'].length).to eq(2)
+      expect(json['providers']['data'].length).to eq(2)
       expect(json['current_provider_id']).to eq(provider1.id)
       expect(json['total_count']).to eq(2)
       
-      provider_names = json['providers'].map { |p| p['name'] }
+      provider_names = json['providers']['data'].map { |p| p['attributes']['name'] }
       expect(provider_names).to include('Provider One', 'Provider Two')
     end
   end
@@ -39,9 +39,7 @@ RSpec.describe 'Multi-Provider Access', type: :request do
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       
-      expect(json['success']).to be true
-      expect(json['active_provider']['id']).to eq(provider2.id)
-      expect(json['active_provider']['name']).to eq('Provider Two')
+      expect(json['active_provider_id']).to eq(provider2.id.to_s)
       
       # Verify the user's active provider was updated
       user.reload
@@ -55,24 +53,24 @@ RSpec.describe 'Multi-Provider Access', type: :request do
            params: { provider_id: unauthorized_provider.id },
            headers: { 'Authorization' => user.id.to_s }
       
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:forbidden)
       json = JSON.parse(response.body)
-      expect(json['error']).to include('Unable to set active provider')
+      expect(json['error']).to include('Forbidden')
     end
   end
 
   describe 'Provider self operations with active provider context' do
     it 'uses the active provider for self operations' do
       # Set provider2 as active
-      user.update!(provider_id: provider2.id)
+      user.update!(active_provider_id: provider2.id)
       
       get '/api/v1/provider_self', headers: { 'Authorization' => user.id.to_s }
       
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       
-      expect(json['data']['id']).to eq(provider2.id.to_s)
-      expect(json['data']['attributes']['name']).to eq('Provider Two')
+      expect(json['data'][0]['id']).to eq(provider2.id)
+      expect(json['data'][0]['attributes']['name']).to eq('Provider Two')
     end
   end
 

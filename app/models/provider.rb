@@ -12,6 +12,8 @@ class Provider < ApplicationRecord
   
   # New relationship for user management
   belongs_to :user, optional: true
+  has_many :provider_assignments, dependent: :destroy
+  has_many :assigned_users, through: :provider_assignments, source: :user
 
   enum status: { pending: 1, approved: 2, denied: 3 }
 
@@ -19,7 +21,7 @@ class Provider < ApplicationRecord
   validates :in_home_only, inclusion: { in: [true, false] }
   validates :service_delivery, presence: true
   # Only validate logo if it's an Active Storage attachment
-  validates :logo, content_type: ['image/png', 'image/jpeg', 'image/gif'], size: { less_than: 5.megabytes }, if: -> { logo.present? && logo.respond_to?(:attached?) && logo.attached? && defined?(ActiveStorageValidations) && Rails.env != 'test' }
+  validates :logo, content_type: ['image/png', 'image/jpeg', 'image/gif'], size: { less_than: 5.megabytes }, if: -> { logo.respond_to?(:attached?) && logo.attached? && Rails.env != 'test' }
 
   # Custom validation for in-home only providers
   validate :locations_required_unless_in_home_only
@@ -33,41 +35,11 @@ class Provider < ApplicationRecord
   def logo_url
     return nil if Rails.env.test?
     
-    Rails.logger.debug "Generating logo URL for provider #{id}"
-    
-    # First check if there's an Active Storage attachment (new format)
     if logo.attached?
-      begin
-        # Get the configured host for Active Storage
-        host = Rails.application.config.active_storage.default_url_options&.dig(:host)
-        
-        if host.present?
-          # Try to generate the URL with explicit host configuration
-          Rails.logger.debug "Generating URL with host: #{host}"
-          Rails.application.routes.url_helpers.rails_blob_url(logo, host: host)
-        else
-          # Fallback: try without explicit host
-          Rails.logger.debug "Generating URL without explicit host"
-          Rails.application.routes.url_helpers.rails_blob_url(logo)
-        end
-      rescue ArgumentError => e
-        # If host is not configured, try with a fallback
-        Rails.logger.warn "Could not generate logo URL for provider #{id}: #{e.message}"
-        begin
-          # Try with localhost as fallback
-          Rails.application.routes.url_helpers.rails_blob_url(logo, host: 'localhost:3000')
-        rescue => e2
-          Rails.logger.error "Fallback logo URL generation failed for provider #{id}: #{e2.message}"
-          nil
-        end
-      rescue => e
-        # Catch any other errors that might occur
-        Rails.logger.error "Unexpected error generating logo URL for provider #{id}: #{e.message}"
-        nil
-      end
-    # Then check if there's a logo string in the database (legacy format)
+      Rails.application.routes.url_helpers.rails_blob_url(logo)
     elsif self[:logo].present?
-      return self[:logo]
+      # Legacy logo field
+      self[:logo]
     else
       nil
     end
