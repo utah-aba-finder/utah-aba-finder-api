@@ -1,5 +1,5 @@
 class Api::V1::ProvidersController < ApplicationController
-  skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo, :accessible_providers, :my_providers, :set_active_provider]
+  skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo, :accessible_providers, :my_providers, :set_active_provider, :assign_provider_to_user]
   before_action :authenticate_provider_or_client, only: [:show, :update, :put, :remove_logo]
 
   def index
@@ -300,6 +300,67 @@ class Api::V1::ProvidersController < ApplicationController
     
     # If user authentication fails, return unauthorized
     render json: { error: 'Unauthorized' }, status: :unauthorized
+  end
+
+  # Assign a user to a provider (for admin operations)
+  def assign_provider_to_user
+    user_email = params[:user_email]
+    provider_id = params[:provider_id]
+    
+    if user_email.blank? || provider_id.blank?
+      render json: { error: "Both user_email and provider_id are required" }, status: :bad_request
+      return
+    end
+    
+    begin
+      user = User.find_by(email: user_email)
+      provider = Provider.find(provider_id)
+      
+      if user.nil?
+        render json: { error: "User not found with email: #{user_email}" }, status: :not_found
+        return
+      end
+      
+      # Check if user already has access to this provider
+      if user.provider_id == provider_id.to_i
+        render json: { 
+          error: "User #{user_email} is already assigned to provider #{provider.name}",
+          user: { id: user.id, email: user.email, provider_id: user.provider_id },
+          provider: { id: provider.id, name: provider.name }
+        }, status: :conflict
+        return
+      end
+      
+      old_provider_id = user.provider_id
+      old_provider = old_provider_id ? Provider.find(old_provider_id) : nil
+      
+      user.update!(provider_id: provider_id)
+      
+      render json: { 
+        success: true,
+        message: "User successfully assigned to provider",
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          provider_id: user.provider_id
+        },
+        old_provider: old_provider ? {
+          id: old_provider.id,
+          name: old_provider.name,
+          email: old_provider.email
+        } : nil,
+        new_provider: {
+          id: provider.id,
+          name: provider.name,
+          email: provider.email
+        }
+      }, status: :ok
+    rescue ActiveRecord::RecordNotFound => e
+      render json: { error: "Provider not found with ID: #{provider_id}" }, status: :not_found
+    rescue => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    end
   end
 
 
