@@ -1,5 +1,5 @@
 class Api::V1::ProvidersController < ApplicationController
-  skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo, :accessible_providers, :my_providers, :set_active_provider, :assign_provider_to_user]
+  skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo, :accessible_providers, :my_providers, :set_active_provider, :assign_provider_to_user, :remove_provider_from_user, :user_providers]
   before_action :authenticate_provider_or_client, only: [:show, :update, :put, :remove_logo]
 
   def index
@@ -321,36 +321,41 @@ class Api::V1::ProvidersController < ApplicationController
         return
       end
       
-      # Check if user already has access to this provider
-      if user.provider_id == provider_id.to_i
+      # Check if user already has access to this provider (either as primary or assigned)
+      if user.can_access_provider?(provider_id)
         render json: { 
-          error: "User #{user_email} is already assigned to provider #{provider.name}",
+          error: "User #{user_email} already has access to provider #{provider.name}",
           user: { id: user.id, email: user.email, provider_id: user.provider_id },
-          provider: { id: provider.id, name: provider.name }
+          provider: { id: provider.id, name: provider.name },
+          access_type: user.primary_owner_of?(provider) ? "primary_owner" : "assigned"
         }, status: :conflict
         return
       end
       
-      old_provider_id = user.provider_id
-      old_provider = old_provider_id ? Provider.find(old_provider_id) : nil
-      
-      user.update!(provider_id: provider_id)
+      # Create a provider assignment (adds to user's provider list)
+      assignment = ProviderAssignment.create!(
+        user: user,
+        provider: provider,
+        assigned_by: current_user&.email || user.email # Track who made the assignment
+      )
       
       render json: { 
         success: true,
         message: "User successfully assigned to provider",
+        assignment: {
+          id: assignment.id,
+          user_id: user.id,
+          provider_id: provider.id,
+          assigned_by: assignment.assigned_by
+        },
         user: {
           id: user.id,
           email: user.email,
           role: user.role,
-          provider_id: user.provider_id
+          provider_id: user.provider_id, # Primary provider (unchanged)
+          accessible_providers_count: user.all_managed_providers.count
         },
-        old_provider: old_provider ? {
-          id: old_provider.id,
-          name: old_provider.name,
-          email: old_provider.email
-        } : nil,
-        new_provider: {
+        provider: {
           id: provider.id,
           name: provider.name,
           email: provider.email
@@ -363,14 +368,114 @@ class Api::V1::ProvidersController < ApplicationController
     end
   end
 
+  # List all providers a user can access (including assignments)
+  def user_providers
+    user_email = params[:user_email]
+    
+    if user_email.blank?
+      render json: { error: "user_email is required" }, status: :bad_request
+      return
+    end
+    
+    begin
+      user = User.find_by(email: user_email)
+      
+      if user.nil?
+        render json: { error: "User not found with email: #{user_email}" }, status: :not_found
+        return
+      end
+      
+      # Get all providers user can access
+      accessible_providers = user.all_managed_providers
+      
+      render json: {
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          primary_provider_id: user.provider_id,
+          active_provider_id: user.active_provider_id
+        },
+        providers: accessible_providers.map do |provider|
+          {
+            id: provider.id,
+            name: provider.name,
+            email: provider.email,
+            status: provider.status,
+            access_type: user.primary_owner_of?(provider) ? "primary_owner" : "assigned",
+            is_active: provider.id == user.active_provider_id
+          }
+        end,
+        total_count: accessible_providers.count
+      }, status: :ok
+    rescue => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    end
+  end
 
-
-
-
-
-
-
-
+  # Remove a user's access to a provider (for admin operations)
+  def remove_provider_from_user
+    user_email = params[:user_email]
+    provider_id = params[:provider_id]
+    
+    if user_email.blank? || provider_id.blank?
+      render json: { error: "Both user_email and provider_id are required" }, status: :bad_request
+      return
+    end
+    
+    begin
+      user = User.find_by(email: user_email)
+      provider = Provider.find(provider_id)
+      
+      if user.nil?
+        render json: { error: "User not found with email: #{user_email}" }, status: :not_found
+        return
+      end
+      
+      # Check if user is the primary owner (can't remove primary ownership)
+      if user.primary_owner_of?(provider)
+        render json: { 
+          error: "Cannot remove primary ownership. User #{user_email} is the primary owner of provider #{provider.name}",
+          user: { id: user.id, email: user.email, provider_id: user.provider_id },
+          provider: { id: provider.id, name: provider.name }
+        }, status: :forbidden
+        return
+      end
+      
+      # Find and remove the assignment
+      assignment = user.provider_assignments.find_by(provider: provider)
+      
+      if assignment.nil?
+        render json: { 
+          error: "User #{user_email} does not have an assignment to provider #{provider.name}",
+          user: { id: user.id, email: user.email },
+          provider: { id: provider.id, name: provider.name }
+        }, status: :not_found
+        return
+      end
+      
+      assignment.destroy!
+      
+      render json: { 
+        success: true,
+        message: "User access to provider removed successfully",
+        user: {
+          id: user.id,
+          email: user.email,
+          accessible_providers_count: user.all_managed_providers.count
+        },
+        provider: {
+          id: provider.id,
+          name: provider.name
+        }
+      }, status: :ok
+    rescue ActiveRecord::RecordNotFound => e
+      render json: { error: "Provider not found with ID: #{provider_id}" }, status: :not_found
+    rescue => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    end
+  end
 
   private
   
