@@ -40,7 +40,12 @@ Rails.application.routes.draw do
           post :remove_provider_from_user
           get :user_providers
         end
+        
         member do
+          get :locations, to: 'providers#provider_locations'
+          post :locations, to: 'providers#add_location'
+          patch 'locations/:location_id', to: 'providers#update_location'
+          delete 'locations/:location_id', to: 'providers#remove_location'
           delete :remove_logo
         end
       end

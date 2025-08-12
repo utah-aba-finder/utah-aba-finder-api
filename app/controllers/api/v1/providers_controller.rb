@@ -1,5 +1,5 @@
 class Api::V1::ProvidersController < ApplicationController
-  skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo, :accessible_providers, :my_providers, :set_active_provider, :assign_provider_to_user, :remove_provider_from_user, :user_providers]
+  skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo, :accessible_providers, :my_providers, :set_active_provider, :assign_provider_to_user, :remove_provider_from_user, :user_providers, :provider_locations, :add_location, :update_location, :remove_location]
   before_action :authenticate_provider_or_client, only: [:show, :update, :put, :remove_logo]
 
   def index
@@ -477,6 +477,149 @@ class Api::V1::ProvidersController < ApplicationController
     end
   end
 
+  # Location Management Methods
+  # Get all locations for a provider
+  def provider_locations
+    provider_id = params[:id]
+    
+    begin
+      provider = Provider.find(provider_id)
+      locations = provider.locations
+      
+      render json: {
+        success: true,
+        provider: {
+          id: provider.id,
+          name: provider.name
+        },
+        locations: locations.map do |location|
+          {
+            id: location.id,
+            name: location.name,
+            phone: location.phone,
+            email: location.email,
+            address_1: location.address_1,
+            address_2: location.address_2,
+            city: location.city,
+            state: location.state,
+            zip: location.zip,
+            in_home_waitlist: location.in_home_waitlist,
+            in_clinic_waitlist: location.in_clinic_waitlist,
+            practice_types: location.practice_types.pluck(:name)
+          }
+        end,
+        total_count: locations.count
+      }
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: "Provider not found" }, status: :not_found
+    rescue => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    end
+  end
+
+  # Add a new location to a provider
+  def add_location
+    provider_id = params[:id]
+    
+    begin
+      provider = Provider.find(provider_id)
+      
+      location = provider.locations.build(location_params)
+      
+      if location.save
+        render json: {
+          success: true,
+          message: "Location added successfully",
+          location: {
+            id: location.id,
+            name: location.name,
+            phone: location.phone,
+            email: location.email,
+            address_1: location.address_1,
+            address_2: location.address_2,
+            city: location.city,
+            state: location.state,
+            zip: location.zip,
+            in_home_waitlist: location.in_home_waitlist,
+            in_clinic_waitlist: location.in_clinic_waitlist
+          }
+        }, status: :created
+      else
+        render json: { 
+          error: "Failed to create location",
+          errors: location.errors.full_messages
+        }, status: :unprocessable_entity
+      end
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: "Provider not found" }, status: :not_found
+    rescue => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    end
+  end
+
+  # Update a location
+  def update_location
+    provider_id = params[:id]
+    location_id = params[:location_id]
+    
+    begin
+      provider = Provider.find(provider_id)
+      location = provider.locations.find(location_id)
+      
+      if location.update(location_params)
+        render json: {
+          success: true,
+          message: "Location updated successfully",
+          location: {
+            id: location.id,
+            name: location.name,
+            phone: location.phone,
+            email: location.email,
+            address_1: location.address_1,
+            address_2: location.address_2,
+            city: location.city,
+            state: location.state,
+            zip: location.zip,
+            in_home_waitlist: location.in_home_waitlist,
+            in_clinic_waitlist: location.in_clinic_waitlist
+          }
+        }
+      else
+        render json: { 
+          error: "Failed to update location",
+          errors: location.errors.full_messages
+        }, status: :unprocessable_entity
+      end
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: "Provider or location not found" }, status: :not_found
+    rescue => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    end
+  end
+
+  # Remove a location from a provider
+  def remove_location
+    provider_id = params[:id]
+    location_id = params[:location_id]
+    
+    begin
+      provider = Provider.find(provider_id)
+      location = provider.locations.find(location_id)
+      
+      location_name = location.name.presence || "Location #{location.id}"
+      location.destroy!
+      
+      render json: {
+        success: true,
+        message: "Location '#{location_name}' removed successfully"
+      }
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: "Provider or location not found" }, status: :not_found
+    rescue => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    end
+  end
+
   private
   
   def multipart_provider_params
@@ -497,6 +640,21 @@ class Api::V1::ProvidersController < ApplicationController
       :in_home_only,
       :logo,
       service_delivery: {}
+    )
+  end
+
+  def location_params
+    params.require(:location).permit(
+      :name,
+      :phone,
+      :email,
+      :address_1,
+      :address_2,
+      :city,
+      :state,
+      :zip,
+      :in_home_waitlist,
+      :in_clinic_waitlist
     )
   end
 
