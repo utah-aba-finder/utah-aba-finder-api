@@ -31,14 +31,32 @@ Rails.application.routes.draw do
       post "provider_context", to: "provider_context#set"
       get "provider_context", to: "provider_context#show"
       
+      # Provider categories and fields
+      resources :provider_categories, only: [:index, :show, :create, :update]
+      
+      # Provider self-registration workflow
+      resources :provider_registrations, only: [:index, :show, :create] do
+        member do
+          post :approve
+          post :reject
+        end
+      end
+      
       resources :providers, only: [:index, :update, :show, :create, :put] do
         collection do
           get :my_providers
           get :accessible_providers
           post :set_active_provider
           post :assign_provider_to_user
+          post :remove_provider_from_user
+          get :user_providers
         end
+        
         member do
+          get :locations, to: 'providers#provider_locations'
+          post :locations, to: 'providers#add_location'
+          patch 'locations/:location_id', to: 'providers#update_location'
+          delete 'locations/:location_id', to: 'providers#remove_location'
           delete :remove_logo
         end
       end
@@ -57,22 +75,12 @@ Rails.application.routes.draw do
       # User management routes (for Super Admin)
       resources :users, only: [:index, :show, :create] do
         collection do
-          post :check_user_exists
-          get :debug_lookup
-          post :manual_link
-          post :switch_provider
-          get :unlinked_users
-          get :providers_list
           get :users_with_providers
-          get :admin_users
           post :bulk_assign_users
-          post :assign_user_by_email
-          post :unassign_provider_from_user
-          post :unlink_user_from_provider
         end
+        
         member do
-          post :link_to_provider
-          delete :unlink_from_provider
+          post :unassign_provider_from_user
         end
       end
       

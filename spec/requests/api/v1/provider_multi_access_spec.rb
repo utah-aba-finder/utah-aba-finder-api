@@ -10,13 +10,17 @@ RSpec.describe 'Multi-Provider Access', type: :request do
     ProviderAssignment.create!(user: user, provider: provider1, assigned_by: 'test')
     ProviderAssignment.create!(user: user, provider: provider2, assigned_by: 'test')
     
+    # Set user as primary owner of both providers (required for authentication)
+    provider1.update!(user: user)
+    provider2.update!(user: user)
+    
     # Set provider1 as the active provider
     user.update!(active_provider_id: provider1.id)
   end
 
   describe 'GET /api/v1/providers/accessible_providers' do
     it 'returns all providers the user can access' do
-      get '/api/v1/providers/accessible_providers', headers: { 'Authorization' => user.id.to_s }
+      get '/api/v1/providers/accessible_providers', headers: { 'Authorization' => "Bearer #{user.id}" }
       
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
@@ -34,7 +38,7 @@ RSpec.describe 'Multi-Provider Access', type: :request do
     it 'changes the active provider' do
       post '/api/v1/providers/set_active_provider', 
            params: { provider_id: provider2.id },
-           headers: { 'Authorization' => user.id.to_s }
+           headers: { 'Authorization' => "Bearer #{user.id}" }
       
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
@@ -51,7 +55,7 @@ RSpec.describe 'Multi-Provider Access', type: :request do
       
       post '/api/v1/providers/set_active_provider', 
            params: { provider_id: unauthorized_provider.id },
-           headers: { 'Authorization' => user.id.to_s }
+           headers: { 'Authorization' => "Bearer #{user.id}" }
       
       expect(response).to have_http_status(:forbidden)
       json = JSON.parse(response.body)
@@ -64,7 +68,7 @@ RSpec.describe 'Multi-Provider Access', type: :request do
       # Set provider2 as active
       user.update!(active_provider_id: provider2.id)
       
-      get '/api/v1/provider_self', headers: { 'Authorization' => user.id.to_s }
+      get '/api/v1/provider_self', headers: { 'Authorization' => "Bearer #{user.id}" }
       
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
@@ -78,7 +82,7 @@ RSpec.describe 'Multi-Provider Access', type: :request do
     it 'allows updating providers the user has access to' do
       patch "/api/v1/providers/#{provider1.id}", 
             params: { name: 'Updated Provider One' },
-            headers: { 'Authorization' => user.id.to_s }
+            headers: { 'Authorization' => "Bearer #{user.id}" }
       
       expect(response).to have_http_status(:ok)
     end
@@ -88,7 +92,7 @@ RSpec.describe 'Multi-Provider Access', type: :request do
       
       patch "/api/v1/providers/#{unauthorized_provider.id}", 
             params: { name: 'Updated Unauthorized Provider' },
-            headers: { 'Authorization' => user.id.to_s }
+            headers: { 'Authorization' => "Bearer #{user.id}" }
       
       expect(response).to have_http_status(:forbidden)
       json = JSON.parse(response.body)

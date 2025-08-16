@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+</head>
+<body>
+  <h1>Provider Registration Update</h1>
+  
+  <p>Dear <%= @registration.provider_name %>,</p>
+  
+  <p>Thank you for your interest in joining the Autism Services Locator directory. After careful review, we regret to inform you that we are unable to approve your registration at this time.</p>
+  
+  <h2>Reason for Rejection:</h2>
+  <p><strong><%= @registration.rejection_reason %></strong></p>
+  
+  <% if @registration.admin_notes.present? %>
+    <h2>Additional Notes:</h2>
+    <p><%= @registration.admin_notes %></p>
+  <% end %>
+  
+  <h2>What You Can Do:</h2>
+  <ul>
+    <li>Review the information you submitted for accuracy</li>
+    <li>Ensure all required fields are completed</li>
+    <li>Consider addressing the specific reason mentioned above</li>
+    <li>Submit a new registration with corrected information</li>
+  </ul>
+  
+  <p>We encourage you to review your submission and try again. If you have questions about the rejection or need assistance, please contact us directly.</p>
+  
+  <p>Thank you for your understanding.</p>
+  
+  <p>Best regards,<br>
+  The Autism Services Locator Team</p>
+</body>
+</html> 
