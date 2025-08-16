@@ -41,19 +41,7 @@ class Provider < ApplicationRecord
     logo.purge if logo.attached?
   end
 
-  def logo_url
-    return nil unless logo.attached?
-    
-    # Get host and port from Active Storage config
-    host = Rails.application.config.active_storage.default_url_options[:host]
-    port = Rails.application.config.active_storage.default_url_options[:port]
-    
-    if host && port
-      Rails.application.routes.url_helpers.rails_blob_url(logo, host: host, port: port)
-    else
-      Rails.application.routes.url_helpers.rails_blob_url(logo)
-    end
-  end
+
 
   # New methods for multi-provider type system
   def category_fields

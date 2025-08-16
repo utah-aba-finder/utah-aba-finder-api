@@ -61,7 +61,7 @@ class ProviderSerializer
             "spanish_speakers": provider.spanish_speakers,
             "at_home_services": provider.at_home_services,
             "in_clinic_services": provider.in_clinic_services,
-            "logo": provider.logo_url,
+            "logo": logo_url_for(provider),
             "updated_last": provider.updated_at,
             "status": provider.status,
             "in_home_only": provider.in_home_only,
@@ -70,5 +70,13 @@ class ProviderSerializer
         }
       end
     }
+  end
+
+  def self.logo_url_for(provider)
+    return nil unless provider.logo.attached?
+    Rails.application.routes.url_helpers.rails_blob_url(
+      provider.logo,
+      **Rails.application.config.active_storage.default_url_options.symbolize_keys
+    )
   end
 end
