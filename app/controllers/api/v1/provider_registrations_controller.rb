@@ -2,9 +2,17 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
   skip_before_action :authenticate_client, only: [:create, :show]
 
   def create
+    Rails.logger.info "Received params: #{params.inspect}"
+    Rails.logger.info "Registration params: #{registration_params.inspect}"
+    
     @registration = ProviderRegistration.new(registration_params)
     
+    Rails.logger.info "Registration object: #{@registration.attributes.inspect}"
+    
     if @registration.save
+      Rails.logger.info "Registration saved successfully with ID: #{@registration.id}"
+      Rails.logger.info "Saved submitted_data: #{@registration.submitted_data.inspect}"
+      
       # Send confirmation email to provider
       ProviderRegistrationMailer.received(@registration).deliver_later
       
@@ -17,6 +25,7 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
         registration_id: @registration.id
       }, status: :created
     else
+      Rails.logger.error "Registration failed to save: #{@registration.errors.full_messages}"
       render json: { 
         success: false,
         errors: @registration.errors.full_messages 
