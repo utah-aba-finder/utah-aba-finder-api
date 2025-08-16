@@ -1,4 +1,6 @@
 class Api::V1::Admin::ProvidersController < ApplicationController
+  before_action :authenticate_user!
+  before_action :ensure_super_admin!
   def index
     providers = Provider.all
     render json: ProviderSerializer.format_providers(providers)
@@ -15,6 +17,12 @@ class Api::V1::Admin::ProvidersController < ApplicationController
   end
 
   private
+
+  def ensure_super_admin!
+    unless current_user&.role == 'super_admin' || current_user&.role == 0
+      render json: { error: 'Access denied. Super admin privileges required.' }, status: :forbidden
+    end
+  end
 
   def admin_provider_params
     # Handle both regular params and nested data format

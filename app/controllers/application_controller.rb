@@ -1,5 +1,5 @@
 class ApplicationController < ActionController::API
-  before_action :authenticate_client, unless: :devise_controller?
+  before_action :authenticate_client, unless: [:devise_controller?, :admin_controller?]
 
   private
 
@@ -19,6 +19,11 @@ class ApplicationController < ActionController::API
   def devise_controller?
     # Skip authentication for Devise controllers
     controller_name.start_with?('sessions', 'registrations', 'passwords', 'password_resets', 'confirmations', 'unlocks')
+  end
+
+  def admin_controller?
+    # Skip client authentication for admin controllers (they use user authentication)
+    controller_name.start_with?('admin')
   end
 
   def authenticate_user!
