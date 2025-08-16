@@ -49,9 +49,9 @@ class Provider < ApplicationRecord
     port = Rails.application.config.active_storage.default_url_options[:port]
     
     if host && port
-      rails_blob_url(logo, host: host, port: port)
+      Rails.application.routes.url_helpers.rails_blob_url(logo, host: host, port: port)
     else
-      rails_blob_url(logo)
+      Rails.application.routes.url_helpers.rails_blob_url(logo)
     end
   end
 
