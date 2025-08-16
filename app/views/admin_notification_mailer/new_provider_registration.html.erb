@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+</head>
+<body>
+  <h1>New Provider Registration Requires Review</h1>
+  
+  <p>A new provider has submitted a registration that requires your review.</p>
+  
+  <h2>Registration Details:</h2>
+  <ul>
+    <li><strong>Provider Name:</strong> <%= @registration.provider_name %></li>
+    <li><strong>Category:</strong> <%= @registration.category_display_name %></li>
+    <li><strong>Email:</strong> <%= @registration.email %></li>
+    <li><strong>Submitted:</strong> <%= @registration.created_at.strftime("%B %d, %Y at %I:%M %p") %></li>
+  </ul>
+  
+  <h2>Submitted Information:</h2>
+  <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px;">
+    <% @registration.submitted_data.each do |key, value| %>
+      <p><strong><%= key.titleize %>:</strong> <%= value %></p>
+    <% end %>
+  </div>
+  
+  <h2>Action Required:</h2>
+  <p>Please review this registration and either approve or reject it. You can do this through your admin dashboard or by using the API endpoints:</p>
+  
+  <ul>
+    <li><strong>Approve:</strong> POST /api/v1/provider_registrations/<%= @registration.id %>/approve</li>
+    <li><strong>Reject:</strong> POST /api/v1/provider_registrations/<%= @registration.id %>/reject</li>
+  </ul>
+  
+  <p>If rejecting, please provide a clear reason for the rejection.</p>
+  
+  <p>Best regards,<br>
+  Autism Services Locator System</p>
+</body>
+</html> 
