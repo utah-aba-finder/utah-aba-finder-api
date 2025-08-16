@@ -2,16 +2,20 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
   skip_before_action :authenticate_client, only: [:create, :show]
 
   def create
-    Rails.logger.info "Received params: #{params.inspect}"
-    Rails.logger.info "Registration params: #{registration_params.inspect}"
+    Rails.logger.info "=== PROVIDER REGISTRATION DEBUG ==="
+    Rails.logger.info "Raw params: #{params.inspect}"
+    Rails.logger.info "Provider registration params: #{params[:provider_registration].inspect}"
+    Rails.logger.info "Submitted data: #{params[:provider_registration][:submitted_data].inspect}"
     
     @registration = ProviderRegistration.new(registration_params)
     
-    Rails.logger.info "Registration object: #{@registration.attributes.inspect}"
+    Rails.logger.info "Registration object before save: #{@registration.attributes.inspect}"
+    Rails.logger.info "Submitted data before save: #{@registration.submitted_data.inspect}"
     
     if @registration.save
       Rails.logger.info "Registration saved successfully with ID: #{@registration.id}"
       Rails.logger.info "Saved submitted_data: #{@registration.submitted_data.inspect}"
+      Rails.logger.info "Final attributes: #{@registration.attributes.inspect}"
       
       # Send confirmation email to provider
       ProviderRegistrationMailer.received(@registration).deliver_later
@@ -110,6 +114,14 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
   private
 
   def registration_params
-    params.require(:provider_registration).permit(:email, :provider_name, :category, :submitted_data)
+    Rails.logger.info "=== REGISTRATION PARAMS DEBUG ==="
+    Rails.logger.info "Params before permit: #{params[:provider_registration].inspect}"
+    
+    permitted_params = params.require(:provider_registration).permit(:email, :provider_name, :category, submitted_data: {})
+    
+    Rails.logger.info "Params after permit: #{permitted_params.inspect}"
+    Rails.logger.info "Submitted data after permit: #{permitted_params[:submitted_data].inspect}"
+    
+    permitted_params
   end
 end 
