@@ -1,6 +1,10 @@
 class ProviderRegistration < ApplicationRecord
   belongs_to :reviewed_by, class_name: 'User', optional: true
   
+  # Ensure JSONB fields are properly typed
+  attribute :submitted_data, :json, default: {}
+  attribute :metadata, :json, default: {}
+  
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :provider_name, presence: true
   validates :category, presence: true
