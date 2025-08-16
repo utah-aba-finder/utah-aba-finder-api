@@ -1,6 +1,11 @@
 class Api::V1::ProvidersController < ApplicationController
-  skip_before_action :authenticate_client, only: [:index, :show, :update, :put, :remove_logo, :accessible_providers, :my_providers, :set_active_provider, :assign_provider_to_user, :remove_provider_from_user, :user_providers, :provider_locations, :add_location, :update_location, :remove_location]
   before_action :authenticate_provider_or_client, only: [:show, :update, :put, :remove_logo]
+  
+  # Override authenticate_client to allow public access to index
+  def authenticate_client
+    return if action_name == 'index'
+    super
+  end
 
   def index
     puts "🔍 Controller loaded: #{__FILE__}"
