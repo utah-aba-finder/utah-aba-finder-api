@@ -1,11 +1,9 @@
 class Api::V1::ProvidersController < ApplicationController
   before_action :authenticate_provider_or_client, only: [:show, :update, :put, :remove_logo]
+  before_action :authenticate_user!, only: [:accessible_providers, :set_active_provider]
   
-  # Override authenticate_client to allow public access to index
-  def authenticate_client
-    return if action_name == 'index'
-    super
-  end
+  # IMPORTANT: skip client auth for actions that use authenticate_provider_or_client
+  skip_before_action :authenticate_client, only: [:index, :accessible_providers, :set_active_provider, :show, :update, :put, :remove_logo]
 
   def index
     puts "🔍 Controller loaded: #{__FILE__}"
@@ -55,8 +53,14 @@ class Api::V1::ProvidersController < ApplicationController
   def update
     provider = Provider.find(params[:id])
     
+    Rails.logger.info "🔍 Update method - @current_user: #{@current_user&.id}"
+    Rails.logger.info "🔍 Update method - @current_client: #{@current_client&.id}"
+    Rails.logger.info "🔍 Update method - Provider ID: #{provider.id}"
+    Rails.logger.info "🔍 Update method - Provider user_id: #{provider.user_id}"
+    
     # Check if current user can access this provider (for user authentication)
     if @current_user && !@current_user.can_access_provider?(provider.id)
+      Rails.logger.info "🔍 Update method - Access denied for user #{@current_user.id}"
       render json: { error: 'Access denied. You can only update providers you have access to.' }, status: :forbidden
       return
     end

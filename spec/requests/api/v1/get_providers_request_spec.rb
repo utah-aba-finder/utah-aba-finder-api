@@ -167,17 +167,16 @@ RSpec.describe "Get Providers Request", type: :request do
       # expect(provider_ids).not_to include(61)
     end
 
-    it "it throws error if not authorized with bearer token" do
-
+    it "allows public access without authorization" do
       get "/api/v1/providers"
 
-      expect(response.status).to eq(401)
+      expect(response.status).to eq(200)
 
-      error_response = JSON.parse(response.body, symbolize_names: true)
+      providers_response = JSON.parse(response.body, symbolize_names: true)
 
-      expect(error_response).to be_an(Hash)
-      expect(error_response).to have_key(:error)
-      expect(error_response[:error]).to eq("Unauthorized")
+      expect(providers_response).to be_an(Hash)
+      expect(providers_response).to have_key(:data)
+      expect(providers_response[:data]).to be_an(Array)
     end
   end
 end
