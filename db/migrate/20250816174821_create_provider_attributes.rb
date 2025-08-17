@@ -10,7 +10,5 @@ class CreateProviderAttributes < ActiveRecord::Migration[7.1]
     end
 
     add_index :provider_attributes, [:provider_id, :category_field_id], unique: true
-    add_index :provider_attributes, :provider_id
-    add_index :provider_attributes, :category_field_id
   end
 end 

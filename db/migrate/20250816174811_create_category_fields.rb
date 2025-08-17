@@ -13,7 +13,6 @@ class CreateCategoryFields < ActiveRecord::Migration[7.1]
       t.timestamps
     end
 
-    add_index :category_fields, :provider_category_id
     add_index :category_fields, :name
     add_index :category_fields, :field_type
     add_index :category_fields, :is_active
