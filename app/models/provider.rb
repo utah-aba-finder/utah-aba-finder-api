@@ -21,6 +21,78 @@ class Provider < ApplicationRecord
   has_many :provider_assignments, dependent: :destroy
   has_many :assigned_users, through: :provider_assignments, source: :user
 
+  # Service Type Relationships
+  has_many :provider_service_types, dependent: :destroy
+  has_many :service_categories, through: :provider_service_types, source: :provider_category
+  
+  # Backward compatibility - keep existing category field
+  # but now it represents the primary service type
+  def primary_service_category
+    provider_service_types.primary.first&.provider_category || provider_category
+  end
+  
+  def primary_service_category=(category)
+    if category.is_a?(ProviderCategory)
+      # Find or create the primary service type
+      service_type = provider_service_types.find_or_initialize_by(provider_category: category)
+      service_type.is_primary = true
+      service_type.save!
+      
+      # Update the legacy category field for backward compatibility
+      update_column(:category, category.slug)
+    elsif category.is_a?(String)
+      # Handle string input (slug)
+      cat = ProviderCategory.find_by(slug: category)
+      self.primary_service_category = cat if cat
+    end
+  end
+  
+  def add_service_type(category, is_primary: false)
+    return false if has_service_type?(category)
+    
+    # If this is being set as primary, unset any existing primary
+    if is_primary
+      provider_service_types.primary.update_all(is_primary: false)
+    end
+    
+    provider_service_types.create!(
+      provider_category: category,
+      is_primary: is_primary
+    )
+    
+    # Update legacy category field if this is primary
+    update_column(:category, category.slug) if is_primary
+    
+    true
+  end
+  
+  def remove_service_type(category)
+    service_type = provider_service_types.find_by(provider_category: category)
+    return false unless service_type
+    
+    # If removing primary service type, set another as primary if available
+    if service_type.is_primary? && provider_service_types.count > 1
+      new_primary = provider_service_types.where.not(id: service_type.id).first
+      new_primary.update!(is_primary: true)
+      update_column(:category, new_primary.provider_category.slug)
+    end
+    
+    service_type.destroy
+    true
+  end
+  
+  def has_service_type?(category)
+    provider_service_types.exists?(provider_category: category)
+  end
+  
+  def service_types_count
+    provider_service_types.count
+  end
+  
+  def multiple_service_types?
+    provider_service_types.count > 1
+  end
+
   enum status: { pending: 1, approved: 2, denied: 3 }
 
   # Validations

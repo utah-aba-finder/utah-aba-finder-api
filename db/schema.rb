@@ -47,16 +47,17 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_16_174917) do
     t.bigint "provider_category_id", null: false
     t.string "name", null: false
     t.string "field_type", null: false
-    t.boolean "required", default: false
+    t.boolean "required", default: false, null: false
     t.jsonb "options", default: {}
-    t.integer "display_order", default: 0
+    t.integer "display_order", default: 0, null: false
     t.text "help_text"
-    t.boolean "is_active", default: true
+    t.boolean "is_active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["display_order"], name: "index_category_fields_on_display_order"
     t.index ["field_type"], name: "index_category_fields_on_field_type"
     t.index ["is_active"], name: "index_category_fields_on_is_active"
-    t.index ["provider_category_id", "display_order"], name: "idx_on_provider_category_id_display_order_976543390f"
+    t.index ["name"], name: "index_category_fields_on_name"
     t.index ["provider_category_id"], name: "index_category_fields_on_provider_category_id"
   end
 
@@ -162,9 +163,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_16_174917) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["category_field_id"], name: "index_provider_attributes_on_category_field_id"
-    t.index ["provider_id", "category_field_id"], name: "index_provider_attributes_unique", unique: true
+    t.index ["provider_id", "category_field_id"], name: "index_provider_attributes_on_provider_id_and_category_field_id", unique: true
     t.index ["provider_id"], name: "index_provider_attributes_on_provider_id"
-    t.index ["value"], name: "index_provider_attributes_on_value"
   end
 
   create_table "provider_categories", force: :cascade do |t|
@@ -172,7 +172,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_16_174917) do
     t.string "slug", null: false
     t.text "description"
     t.boolean "is_active", default: true, null: false
-    t.integer "display_order", default: 0
+    t.integer "display_order", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["display_order"], name: "index_provider_categories_on_display_order"
@@ -209,12 +209,12 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_16_174917) do
     t.text "admin_notes"
     t.datetime "reviewed_at"
     t.bigint "reviewed_by_id"
-    t.string "rejection_reason"
-    t.boolean "is_processed", default: false
+    t.text "rejection_reason"
+    t.boolean "is_processed", default: false, null: false
+    t.jsonb "metadata", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["category"], name: "index_provider_registrations_on_category"
-    t.index ["created_at"], name: "index_provider_registrations_on_created_at"
     t.index ["email"], name: "index_provider_registrations_on_email"
     t.index ["is_processed"], name: "index_provider_registrations_on_is_processed"
     t.index ["reviewed_by_id"], name: "index_provider_registrations_on_reviewed_by_id"

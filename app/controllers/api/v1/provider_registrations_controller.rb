@@ -81,6 +81,12 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
   private
 
   def registration_params
-    params.permit(:email, :provider_name, :category, submitted_data: {})
+    params.require(:provider_registration).permit(
+      :email, 
+      :provider_name, 
+      :category, 
+      :service_types, 
+      submitted_data: {}
+    )
   end
 end 
