@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+</head>
+<body>
+  <h1>New Provider Registration</h1>
+  
+  <h2><%= @registration.provider_name %></h2>
+  
+  <p><strong>Email:</strong> <%= @registration.email %></p>
+  <p><strong>Category:</strong> <%= @registration.category %></p>
+  <p><strong>Status:</strong> <%= @registration.status %></p>
+  <p><strong>Submitted:</strong> <%= @registration.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>
+  
+  <h3>Submitted Information:</h3>
+  <% @registration.submitted_data.each do |key, value| %>
+    <p><strong><%= key.humanize %>:</strong> <%= value %></p>
+  <% end %>
+  
+  <p>
+    <a href="<%= request.base_url %>/admin/provider_registrations/<%= @registration.id %>">
+      Review this registration
+    </a>
+  </p>
+</body>
+</html> 

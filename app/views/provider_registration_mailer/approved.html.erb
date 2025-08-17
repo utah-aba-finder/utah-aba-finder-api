@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+</head>
+<body>
+  <h1>Registration Approved!</h1>
+  
+  <p>Dear <%= @registration.provider_name %>,</p>
+  
+  <p>Great news! Your registration for <strong><%= @registration.category.humanize %></strong> services has been approved.</p>
+  
+  <p>Your provider profile has been created and is now live on our platform. Families can now find and contact you for services.</p>
+  
+  <p>Next steps:</p>
+  <ul>
+    <li>Complete your provider profile with additional details</li>
+    <li>Add your service locations and hours</li>
+    <li>Upload your logo and photos</li>
+    <li>Set your availability and waitlist status</li>
+  </ul>
+  
+  <p>If you have any questions or need assistance setting up your profile, please don't hesitate to contact us.</p>
+  
+  <p>Welcome to the Autism Services Locator family!</p>
+  
+  <p>Best regards,<br>
+  The Autism Services Locator Team</p>
+</body>
+</html> 

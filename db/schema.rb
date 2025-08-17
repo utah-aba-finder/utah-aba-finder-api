@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_08_06_184654) do
+ActiveRecord::Schema[7.1].define(version: 2025_08_16_174917) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_trgm"
   enable_extension "plpgsql"
@@ -41,6 +41,23 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_06_184654) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "category_fields", force: :cascade do |t|
+    t.bigint "provider_category_id", null: false
+    t.string "name", null: false
+    t.string "field_type", null: false
+    t.boolean "required", default: false
+    t.jsonb "options", default: {}
+    t.integer "display_order", default: 0
+    t.text "help_text"
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["field_type"], name: "index_category_fields_on_field_type"
+    t.index ["is_active"], name: "index_category_fields_on_is_active"
+    t.index ["provider_category_id", "display_order"], name: "idx_on_provider_category_id_display_order_976543390f"
+    t.index ["provider_category_id"], name: "index_category_fields_on_provider_category_id"
   end
 
   create_table "clients", force: :cascade do |t|
@@ -124,6 +141,45 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_06_184654) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "provider_assignments", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "provider_id", null: false
+    t.string "assigned_by", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assigned_by"], name: "index_provider_assignments_on_assigned_by"
+    t.index ["provider_id"], name: "index_provider_assignments_on_provider_id"
+    t.index ["user_id", "provider_id"], name: "index_provider_assignments_on_user_id_and_provider_id", unique: true
+    t.index ["user_id"], name: "index_provider_assignments_on_user_id"
+  end
+
+  create_table "provider_attributes", force: :cascade do |t|
+    t.bigint "provider_id", null: false
+    t.bigint "category_field_id", null: false
+    t.text "value"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_field_id"], name: "index_provider_attributes_on_category_field_id"
+    t.index ["provider_id", "category_field_id"], name: "index_provider_attributes_unique", unique: true
+    t.index ["provider_id"], name: "index_provider_attributes_on_provider_id"
+    t.index ["value"], name: "index_provider_attributes_on_value"
+  end
+
+  create_table "provider_categories", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.text "description"
+    t.boolean "is_active", default: true, null: false
+    t.integer "display_order", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["display_order"], name: "index_provider_categories_on_display_order"
+    t.index ["is_active"], name: "index_provider_categories_on_is_active"
+    t.index ["slug"], name: "index_provider_categories_on_slug", unique: true
+  end
+
   create_table "provider_insurances", force: :cascade do |t|
     t.bigint "provider_id", null: false
     t.bigint "insurance_id", null: false
@@ -142,6 +198,27 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_06_184654) do
     t.index ["practice_type_id"], name: "index_provider_practice_types_on_practice_type_id"
     t.index ["provider_id", "practice_type_id"], name: "idx_on_provider_id_practice_type_id_1a4497536f", unique: true
     t.index ["provider_id"], name: "index_provider_practice_types_on_provider_id"
+  end
+
+  create_table "provider_registrations", force: :cascade do |t|
+    t.string "email", null: false
+    t.string "provider_name", null: false
+    t.string "category", null: false
+    t.string "status", default: "pending", null: false
+    t.jsonb "submitted_data", default: {}
+    t.text "admin_notes"
+    t.datetime "reviewed_at"
+    t.bigint "reviewed_by_id"
+    t.string "rejection_reason"
+    t.boolean "is_processed", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_provider_registrations_on_category"
+    t.index ["created_at"], name: "index_provider_registrations_on_created_at"
+    t.index ["email"], name: "index_provider_registrations_on_email"
+    t.index ["is_processed"], name: "index_provider_registrations_on_is_processed"
+    t.index ["reviewed_by_id"], name: "index_provider_registrations_on_reviewed_by_id"
+    t.index ["status"], name: "index_provider_registrations_on_status"
   end
 
   create_table "providers", force: :cascade do |t|
@@ -163,6 +240,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_06_184654) do
     t.boolean "in_home_only", default: false, null: false
     t.jsonb "service_delivery", default: {"in_home"=>false, "in_clinic"=>false, "telehealth"=>false}
     t.bigint "user_id"
+    t.string "category", default: "aba_therapy"
+    t.index ["category"], name: "index_providers_on_category"
     t.index ["user_id"], name: "index_providers_on_user_id"
   end
 
@@ -183,12 +262,15 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_06_184654) do
     t.datetime "updated_at", null: false
     t.integer "provider_id"
     t.string "role"
+    t.integer "active_provider_id"
+    t.index ["active_provider_id"], name: "index_users_on_active_provider_id"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "category_fields", "provider_categories"
   add_foreign_key "counties", "states"
   add_foreign_key "counties_providers", "counties"
   add_foreign_key "counties_providers", "providers"
@@ -196,9 +278,15 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_06_184654) do
   add_foreign_key "locations_practice_types", "locations"
   add_foreign_key "locations_practice_types", "practice_types"
   add_foreign_key "old_counties", "providers"
+  add_foreign_key "provider_assignments", "providers"
+  add_foreign_key "provider_assignments", "users"
+  add_foreign_key "provider_attributes", "category_fields"
+  add_foreign_key "provider_attributes", "providers"
   add_foreign_key "provider_insurances", "insurances"
   add_foreign_key "provider_insurances", "providers"
   add_foreign_key "provider_practice_types", "practice_types"
   add_foreign_key "provider_practice_types", "providers"
+  add_foreign_key "provider_registrations", "users", column: "reviewed_by_id"
   add_foreign_key "providers", "users"
+  add_foreign_key "users", "providers", column: "active_provider_id"
 end

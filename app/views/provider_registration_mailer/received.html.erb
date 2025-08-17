@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+</head>
+<body>
+  <h1>Registration Received</h1>
+  
+  <p>Dear <%= @registration.provider_name %>,</p>
+  
+  <p>Thank you for your interest in joining our provider network! We have received your registration for <strong><%= @registration.category.humanize %></strong> services.</p>
+  
+  <p>Our team will review your application and get back to you within 2-3 business days. You will receive an email notification once your registration has been reviewed.</p>
+  
+  <p>If you have any questions, please don't hesitate to contact us.</p>
+  
+  <p>Best regards,<br>
+  The Autism Services Locator Team</p>
+</body>
+</html> 
