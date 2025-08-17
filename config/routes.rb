@@ -70,7 +70,11 @@ Rails.application.routes.draw do
         resources :providers, only: [:index], action: :index, controller: '/api/v1/states/providers'
       end
 
-      resources :insurances, only: [:index, :create, :update, :destroy]
+      resources :insurances, only: [:index, :create, :update, :destroy] do
+        collection do
+          get :search
+        end
+      end
       
       # Provider categories and registration
       resources :provider_categories, only: [:index, :show, :create, :update]

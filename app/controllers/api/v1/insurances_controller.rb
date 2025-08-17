@@ -4,6 +4,18 @@ class Api::V1::InsurancesController < ApplicationController
     render json: InsuranceSerializer.format_insurances(insurances)
   end
   
+  def search
+    query = params[:q]
+    if query.present?
+      insurances = InsuranceService.search_insurances(query)
+      render json: InsuranceSerializer.format_insurances(insurances)
+    else
+      # Return popular insurances if no query
+      insurances = InsuranceService.get_popular_insurances(20)
+      render json: InsuranceSerializer.format_insurances(insurances)
+    end
+  end
+  
   def create
     insurance = Insurance.find_or_create_by(name: params.require(:data).first[:attributes][:name])
 

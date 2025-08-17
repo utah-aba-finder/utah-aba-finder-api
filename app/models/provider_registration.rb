@@ -149,12 +149,31 @@ class ProviderRegistration < ApplicationRecord
       value = submitted_data[field.name.parameterize.underscore]
       next unless value.present?
 
-      # Create provider attribute
-      provider.provider_attributes.create!(
-        category_field: field,
-        value: value.is_a?(Array) ? value.join(', ') : value.to_s
-      )
+      # Special handling for insurance fields
+      if field.name.downcase.include?('insurance')
+        process_insurance_field(provider, field, value)
+      else
+        # Create provider attribute for non-insurance fields
+        provider.provider_attributes.create!(
+          category_field: field,
+          value: value.is_a?(Array) ? value.join(', ') : value.to_s
+        )
+      end
     end
+  end
+
+  def process_insurance_field(provider, field, value)
+    # Process insurance using the InsuranceService
+    InsuranceService.link_insurances_to_provider(provider, value)
+    
+    # Also store the insurance names as a provider attribute for display
+    insurance_names = value.is_a?(Array) ? value : [value]
+    provider.provider_attributes.create!(
+      category_field: field,
+      value: insurance_names.join(', ')
+    )
+    
+    Rails.logger.info "🔗 Processed insurance for #{provider.name}: #{insurance_names.join(', ')}"
   end
 
   def determine_in_home_only
