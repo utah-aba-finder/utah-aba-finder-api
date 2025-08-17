@@ -4,6 +4,7 @@ class ProviderAttribute < ApplicationRecord
 
   validates :provider_id, uniqueness: { scope: :category_field_id }
 
+
   def display_value
     case category_field.field_type
     when 'boolean'

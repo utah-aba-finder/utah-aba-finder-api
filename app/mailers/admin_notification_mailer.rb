@@ -6,6 +6,7 @@ class AdminNotificationMailer < ApplicationMailer
     mail(
       to: @admin_email,
       subject: "New Provider Registration: #{registration.provider_name}"
+
     )
   end
 end 

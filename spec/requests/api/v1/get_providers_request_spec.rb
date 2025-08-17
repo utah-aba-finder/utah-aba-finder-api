@@ -16,7 +16,7 @@ RSpec.describe "Get Providers Request", type: :request do
       spanish_speakers: "Yes",
       logo: "https://logo.com",
       status: 2,
-      in_home_only: false,
+      in_home_only: true,
       service_delivery: { in_home: false, in_clinic: false, telehealth: false }
       )
       
@@ -147,9 +147,9 @@ RSpec.describe "Get Providers Request", type: :request do
 
     # it "doesn't return provider id:61" do #this is the test provider id so we can live test updates with the deployed api
     it "returns only providers with status approved" do #this is the test provider id so we can live test updates with the deployed api
-      @provider_2 = Provider.create!(name: "Provider 2", website: "https://provider2.com", email: "contact@provider2.com", status: 2, in_home_only: false, service_delivery: { in_home: false, in_clinic: false, telehealth: false })
+      @provider_2 = Provider.create!(name: "Provider 2", website: "https://provider2.com", email: "contact@provider2.com", status: 2, in_home_only: true, service_delivery: { in_home: false, in_clinic: false, telehealth: false })
       # @provider_61 = Provider.create!(id: 61, name: "Provider 61", website: "https://provider61.com", email: "contact@provider61.com")
-              @provider_denied = Provider.create!(name: "Provider denied", website: "https://providerdenied.com", email: "contact@providerdenied.com", status: 3, in_home_only: false, service_delivery: { in_home: false, in_clinic: false, telehealth: false })
+              @provider_denied = Provider.create!(name: "Provider denied", website: "https://providerdenied.com", email: "contact@providerdenied.com", status: 3, in_home_only: true, service_delivery: { in_home: false, in_clinic: false, telehealth: false })
       
       get "/api/v1/providers", headers: { 'Content-Type': 'application/json', 'Authorization': @api_key, 'Accept': 'application/json' }
 
@@ -167,17 +167,16 @@ RSpec.describe "Get Providers Request", type: :request do
       # expect(provider_ids).not_to include(61)
     end
 
-    it "it throws error if not authorized with bearer token" do
-
+    it "allows public access without authorization" do
       get "/api/v1/providers"
 
-      expect(response.status).to eq(401)
+      expect(response.status).to eq(200)
 
-      error_response = JSON.parse(response.body, symbolize_names: true)
+      providers_response = JSON.parse(response.body, symbolize_names: true)
 
-      expect(error_response).to be_an(Hash)
-      expect(error_response).to have_key(:error)
-      expect(error_response[:error]).to eq("Unauthorized")
+      expect(providers_response).to be_an(Hash)
+      expect(providers_response).to have_key(:data)
+      expect(providers_response[:data]).to be_an(Array)
     end
   end
 end

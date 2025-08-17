@@ -13,7 +13,7 @@ RSpec.describe ProviderInsurance, type: :model do
       insurance2 = Insurance.create!(name: "Insurance B")
       insurance3 = Insurance.create!(name: "Insurance C")
 
-      provider = Provider.create!(name: "Test Provider", in_home_only: false, service_delivery: { in_home: false, in_clinic: false, telehealth: false })
+      provider = Provider.create!(name: "Test Provider", in_home_only: true, service_delivery: { in_home: false, in_clinic: false, telehealth: false })
 
       expect(ProviderInsurance.count).to eq(0)
 

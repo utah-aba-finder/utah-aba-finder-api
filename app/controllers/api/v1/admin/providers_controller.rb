@@ -1,4 +1,4 @@
-class Api::V1::Admin::ProvidersController < ApplicationController
+class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
   def index
     providers = Provider.all
     render json: ProviderSerializer.format_providers(providers)

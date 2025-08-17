@@ -5,6 +5,7 @@ class ProviderRegistrationMailer < ApplicationMailer
     mail(
       to: @registration.email,
       subject: "Provider Registration Received - #{registration.provider_name}"
+
     )
   end
 
@@ -14,6 +15,7 @@ class ProviderRegistrationMailer < ApplicationMailer
     mail(
       to: @registration.email,
       subject: "Provider Registration Approved - #{registration.provider_name}"
+
     )
   end
 
@@ -23,6 +25,7 @@ class ProviderRegistrationMailer < ApplicationMailer
     mail(
       to: @registration.email,
       subject: "Provider Registration Update - #{registration.provider_name}"
+
     )
   end
 end 
