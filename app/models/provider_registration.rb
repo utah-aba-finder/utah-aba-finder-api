@@ -19,6 +19,9 @@ class ProviderRegistration < ApplicationRecord
   validates :service_types, presence: true, length: { minimum: 1, maximum: 5 }
   validate :validate_service_types_exist
 
+  # Add idempotency key attribute
+  attribute :idempotency_key, :string
+
   def can_be_approved?
     status == 'pending' && !is_processed
   end
@@ -146,7 +149,9 @@ class ProviderRegistration < ApplicationRecord
     return unless category_obj
 
     category_obj.category_fields.each do |field|
-      value = submitted_data[field.name.parameterize.underscore]
+      # Use slug for the key, but fall back to name if slug is nil (backward compatibility)
+      key = field.slug || field.name.parameterize.underscore
+      value = submitted_data[key] || submitted_data[field.name.parameterize.underscore]
       next unless value.present?
 
       # Special handling for insurance fields

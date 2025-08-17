@@ -21,7 +21,22 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
   end
 
   def create
+    # Check idempotency key
+    idempotency_key = request.headers['Idempotency-Key']
+    if idempotency_key.present?
+      existing_registration = ProviderRegistration.find_by(idempotency_key: idempotency_key)
+      if existing_registration
+        render json: ProviderRegistrationSerializer.format_registration(existing_registration), 
+               status: :ok,
+               headers: { 'Location' => "/api/v1/provider_registrations/#{existing_registration.id}" }
+        return
+      end
+    end
+
     registration = ProviderRegistration.new(registration_params)
+    
+    # Set idempotency key if provided
+    registration.idempotency_key = idempotency_key if idempotency_key.present?
     
     if registration.save
       # Send notification email to admin
@@ -30,9 +45,11 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
       # Send confirmation email to provider
       ProviderRegistrationMailer.received(registration).deliver_later
       
-      render json: ProviderRegistrationSerializer.format_registration(registration), status: :created
+      render json: ProviderRegistrationSerializer.format_registration(registration), 
+             status: :created,
+             headers: { 'Location' => "/api/v1/provider_registrations/#{registration.id}" }
     else
-      render json: { error: registration.errors.full_messages.join(', ') }, status: :unprocessable_entity
+      render json: format_validation_errors(registration.errors), status: :unprocessable_entity
     end
   end
 
@@ -75,7 +92,6 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
     end
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Registration not found' }, status: :not_found
-
   end
 
   private
@@ -88,5 +104,18 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
       :service_types, 
       submitted_data: {}
     )
+  end
+
+  def format_validation_errors(errors)
+    {
+      errors: errors.map do |field, messages|
+        {
+          source: { 
+            pointer: "/data/attributes/#{field}" 
+          },
+          detail: messages.is_a?(Array) ? messages.join(', ') : messages
+        }
+      end
+    }
   end
 end 

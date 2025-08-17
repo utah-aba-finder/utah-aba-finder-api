@@ -21,6 +21,7 @@ class ProviderCategorySerializer
           {
             id: field.id,
             name: field.name,
+            slug: field.slug || field.name.parameterize.underscore,
             field_type: field.field_type,
             required: field.required,
             options: field.options,
@@ -28,8 +29,7 @@ class ProviderCategorySerializer
             help_text: field.help_text
           }
         end
-
-      }
+      end
     }
   end
 end 

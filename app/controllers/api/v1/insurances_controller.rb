@@ -11,9 +11,18 @@ class Api::V1::InsurancesController < ApplicationController
       render json: InsuranceSerializer.format_insurances(insurances)
     else
       # Return popular insurances if no query
+      # Note: This list is sorted by usage and stable for 24h (cache at the edge)
       insurances = InsuranceService.get_popular_insurances(20)
       render json: InsuranceSerializer.format_insurances(insurances)
     end
+  rescue => e
+    Rails.logger.error "Insurance search failed: #{e.message}"
+    render json: { 
+      errors: [{ 
+        source: { pointer: "/data" }, 
+        detail: "Insurance search failed. Please try again." 
+      }] 
+    }, status: :internal_server_error
   end
   
   def create
@@ -23,7 +32,14 @@ class Api::V1::InsurancesController < ApplicationController
       insurance.initialize_provider_insurance
       render json: InsuranceSerializer.format_insurances([insurance]), status: :created
     else
-      render json: { errors: insurance.errors.full_messages }, status: :unprocessable_entity
+      render json: { 
+        errors: insurance.errors.map do |field, message|
+          {
+            source: { pointer: "/data/attributes/#{field}" },
+            detail: message
+          }
+        end
+      }, status: :unprocessable_entity
     end
   end
   
@@ -33,7 +49,14 @@ class Api::V1::InsurancesController < ApplicationController
     if insurance&.update(insurance_params)
       render json: InsuranceSerializer.format_insurances([insurance])
     else
-      render json: { errors: insurance&.errors&.full_messages || ["Insurance not found"] }, status: :unprocessable_entity
+      render json: { 
+        errors: insurance&.errors&.map do |field, message|
+          {
+            source: { pointer: "/data/attributes/#{field}" },
+            detail: message
+          }
+        end || [{ source: { pointer: "/data" }, detail: "Insurance not found" }]
+      }, status: :unprocessable_entity
     end
   end
 
