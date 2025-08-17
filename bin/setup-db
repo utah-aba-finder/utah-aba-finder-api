@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+# Database setup script for CI/CD environments
+set -e
+
+echo "🗄️  Setting up database..."
+
+# Drop database if it exists (ignore errors)
+echo "📥 Dropping existing database..."
+bin/rails db:drop || echo "Database drop skipped (may not exist)"
+
+# Create fresh database
+echo "🆕 Creating new database..."
+bin/rails db:create
+
+# Run migrations
+echo "🔄 Running migrations..."
+bin/rails db:migrate
+
+# Run seeds if they exist
+echo "🌱 Running seeds..."
+bin/rails db:seed || echo "No seeds to run"
+
+# Run provider categories seed
+echo "🏥 Seeding provider categories..."
+bin/rails runner db/seeds_provider_categories.rb
+
+# Verify setup
+echo "✅ Verifying database setup..."
+bin/rails runner "
+  puts 'Database tables:'
+  puts ActiveRecord::Base.connection.tables.sort.join(', ')
+  puts 'ProviderCategory count:'
+  puts ProviderCategory.count
+  puts 'CategoryField count:'
+  puts CategoryField.count
+"
+
+echo "🎉 Database setup complete!" 

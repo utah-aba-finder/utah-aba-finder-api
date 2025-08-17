@@ -45,17 +45,7 @@ jobs:
         run: sleep 10
         
       - name: Set up database
-        run: |
-          bin/rails db:drop || true
-          bin/rails db:create
-          bin/rails db:migrate
-          bin/rails db:seed || true
-          bin/rails runner db/seeds_provider_categories.rb
-          
-      - name: Verify database setup
-        run: |
-          bin/rails runner "puts 'Database tables:'; puts ActiveRecord::Base.connection.tables.sort.join(', ')"
-          bin/rails runner "puts 'ProviderCategory count:'; puts ProviderCategory.count"
+        run: bin/setup-db
 
       - name: Run RSpec tests
         run: bundle exec rspec
