@@ -20,6 +20,5 @@ class CreateProviderRegistrations < ActiveRecord::Migration[7.1]
     add_index :provider_registrations, :category
     add_index :provider_registrations, :status
     add_index :provider_registrations, :is_processed
-    add_index :provider_registrations, :reviewed_by_id
   end
 end 
