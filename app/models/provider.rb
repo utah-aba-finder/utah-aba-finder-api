@@ -12,8 +12,14 @@ class Provider < ApplicationRecord
   has_many :provider_attributes, dependent: :destroy
   belongs_to :provider_category, optional: true, foreign_key: 'category', primary_key: 'slug'
   
+  # New multi-provider type relationships
+  has_many :provider_attributes, dependent: :destroy
+  belongs_to :provider_category, optional: true, foreign_key: 'category', primary_key: 'slug'
+  
   # New relationship for user management
   belongs_to :user, optional: true
+  has_many :provider_assignments, dependent: :destroy
+  has_many :assigned_users, through: :provider_assignments, source: :user
 
   enum status: { pending: 1, approved: 2, denied: 3 }
 
@@ -22,68 +28,65 @@ class Provider < ApplicationRecord
   validates :service_delivery, presence: true
   validates :category, presence: true
   # Only validate logo if it's an Active Storage attachment
-  validates :logo, content_type: ['image/png', 'image/jpeg', 'image/gif'], size: { less_than: 5.megabytes }, if: -> { logo.present? && logo.respond_to?(:attached?) && logo.attached? && defined?(ActiveStorageValidations) && Rails.env != 'test' }
+  validates :logo, content_type: ['image/png', 'image/jpeg', 'image/gif'], size: { less_than: 5.megabytes }, if: -> { logo.respond_to?(:attached?) && logo.attached? && Rails.env != 'test' }
 
   # Custom validation for in-home only providers
   validate :locations_required_unless_in_home_only
   validate :validate_service_delivery_structure
+
+  # Scopes
+  scope :by_category, ->(category) { where(category: category) }
+  scope :active_categories, -> { joins(:provider_category).where(provider_categories: { is_active: true }) }
 
   def remove_logo
     return if Rails.env.test?
     logo.purge if logo.attached?
   end
 
-  def logo_url
-    return nil if Rails.env.test?
+
+
+  # New methods for multi-provider type system
+  def category_fields
+    return [] unless provider_category
+    provider_category.category_fields.active.ordered
+  end
+
+  def get_attribute_value(field_name)
+    field = category_fields.find_by(name: field_name)
+    return nil unless field
     
-    Rails.logger.debug "Generating logo URL for provider #{id}"
+    attr = provider_attributes.find_by(category_field: field)
+    attr&.value
+  end
+
+  def set_attribute_value(field_name, value)
+    field = category_fields.find_by(name: field_name)
+    return false unless field
     
-    # First check if there's an Active Storage attachment (new format)
-    if logo.attached?
-      begin
-        # Get the configured host for Active Storage
-        host = Rails.application.config.active_storage.default_url_options&.dig(:host)
-        
-        if host.present?
-          # Try to generate the URL with explicit host configuration
-          Rails.logger.debug "Generating URL with host: #{host}"
-          Rails.application.routes.url_helpers.rails_blob_url(logo, host: host)
-        else
-          # Fallback: try without explicit host
-          Rails.logger.debug "Generating URL without explicit host"
-          Rails.application.routes.url_helpers.rails_blob_url(logo)
-        end
-      rescue ArgumentError => e
-        # If host is not configured, try with a fallback
-        Rails.logger.warn "Could not generate logo URL for provider #{id}: #{e.message}"
-        begin
-          # Try with localhost as fallback
-          Rails.application.routes.url_helpers.rails_blob_url(logo, host: 'localhost:3000')
-        rescue => e2
-          Rails.logger.error "Fallback logo URL generation failed for provider #{id}: #{e2.message}"
-          nil
-        end
-      rescue => e
-        # Catch any other errors that might occur
-        Rails.logger.error "Unexpected error generating logo URL for provider #{id}: #{e.message}"
-        nil
-      end
-    # Then check if there's a logo string in the database (legacy format)
-    elsif self[:logo].present?
-      return self[:logo]
-    else
-      nil
+    attr = provider_attributes.find_or_initialize_by(category_field: field)
+    attr.value = value
+    attr.save
+  end
+
+  def has_attribute?(field_name)
+    field = category_fields.find_by(name: field_name)
+    return false unless field
+    
+    provider_attributes.exists?(category_field: field)
+  end
+
+  def required_attributes_complete?
+    required_fields = category_fields.required
+    return true if required_fields.empty?
+    
+    required_fields.all? do |field|
+      attr = provider_attributes.find_by(category_field: field)
+      attr&.value.present?
     end
   end
 
-  def create_practice_types(practice_type_names)
-    practice_type_names.each do |param|
-      name = param[:name]
-      next if name.blank?
-
-      practice_type = PracticeType.find_or_create_by(name: name)
-      self.practice_types << practice_type unless self.practice_types.include?(practice_type)
-    end
+  def category_display_name
+    provider_category&.name || category.titleize
   end
 
   def category_fields
@@ -186,95 +189,77 @@ class Provider < ApplicationRecord
   end
 
   # def update_counties(counties_params)
+  #   return if counties_params.blank?
+
+  #   counties_params_ids = counties_params.map { |county| county[:id] }.compact
+
+  #   self.counties.each do |county|
+  #     unless counties_params_ids.include?(county.id)
+  #       self.counties.delete(county)
+  #     end
+  #   end
+
   #   counties_params.each do |county_info|
-  #     # self.old_counties.update!(counties_served: county_info[:county])
+  #     county = County.find(county_info[:id])
+  #     self.counties << county unless self.counties.include?(county)
   #   end
   # end
 
   def update_counties_from_array(county_ids)
     return if county_ids.blank?
 
-    counties_to_remove = self.counties.where.not(id: county_ids)
-    self.counties.delete(counties_to_remove)
+    # Clear existing counties
+    self.counties.clear
 
+    # Add new counties
     county_ids.each do |county_id|
-      county = County.find_by(id: county_id)
-      self.counties << county if county && !self.counties.include?(county)
+      county = County.find(county_id)
+      self.counties << county
     end
   end
 
-  def update_practice_types(practice_type_names)
-    return if practice_type_names.blank?
+  def create_practice_types(practice_type_params)
+    return if practice_type_params.blank?
 
-    new_practice_types = practice_type_names.map do |params|
-      PracticeType.find_by(name: params[:name])
-    end.compact
-
-    new_practice_types.each do |practice_type|
-      unless self.practice_types.include?(practice_type)
-        self.practice_types << practice_type
-      end
-    end
-
-    self.practice_types.each do |practice_type|
-      unless new_practice_types.include?(practice_type)
-        self.practice_types.delete(practice_type)
-      end
+    practice_type_params.each do |type_info|
+      practice_type = PracticeType.find(type_info[:id])
+      ProviderPracticeType.create!(
+        provider: self,
+        practice_type: practice_type
+      )
     end
   end
-
-  def create_practice_types(practice_type_names)
-    return if practice_type_names.blank?
-
-    practice_type_names.each do |params|
-      practice_type = PracticeType.find_by(name: params[:name])
-      if practice_type && !self.practice_types.include?(practice_type)
-        self.practice_types << practice_type
-      end
-    end
-  end
-
-  private
 
   def update_location_services(location, services_params)
     return if services_params.blank?
 
-    # Get the practice type IDs from the services params
-    service_ids = services_params.map { |service| service[:id] }.compact
+    services_params_ids = services_params.map { |service| service[:id] }.compact
 
-    # Remove practice types that are no longer associated with this location
     location.practice_types.each do |practice_type|
-      unless service_ids.include?(practice_type.id)
+      unless services_params_ids.include?(practice_type.id)
         location.practice_types.delete(practice_type)
       end
     end
 
-    # Add new practice types to the location
-    service_ids.each do |service_id|
-      practice_type = PracticeType.find_by(id: service_id)
-      if practice_type && !location.practice_types.include?(practice_type)
-        location.practice_types << practice_type
-      end
-    end
-  end
-
-  def locations_required_unless_in_home_only
-    return if new_record?
-    return if in_home_only?
-    if locations.empty?
-      errors.add(:locations, 'are required unless provider offers in-home services only')
+    services_params.each do |service_info|
+      practice_type = PracticeType.find(service_info[:id])
+      location.practice_types << practice_type unless location.practice_types.include?(practice_type)
     end
   end
 
   private
 
+  def locations_required_unless_in_home_only
+    if !in_home_only && locations.empty?
+      errors.add(:locations, "are required for clinic-based providers")
+    end
+  end
+
   def validate_service_delivery_structure
     return unless service_delivery.present?
-    unless service_delivery.is_a?(Hash) && 
-           service_delivery.key?('in_home') && 
-           service_delivery.key?('in_clinic') && 
-           service_delivery.key?('telehealth')
-      errors.add(:service_delivery, 'must have in_home, in_clinic, and telehealth keys')
+
+    unless service_delivery.is_a?(Hash) && service_delivery.key?('in_home') && service_delivery.key?('in_clinic')
+      errors.add(:service_delivery, "must have 'in_home' and 'in_clinic' keys")
     end
   end
 end

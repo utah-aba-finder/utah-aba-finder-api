@@ -1,3 +1,4 @@
+
 # Seeds for Provider Categories and Fields
 puts "🌱 Seeding provider categories and fields..."
 
@@ -39,6 +40,7 @@ categories = [
       { name: "Age Groups", field_type: "select", required: true, options: { choices: ["0-3 (Early Intervention)", "3-5 (Preschool)", "5-12 (School Age)", "12-18 (Adolescent)", "18+ (Adult)"] } },
       { name: "Insurance Accepted", field_type: "select", required: false, options: { choices: ["Medicaid", "Private Insurance", "Self-Pay", "School District Contracts"] } },
       { name: "Teletherapy Available", field_type: "boolean", required: false, help_text: "Virtual therapy sessions available" }
+
     ]
   },
   {
@@ -156,6 +158,7 @@ categories = [
       { name: "Age Groups", field_type: "select", required: true, options: { choices: ["0-3", "3-5", "5-12", "12-18", "18+", "All Ages"] } },
       { name: "Insurance Accepted", field_type: "select", required: false, options: { choices: ["Medicaid", "Private Insurance", "Self-Pay", "Sliding Scale"] } },
       { name: "Special Needs Experience", field_type: "boolean", required: false, help_text: "Experience with autism and special needs" }
+
     ]
   }
 ]

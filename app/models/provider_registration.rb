@@ -1,11 +1,11 @@
 class ProviderRegistration < ApplicationRecord
   belongs_to :reviewed_by, class_name: 'User', optional: true
 
+
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :provider_name, presence: true
   validates :category, presence: true
   validates :status, inclusion: { in: %w[pending approved rejected] }
-
   scope :pending, -> { where(status: 'pending') }
   scope :approved, -> { where(status: 'approved') }
   scope :rejected, -> { where(status: 'rejected') }

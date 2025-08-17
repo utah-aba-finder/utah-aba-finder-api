@@ -12,6 +12,7 @@ class Api::V1::ProviderCategoriesController < ApplicationController
       render json: ProviderCategorySerializer.format_category(category)
     else
       render json: { error: 'Category not found' }, status: :not_found
+
     end
   end
 
@@ -28,6 +29,7 @@ class Api::V1::ProviderCategoriesController < ApplicationController
       render json: ProviderCategorySerializer.format_category(category), status: :created
     else
       render json: { error: category.errors.full_messages.join(', ') }, status: :unprocessable_entity
+
     end
   end
 
@@ -44,6 +46,7 @@ class Api::V1::ProviderCategoriesController < ApplicationController
       render json: ProviderCategorySerializer.format_category(category)
     else
       render json: { error: 'Category not found or could not be updated' }, status: :unprocessable_entity
+
     end
   end
 

@@ -75,6 +75,7 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
     end
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Registration not found' }, status: :not_found
+
   end
 
   private

@@ -28,6 +28,7 @@ class ProviderCategorySerializer
             help_text: field.help_text
           }
         end
+
       }
     }
   end

@@ -7,7 +7,7 @@
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins "autismserviceslocator.com", "localhost:3000", "127.0.0.1:3000"
+    origins "autismserviceslocator.com", "www.autismserviceslocator.com", "localhost:3000", "127.0.0.1:3000"
 
     resource "*",
       headers: :any,

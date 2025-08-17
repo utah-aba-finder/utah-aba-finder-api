@@ -15,3 +15,4 @@ class CreateProviderCategories < ActiveRecord::Migration[7.1]
     add_index :provider_categories, :display_order
   end
 end 
+
