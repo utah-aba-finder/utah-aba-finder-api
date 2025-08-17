@@ -72,6 +72,15 @@ Rails.application.routes.draw do
 
       resources :insurances, only: [:index, :create, :update, :destroy]
       
+      # Provider categories and registration
+      resources :provider_categories, only: [:index, :show, :create, :update]
+      resources :provider_registrations, only: [:index, :show, :create] do
+        member do
+          patch :approve
+          patch :reject
+        end
+      end
+      
       # User management routes (for Super Admin)
       resources :users, only: [:index, :show, :create] do
         collection do

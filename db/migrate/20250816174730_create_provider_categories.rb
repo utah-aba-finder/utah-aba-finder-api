@@ -5,7 +5,7 @@ class CreateProviderCategories < ActiveRecord::Migration[7.1]
       t.string :slug, null: false
       t.text :description
       t.boolean :is_active, default: true, null: false
-      t.integer :display_order, default: 0
+      t.integer :display_order, default: 0, null: false
 
       t.timestamps
     end
@@ -14,4 +14,5 @@ class CreateProviderCategories < ActiveRecord::Migration[7.1]
     add_index :provider_categories, :is_active
     add_index :provider_categories, :display_order
   end
-end
+end 
+

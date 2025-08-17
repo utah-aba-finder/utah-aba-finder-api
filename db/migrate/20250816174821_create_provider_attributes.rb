@@ -9,7 +9,6 @@ class CreateProviderAttributes < ActiveRecord::Migration[7.1]
       t.timestamps
     end
 
-    add_index :provider_attributes, [:provider_id, :category_field_id], unique: true, name: 'index_provider_attributes_unique'
-    add_index :provider_attributes, :value
+    add_index :provider_attributes, [:provider_id, :category_field_id], unique: true
   end
-end
+end 

@@ -1,52 +1,26 @@
 class ProviderRegistration < ApplicationRecord
   belongs_to :reviewed_by, class_name: 'User', optional: true
-  
-  # Ensure JSONB fields are properly typed
-  attribute :submitted_data, :json, default: {}
-  attribute :metadata, :json, default: {}
-  
+
+
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :provider_name, presence: true
   validates :category, presence: true
   validates :status, inclusion: { in: %w[pending approved rejected] }
-  
   scope :pending, -> { where(status: 'pending') }
   scope :approved, -> { where(status: 'approved') }
   scope :rejected, -> { where(status: 'rejected') }
   scope :unprocessed, -> { where(is_processed: false) }
-  scope :recent, -> { order(created_at: :desc) }
-  
+
   before_validation :set_default_status
-  
-  def pending?
-    status == 'pending'
-  end
-  
-  def approved?
-    status == 'approved'
-  end
-  
-  def rejected?
-    status == 'rejected'
-  end
-  
+
   def can_be_approved?
-    pending? && !is_processed
+    status == 'pending' && !is_processed
   end
-  
+
   def can_be_rejected?
-    pending? && !is_processed
+    status == 'pending' && !is_processed
   end
 
-  def provider_created?
-    metadata&.dig('provider_id').present?
-  end
-
-  def provider
-    return nil unless provider_created?
-    Provider.find_by(id: metadata['provider_id'])
-  end
-  
   def approve!(admin_user, notes = nil)
     return false unless can_be_approved?
     
@@ -64,8 +38,8 @@ class ProviderRegistration < ApplicationRecord
     # Send approval email to provider
     ProviderRegistrationMailer.approved(self).deliver_later
   end
-  
-  def reject!(admin_user, reason, notes = nil)
+
+  def reject!(admin_user, reason = nil, notes = nil)
     return false unless can_be_rejected?
     
     update!(
@@ -80,21 +54,20 @@ class ProviderRegistration < ApplicationRecord
     # Send rejection email to provider
     ProviderRegistrationMailer.rejected(self).deliver_later
   end
-  
-  def category_display_name
-    category.titleize
+
+  def provider_created?
+    metadata&.dig('provider_id').present?
   end
-  
-  def submitted_data_summary
-    submitted_data.except('email', 'provider_name', 'category').map do |key, value|
-      "#{key.titleize}: #{value}"
-    end.join(', ')
+
+  def provider
+    return nil unless provider_created?
+    Provider.find_by(id: metadata['provider_id'])
   end
-  
+
   private
-  
+
   def set_default_status
-    self.status = 'pending' if status.blank?
+    self.status ||= 'pending'
   end
 
   def create_provider_from_registration

@@ -1,9 +1,12 @@
 class AdminNotificationMailer < ApplicationMailer
   def new_provider_registration(registration)
     @registration = registration
+    @admin_email = 'registration@autismserviceslocator.com'
+    
     mail(
-      to: "registration@autismserviceslocator.com",
-      subject: "New Provider Registration: #{@registration.provider_name}"
+      to: @admin_email,
+      subject: "New Provider Registration: #{registration.provider_name}"
+
     )
   end
 end 

@@ -1,106 +1,86 @@
 class Api::V1::ProviderRegistrationsController < ApplicationController
   skip_before_action :authenticate_client, only: [:create, :show]
-
-  def create
-    @registration = ProviderRegistration.new(registration_params)
-    
-    if @registration.save
-      # Send confirmation email to provider
-      ProviderRegistrationMailer.received(@registration).deliver_later
-      
-      # Send notification email to admin
-      AdminNotificationMailer.new_provider_registration(@registration).deliver_later
-      
-      render json: {
-        success: true,
-        message: "Registration submitted successfully! We'll review your information and contact you soon.",
-        registration_id: @registration.id
-      }, status: :created
-    else
-      render json: { 
-        success: false,
-        errors: @registration.errors.full_messages 
-      }, status: :unprocessable_entity
+  
+  def index
+    # Super admin only
+    authenticate_user!
+    unless current_user&.role == 'super_admin'
+      render json: { error: 'Unauthorized' }, status: :forbidden
+      return
     end
+
+    registrations = ProviderRegistration.includes(:reviewed_by).order(created_at: :desc)
+    render json: ProviderRegistrationSerializer.format_registrations(registrations)
   end
 
   def show
-    @registration = ProviderRegistration.find(params[:id])
-    render json: ProviderRegistrationSerializer.format_registration(@registration)
+    registration = ProviderRegistration.find(params[:id])
+    render json: ProviderRegistrationSerializer.format_registration(registration)
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Registration not found' }, status: :not_found
   end
 
-  def index
-    # Only super admins can view all registrations
-    unless current_user&.role == 'super_admin'
-      render json: { error: "Unauthorized" }, status: :forbidden
-      return
+  def create
+    registration = ProviderRegistration.new(registration_params)
+    
+    if registration.save
+      # Send notification email to admin
+      AdminNotificationMailer.new_provider_registration(registration).deliver_later
+      
+      # Send confirmation email to provider
+      ProviderRegistrationMailer.received(registration).deliver_later
+      
+      render json: ProviderRegistrationSerializer.format_registration(registration), status: :created
+    else
+      render json: { error: registration.errors.full_messages.join(', ') }, status: :unprocessable_entity
     end
-
-    @registrations = ProviderRegistration.recent
-    
-    # Apply filters
-    @registrations = @registrations.where(status: params[:status]) if params[:status].present?
-    @registrations = @registrations.where(category: params[:category]) if params[:category].present?
-    @registrations = @registrations.where(is_processed: params[:processed]) if params[:processed].present?
-    
-    render json: ProviderRegistrationSerializer.format_registrations(@registrations)
   end
 
   def approve
-    # Only super admins can approve registrations
+    # Super admin only
+    authenticate_user!
     unless current_user&.role == 'super_admin'
-      render json: { error: "Unauthorized" }, status: :forbidden
+      render json: { error: 'Unauthorized' }, status: :forbidden
       return
     end
 
-    @registration = ProviderRegistration.find(params[:id])
+    registration = ProviderRegistration.find(params[:id])
+    notes = params[:admin_notes]
     
-    if @registration.approve!(current_user, params[:admin_notes])
-      render json: {
-        success: true,
-        message: "Registration approved successfully"
-      }
+    if registration.approve!(current_user, notes)
+      render json: { message: 'Registration approved successfully' }
     else
-      render json: { 
-        success: false,
-        error: "Registration cannot be approved" 
-      }, status: :unprocessable_entity
+      render json: { error: 'Registration could not be approved' }, status: :unprocessable_entity
     end
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Registration not found' }, status: :not_found
   end
 
   def reject
-    # Only super admins can reject registrations
+    # Super admin only
+    authenticate_user!
     unless current_user&.role == 'super_admin'
-      render json: { error: "Unauthorized" }, status: :forbidden
+      render json: { error: 'Unauthorized' }, status: :forbidden
       return
     end
 
-    @registration = ProviderRegistration.find(params[:id])
+    registration = ProviderRegistration.find(params[:id])
+    reason = params[:rejection_reason]
+    notes = params[:admin_notes]
     
-    if params[:rejection_reason].blank?
-      render json: { 
-        success: false,
-        error: "Rejection reason is required" 
-      }, status: :bad_request
-      return
-    end
-    
-    if @registration.reject!(current_user, params[:rejection_reason], params[:admin_notes])
-      render json: {
-        success: true,
-        message: "Registration rejected successfully"
-      }
+    if registration.reject!(current_user, reason, notes)
+      render json: { message: 'Registration rejected successfully' }
     else
-      render json: { 
-        success: false,
-        error: "Registration cannot be rejected" 
-      }, status: :unprocessable_entity
+      render json: { error: 'Registration could not be rejected' }, status: :unprocessable_entity
     end
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Registration not found' }, status: :not_found
+
   end
 
   private
 
   def registration_params
-    params.require(:provider_registration).permit(:email, :provider_name, :category, submitted_data: {})
+    params.permit(:email, :provider_name, :category, submitted_data: {})
   end
 end 

@@ -9,6 +9,8 @@ class Provider < ApplicationRecord
   has_many :insurances, through: :provider_insurances
   has_many :provider_practice_types, dependent: :destroy
   has_many :practice_types, through: :provider_practice_types
+  has_many :provider_attributes, dependent: :destroy
+  belongs_to :provider_category, optional: true, foreign_key: 'category', primary_key: 'slug'
   
   # New multi-provider type relationships
   has_many :provider_attributes, dependent: :destroy
@@ -85,6 +87,39 @@ class Provider < ApplicationRecord
 
   def category_display_name
     provider_category&.name || category.titleize
+  end
+
+  def category_fields
+    provider_category&.category_fields&.active&.ordered || []
+  end
+
+  def get_attribute_value(field_name)
+    provider_attributes.joins(:category_field)
+                      .find_by(category_fields: { name: field_name })&.value
+  end
+
+  def set_attribute_value(field_name, value)
+    field = category_fields.find_by(name: field_name)
+    return false unless field
+
+    attribute = provider_attributes.find_or_initialize_by(category_field: field)
+    attribute.value = value
+    attribute.save
+  end
+
+  def has_attribute?(field_name)
+    provider_attributes.joins(:category_field)
+                      .where(category_fields: { name: field_name })
+                      .exists?
+  end
+
+  def required_attributes_complete?
+    required_fields = category_fields.where(required: true)
+    required_fields.all? { |field| has_attribute?(field.name) }
+  end
+
+  def category_display_name
+    provider_category&.name || 'Unknown Category'
   end
 
   #should refactor into smaller methods

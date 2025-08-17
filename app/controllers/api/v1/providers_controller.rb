@@ -1,4 +1,6 @@
 class Api::V1::ProvidersController < ApplicationController
+  skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo]
+
   before_action :authenticate_provider_or_client, only: [:show, :update, :put, :remove_logo]
   before_action :authenticate_user!, only: [:accessible_providers, :set_active_provider]
   

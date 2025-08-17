@@ -15,29 +15,40 @@ class ProviderRegistrationSerializer
         email: registration.email,
         provider_name: registration.provider_name,
         category: registration.category,
-        category_display_name: registration.category_display_name,
         status: registration.status,
         submitted_data: registration.submitted_data,
-        submitted_data_summary: registration.submitted_data_summary,
+        submitted_data_summary: format_submitted_data_summary(registration.submitted_data),
         admin_notes: registration.admin_notes,
+        reviewed_at: registration.reviewed_at,
         rejection_reason: registration.rejection_reason,
         is_processed: registration.is_processed,
         created_at: registration.created_at,
-        updated_at: registration.updated_at,
-        reviewed_at: registration.reviewed_at
+        updated_at: registration.updated_at
       },
       relationships: {
         reviewed_by: registration.reviewed_by ? {
-          data: {
-            id: registration.reviewed_by.id,
-            type: "user",
-            attributes: {
-              email: registration.reviewed_by.email,
-              role: registration.reviewed_by.role
-            }
-          }
+          id: registration.reviewed_by.id,
+          email: registration.reviewed_by.email
         } : nil
       }
     }
+  end
+
+  private
+
+  def self.format_submitted_data_summary(submitted_data)
+    return {} unless submitted_data.is_a?(Hash)
+    
+    summary = {}
+    submitted_data.each do |key, value|
+      if value.is_a?(Array)
+        summary[key] = value.join(', ')
+      elsif value.is_a?(String) && value.length > 100
+        summary[key] = value[0..97] + '...'
+      else
+        summary[key] = value
+      end
+    end
+    summary
   end
 end 

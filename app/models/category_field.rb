@@ -1,37 +1,39 @@
 class CategoryField < ApplicationRecord
   belongs_to :provider_category
   has_many :provider_attributes, dependent: :destroy
-  
+
   validates :name, presence: true
-  validates :field_type, presence: true, inclusion: { in: %w[text textarea select checkbox radio boolean] }
+  validates :field_type, presence: true, inclusion: { in: %w[text select multi_select boolean textarea] }
   validates :display_order, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
-  
+
   scope :active, -> { where(is_active: true) }
   scope :ordered, -> { order(:display_order, :name) }
-  scope :required, -> { where(required: true) }
-  scope :optional, -> { where(required: false) }
-  
-  def text_field?
-    %w[text textarea].include?(field_type)
+
+  def text?
+    field_type == 'text'
   end
-  
-  def select_field?
-    %w[select checkbox radio].include?(field_type)
+
+  def select?
+    field_type == 'select'
   end
-  
-  def boolean_field?
+
+  def multi_select?
+    field_type == 'multi_select'
+  end
+
+  def boolean?
     field_type == 'boolean'
   end
-  
-  def has_options?
-    select_field? && options['choices'].present?
+
+  def textarea?
+    field_type == 'textarea'
   end
-  
-  def choice_options
-    options['choices'] || []
+
+  def choices
+    options&.dig('choices') || []
   end
-  
-  def help_text_or_default
-    help_text.presence || "Enter #{name.downcase}"
+
+  def to_s
+    name
   end
 end 
