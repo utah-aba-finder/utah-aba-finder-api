@@ -6,6 +6,9 @@ Rails.application.routes.draw do
   # Simple password reset endpoint (alternative to API namespace)
   post '/password_reset', to: 'auth#password_reset'
   
+  # Password change endpoint (requires authentication)
+  post '/change_password', to: 'auth#change_password'
+  
   # Devise routes (moved to bottom to avoid conflicts)
   devise_for :users, controllers: {
     sessions: 'users/sessions',

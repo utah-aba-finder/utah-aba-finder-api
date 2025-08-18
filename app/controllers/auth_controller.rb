@@ -75,6 +75,23 @@ class AuthController < ActionController::API
     end
   end
 
+  def change_password
+    # Require authentication for password changes
+    authenticate_user!
+    
+    user = current_user
+    
+    if user.valid_password?(params[:current_password])
+      if user.update(password: params[:new_password], password_confirmation: params[:new_password_confirmation])
+        render json: { message: 'Password changed successfully' }
+      else
+        render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
+      end
+    else
+      render json: { error: 'Current password is incorrect' }, status: :unauthorized
+    end
+  end
+
   private
 
   def user_params

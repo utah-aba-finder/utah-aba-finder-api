@@ -1,3 +1,5 @@
+require 'securerandom'
+
 class ProviderRegistration < ApplicationRecord
   belongs_to :reviewed_by, class_name: 'User', optional: true
 
@@ -74,8 +76,11 @@ class ProviderRegistration < ApplicationRecord
       # Reload the record to reflect changes
       reload
       
-      # Send approval email
-      ProviderRegistrationMailer.approved(self).deliver_now
+      # Create secure user account for the provider
+      user = create_provider_user_account(provider)
+      
+      # Send approval email with login credentials
+      ProviderRegistrationMailer.approved_with_credentials(self, user).deliver_now
       
       true
     rescue => e
@@ -149,6 +154,29 @@ class ProviderRegistration < ApplicationRecord
 
   def set_default_status
     self.status ||= 'pending'
+  end
+
+  def create_provider_user_account(provider)
+    # Generate a secure random password
+    password = SecureRandom.alphanumeric(12)
+    
+    # Create user account linked to the provider
+    user = User.new(
+      email: email,
+      password: password,
+      password_confirmation: password,
+      provider_id: provider.id,
+      role: 'user'  # Regular provider user, not admin
+    )
+    
+    if user.save
+      # Store the password temporarily for email (it will be hashed)
+      user.instance_variable_set(:@plain_password, password)
+      user
+    else
+      Rails.logger.error "Failed to create user account: #{user.errors.full_messages}"
+      nil
+    end
   end
 
   def create_provider_from_registration
