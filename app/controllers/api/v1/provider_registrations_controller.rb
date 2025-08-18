@@ -113,12 +113,12 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
 
   def format_validation_errors(errors)
     {
-      errors: errors.map do |field, messages|
+      errors: errors.full_messages.map do |message|
         {
           source: { 
-            pointer: "/data/attributes/#{field}" 
+            pointer: "/data/attributes" 
           },
-          detail: messages.is_a?(Array) ? messages.join(', ') : messages
+          detail: message
         }
       end
     }
