@@ -11,8 +11,17 @@ class ProviderRegistration < ApplicationRecord
   scope :rejected, -> { where(status: 'rejected') }
   scope :unprocessed, -> { where(is_processed: false) }
 
+  # Normalize then derive category
+  before_validation :normalize_service_types
+  before_validation :set_category_from_service_types, if: -> { category.blank? }
   before_validation :set_default_status
-  before_validation :set_category_from_service_types
+  
+  # Debug logging
+  after_validation do
+    Rails.logger.info(
+      "[ProviderRegistration Debug] service_types=#{service_types.inspect} category=#{category.inspect} valid?=#{errors.empty?}"
+    )
+  end
 
   # Add support for multiple service types
   attribute :service_types, :string, array: true, default: []
@@ -99,13 +108,40 @@ class ProviderRegistration < ApplicationRecord
 
   private
 
-  def set_default_status
-    self.status ||= 'pending'
+  def normalize_service_types
+    # Ensure array
+    case service_types
+    when nil
+      self.service_types = []
+    when String
+      self.service_types = [service_types]
+    else
+      self.service_types = service_types.to_a
+    end
+
+    # Downcase/slugify, remove blanks/dupes
+    self.service_types = service_types
+      .map { |s| s.to_s.strip }
+      .reject(&:blank?)
+      .map { |s| s.parameterize.underscore }
+      .uniq
   end
 
   def set_category_from_service_types
-    return unless service_types.present?
-    self.category = service_types.first
+    # If you have a ProviderCategory model with slugs, prefer the first valid one
+    valid_slugs = ProviderCategory.active.pluck(:slug) rescue []
+    chosen =
+      if valid_slugs.present?
+        service_types.find { |st| valid_slugs.include?(st) } || service_types.first
+      else
+        service_types.first
+      end
+
+    self.category = chosen if chosen.present?
+  end
+
+  def set_default_status
+    self.status ||= 'pending'
   end
 
   def create_provider_from_registration

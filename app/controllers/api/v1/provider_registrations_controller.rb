@@ -1,5 +1,9 @@
 class Api::V1::ProviderRegistrationsController < ApplicationController
+  # This endpoint should be public
   skip_before_action :authenticate_client, only: [:create, :show]
+
+  # Ensure JSON keys are underscored
+  before_action :underscore_params!
   
   def index
     # Super admin only
@@ -33,15 +37,13 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
       end
     end
 
-    registration = ProviderRegistration.new(registration_params)
+    registration = ProviderRegistration.new(reg_params)
+    
+    # Debug logging
+    Rails.logger.info "[Controller Debug] reg_params=#{reg_params.to_h}"
     
     # Set idempotency key if provided
     registration.idempotency_key = idempotency_key if idempotency_key.present?
-    
-    # Set category from first service_type if not provided
-    if registration.category.blank? && registration.service_types.present?
-      registration.category = registration.service_types.first
-    end
     
     if registration.save
       # Send notification email to admin
@@ -54,7 +56,7 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
              status: :created,
              headers: { 'Location' => "/api/v1/provider_registrations/#{registration.id}" }
     else
-      render json: format_validation_errors(registration.errors), status: :unprocessable_entity
+      render json: format_errors(registration), status: :unprocessable_entity
     end
   end
 
@@ -101,25 +103,28 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
 
   private
 
-  def registration_params
+  # Allow array for service_types and arbitrary nested JSON for submitted_data
+  def reg_params
     params.require(:provider_registration).permit(
-      :email, 
-      :provider_name, 
-      :category, 
-      :service_types, 
-      submitted_data: {}
+      :email,
+      :provider_name,
+      :category,               # optional; callback fills if blank
+      service_types: [],       # <-- THIS is the key fix
+      submitted_data: {}       # <-- allow nested shape
+      # If you intend to accept base64 logo right now, also permit :logo_data and decode in model/service
+      # :logo_data
     )
   end
 
-  def format_validation_errors(errors)
+  # Make sure camelCase → snake_case (in case the frontend sends camel)
+  def underscore_params!
+    params.deep_transform_keys!(&:underscore)
+  end
+
+  def format_errors(record)
     {
-      errors: errors.full_messages.map do |message|
-        {
-          source: { 
-            pointer: "/data/attributes" 
-          },
-          detail: message
-        }
+      errors: record.errors.map do |e|
+        { source: { pointer: "/data/attributes/#{e.attribute}" }, detail: e.message }
       end
     }
   end
