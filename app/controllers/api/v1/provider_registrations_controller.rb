@@ -38,6 +38,11 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
     # Set idempotency key if provided
     registration.idempotency_key = idempotency_key if idempotency_key.present?
     
+    # Set category from first service_type if not provided
+    if registration.category.blank? && registration.service_types.present?
+      registration.category = registration.service_types.first
+    end
+    
     if registration.save
       # Send notification email to admin
       AdminNotificationMailer.new_provider_registration(registration).deliver_later
