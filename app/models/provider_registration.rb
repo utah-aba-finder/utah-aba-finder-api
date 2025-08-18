@@ -63,13 +63,16 @@ class ProviderRegistration < ApplicationRecord
       # Create default location if needed
       create_default_location(provider)
       
-      # Update registration status
-      update!(
+      # Update registration status - skip validations during status changes
+      update_columns(
         status: 'approved',
         reviewed_at: Time.current,
-        reviewed_by: User.current,
+        reviewed_by_id: User.current&.id,
         is_processed: true
       )
+      
+      # Reload the record to reflect changes
+      reload
       
       # Send approval email
       ProviderRegistrationMailer.approved(self).deliver_now
@@ -84,14 +87,18 @@ class ProviderRegistration < ApplicationRecord
   def reject!(admin_user, reason = nil, notes = nil)
     return false unless can_be_rejected?
     
-    update!(
+    # Skip validations during status changes to avoid issues with old data
+    update_columns(
       status: 'rejected',
-      reviewed_by: admin_user,
+      reviewed_by_id: admin_user.id,
       reviewed_at: Time.current,
       rejection_reason: reason,
       admin_notes: notes,
       is_processed: true
     )
+    
+    # Reload the record to reflect changes
+    reload
     
     # Send rejection email to provider
     ProviderRegistrationMailer.rejected(self).deliver_later
