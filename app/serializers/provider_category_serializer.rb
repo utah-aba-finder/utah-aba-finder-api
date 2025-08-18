@@ -32,4 +32,4 @@ class ProviderCategorySerializer
       end
     }
   end
-end 
+end
