@@ -174,6 +174,7 @@ class ProviderRegistration < ApplicationRecord
       email: email,
       category: category,
       status: :approved,
+      in_home_only: true,  # Set to true to avoid location requirement
       # Set default values for required fields
       website: submitted_data['website'] || '',
       phone: submitted_data['contact_phone'] || '',
