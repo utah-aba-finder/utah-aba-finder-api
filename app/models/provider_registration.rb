@@ -12,6 +12,7 @@ class ProviderRegistration < ApplicationRecord
   scope :unprocessed, -> { where(is_processed: false) }
 
   before_validation :set_default_status
+  before_validation :set_category_from_service_types
 
   # Add support for multiple service types
   attribute :service_types, :string, array: true, default: []
@@ -100,6 +101,11 @@ class ProviderRegistration < ApplicationRecord
 
   def set_default_status
     self.status ||= 'pending'
+  end
+
+  def set_category_from_service_types
+    return unless service_types.present?
+    self.category = service_types.first
   end
 
   def create_provider_from_registration
