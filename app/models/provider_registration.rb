@@ -46,11 +46,20 @@ class ProviderRegistration < ApplicationRecord
     return false unless can_be_approved?
     
     begin
+      Rails.logger.info "Starting approval process for registration #{id}"
+      
       # Create the provider (simplified)
+      Rails.logger.info "Creating provider..."
       provider = create_provider_from_registration
-      return false unless provider
+      if provider
+        Rails.logger.info "Provider created successfully: #{provider.id}"
+      else
+        Rails.logger.error "Provider creation failed"
+        return false
+      end
       
       # Update registration status - skip validations during status changes
+      Rails.logger.info "Updating registration status..."
       update_columns(
         status: 'approved',
         reviewed_at: Time.current,
@@ -61,17 +70,27 @@ class ProviderRegistration < ApplicationRecord
       
       # Reload the record to reflect changes
       reload
+      Rails.logger.info "Registration status updated to approved"
       
       # Create secure user account for the provider
+      Rails.logger.info "Creating user account..."
       user = create_provider_user_account(provider)
-      return false unless user
+      if user
+        Rails.logger.info "User account created successfully: #{user.id}"
+      else
+        Rails.logger.error "User account creation failed"
+        return false
+      end
       
       # Send approval email with login credentials
+      Rails.logger.info "Sending approval email..."
       ProviderRegistrationMailer.approved_with_credentials(self, user).deliver_now
+      Rails.logger.info "Approval email sent successfully"
       
       true
     rescue => e
       Rails.logger.error "Approval failed: #{e.message}"
+      Rails.logger.error "Backtrace: #{e.backtrace.first(5).join(', ')}"
       errors.add(:base, "Failed to approve registration: #{e.message}")
       false
     end
