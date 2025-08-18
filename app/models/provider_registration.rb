@@ -42,7 +42,7 @@ class ProviderRegistration < ApplicationRecord
     status == 'pending' && !is_processed
   end
 
-  def approve!
+  def approve!(admin_user, notes = nil)
     return false unless can_be_approved?
     
     transaction do
@@ -69,7 +69,8 @@ class ProviderRegistration < ApplicationRecord
       update_columns(
         status: 'approved',
         reviewed_at: Time.current,
-        reviewed_by_id: User.current&.id,
+        reviewed_by_id: admin_user.id,
+        admin_notes: notes,
         is_processed: true
       )
       
