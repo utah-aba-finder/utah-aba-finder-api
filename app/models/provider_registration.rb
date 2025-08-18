@@ -45,25 +45,10 @@ class ProviderRegistration < ApplicationRecord
   def approve!(admin_user, notes = nil)
     return false unless can_be_approved?
     
-    transaction do
-      # Create the provider
+    begin
+      # Create the provider (simplified)
       provider = create_provider_from_registration
-      
-      # Add all service types
-      service_types.each_with_index do |service_type_slug, index|
-        category = ProviderCategory.find_by(slug: service_type_slug)
-        next unless category
-        
-        # First service type becomes primary
-        is_primary = (index == 0)
-        provider.add_service_type(category, is_primary: is_primary)
-      end
-      
-      # Create provider attributes for each service type
-      create_provider_attributes(provider)
-      
-      # Create default location if needed
-      create_default_location(provider)
+      return false unless provider
       
       # Update registration status - skip validations during status changes
       update_columns(
@@ -79,12 +64,14 @@ class ProviderRegistration < ApplicationRecord
       
       # Create secure user account for the provider
       user = create_provider_user_account(provider)
+      return false unless user
       
       # Send approval email with login credentials
       ProviderRegistrationMailer.approved_with_credentials(self, user).deliver_now
       
       true
     rescue => e
+      Rails.logger.error "Approval failed: #{e.message}"
       errors.add(:base, "Failed to approve registration: #{e.message}")
       false
     end
@@ -181,14 +168,12 @@ class ProviderRegistration < ApplicationRecord
   end
 
   def create_provider_from_registration
-    # Map submitted data to provider attributes
+    # Map submitted data to provider attributes (simplified)
     provider_attributes = {
       name: provider_name,
       email: email,
       category: category,
       status: :approved,
-      in_home_only: determine_in_home_only,
-      service_delivery: determine_service_delivery,
       # Set default values for required fields
       website: submitted_data['website'] || '',
       phone: submitted_data['contact_phone'] || '',
@@ -203,21 +188,11 @@ class ProviderRegistration < ApplicationRecord
     
     if provider.save
       # Store the provider ID in metadata for reference
-      update!(metadata: metadata.merge(provider_id: provider.id))
-      
-      # Create provider attributes from submitted data
-      create_provider_attributes(provider)
-      
-      # Create a basic location if service delivery includes in-clinic
-      if service_delivery_includes_clinic?
-        create_default_location(provider)
-      end
-      
-      puts "✅ Created provider: #{provider.name} (ID: #{provider.id})"
+      update_columns(metadata: metadata.merge(provider_id: provider.id))
+      provider
     else
-      puts "❌ Failed to create provider: #{provider.errors.full_messages}"
-      # Store error in metadata for admin review
-      update!(metadata: metadata.merge(provider_creation_error: provider.errors.full_messages))
+      Rails.logger.error "Failed to create provider: #{provider.errors.full_messages}"
+      nil
     end
   end
 
