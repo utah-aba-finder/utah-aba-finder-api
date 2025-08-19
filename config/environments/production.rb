@@ -55,17 +55,16 @@ Rails.application.configure do
   # Active Storage URL configuration
   config.active_storage.default_url_options = { host: ENV.fetch('HOST', 'autismserviceslocator.com') }
   
-  # Email configuration for Office 365
+  # Email configuration for Gmail
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
-    address:              'smtp.office365.com',
+    address:              'smtp.gmail.com',
     port:                 587,
-    domain:               'outlook.com',
-    user_name:            ENV['OUTLOOK_USERNAME'] || 'noreply@autismserviceslocator.com',
-    password:             ENV['OUTLOOK_PASSWORD'],
-    authentication:       'login',
-    enable_starttls_auto: true,
-    openssl_verify_mode:  'none'
+    domain:               'gmail.com',
+    user_name:            ENV['GMAIL_USERNAME'] || 'autismserviceslocator24@gmail.com',
+    password:             ENV['GMAIL_APP_PASSWORD'],
+    authentication:       'plain',
+    enable_starttls_auto: true
   }
 
   # Prepend all log lines with the following tags.
