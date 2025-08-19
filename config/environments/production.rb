@@ -29,8 +29,8 @@ Rails.application.configure do
   # config.action_dispatch.x_sendfile_header = "X-Sendfile" # for Apache
   # config.action_dispatch.x_sendfile_header = "X-Accel-Redirect" # for NGINX
 
-  # Store uploaded files on Amazon S3 for persistent storage (no ACLs)
-  config.active_storage.service = :amazon_no_acl
+  # Store uploaded files on Amazon S3 for persistent storage
+  config.active_storage.service = :amazon
   
   # Use rails storage proxy for better URL handling
   config.active_storage.resolve_model_to_route = :rails_storage_proxy
