@@ -29,10 +29,10 @@ Rails.application.configure do
   # config.action_dispatch.x_sendfile_header = "X-Sendfile" # for Apache
   # config.action_dispatch.x_sendfile_header = "X-Accel-Redirect" # for NGINX
 
-  # Store uploaded files on Amazon S3 for persistent storage
-  config.active_storage.service = :amazon
+  # Store uploaded files on Amazon S3 for persistent storage (no ACLs)
+  config.active_storage.service = :amazon_no_acl
   
-  # Disable ACLs for S3 storage
+  # Use rails storage proxy for better URL handling
   config.active_storage.resolve_model_to_route = :rails_storage_proxy
 
   # Mount Action Cable outside main process or domain.
@@ -62,16 +62,7 @@ Rails.application.configure do
   config.after_initialize do
     ActiveStorage::Current.url_options = { host: ENV.fetch('HOST', 'autismserviceslocator.com'), protocol: 'https' }
     
-    # Disable ACLs for S3 storage
-    if Rails.application.config.active_storage.service == :amazon
-      # Configure S3 client to not use ACLs
-      Aws.config.update({
-        s3: {
-          force_path_style: false,
-          region: ENV.fetch('AWS_REGION', 'us-east-1')
-        }
-      })
-    end
+
   end
   
   # Email configuration for Gmail
