@@ -60,7 +60,7 @@ Rails.application.configure do
   config.action_mailer.smtp_settings = {
     address:              'smtp.office365.com',
     port:                 587,
-    domain:               'autismserviceslocator.com',
+    domain:               'outlook.com',
     user_name:            ENV['OUTLOOK_USERNAME'] || 'noreply@autismserviceslocator.com',
     password:             ENV['OUTLOOK_PASSWORD'],
     authentication:       'login',
