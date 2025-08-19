@@ -92,6 +92,7 @@ Rails.application.routes.draw do
       resources :users, only: [:index, :show, :create] do
         collection do
           get :users_with_providers
+          get :providers_list
           post :bulk_assign_users
         end
         
