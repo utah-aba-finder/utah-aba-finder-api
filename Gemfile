@@ -67,3 +67,6 @@ end
 
 
 gem "devise", "~> 4.9"
+
+# AWS SDK for S3 storage
+gem "aws-sdk-s3", require: false
