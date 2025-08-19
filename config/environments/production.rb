@@ -53,16 +53,16 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: 'autismserviceslocator.com' }
   
   # Active Storage URL configuration
-  config.active_storage.default_url_options = { host: ENV.fetch('HOST', 'utah-aba-finder-api-c9d143f02ce8.herokuapp.com') }
+  config.active_storage.default_url_options = { host: ENV.fetch('HOST', 'autismserviceslocator.com') }
   
-  # Email configuration
+  # Email configuration for Outlook
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
-    address:              'smtp.gmail.com',
+    address:              'smtp-mail.outlook.com',
     port:                 587,
-    domain:               'utah-aba-finder-api-c9d143f02ce8.herokuapp.com',
-    user_name:            ENV['GMAIL_USERNAME'],
-    password:             ENV['GMAIL_APP_PASSWORD'],
+    domain:               'autismserviceslocator.com',
+    user_name:            ENV['OUTLOOK_USERNAME'] || 'registration@autismserviceslocator.com',
+    password:             ENV['OUTLOOK_PASSWORD'],
     authentication:       'plain',
     enable_starttls_auto: true
   }
