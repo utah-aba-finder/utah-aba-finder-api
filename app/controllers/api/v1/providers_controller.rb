@@ -99,7 +99,8 @@ class Api::V1::ProvidersController < ApplicationController
       
       if provider.save
         provider.touch
-        Rails.logger.info "Provider saved successfully. Logo URL: #{provider.logo_url}"
+        logo_info = provider.logo.attached? ? "Logo attached: #{provider.logo.filename}" : "No logo attached"
+        Rails.logger.info "Provider saved successfully. #{logo_info}"
         render json: ProviderSerializer.format_providers([provider])
       else
         Rails.logger.error "Provider save failed: #{provider.errors.full_messages}"
