@@ -55,6 +55,11 @@ Rails.application.configure do
   # Active Storage URL configuration
   config.active_storage.default_url_options = { host: ENV.fetch('HOST', 'autismserviceslocator.com') }
   
+  # Set ActiveStorage::Current.url_options for Disk service
+  config.after_initialize do
+    ActiveStorage::Current.url_options = { host: ENV.fetch('HOST', 'autismserviceslocator.com'), protocol: 'https' }
+  end
+  
   # Email configuration for Gmail
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
