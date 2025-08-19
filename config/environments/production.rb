@@ -55,13 +55,13 @@ Rails.application.configure do
   # Active Storage URL configuration
   config.active_storage.default_url_options = { host: ENV.fetch('HOST', 'autismserviceslocator.com') }
   
-  # Email configuration for Outlook
+  # Email configuration for Office 365
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
-    address:              'smtp-mail.outlook.com',
+    address:              'smtp.office365.com',
     port:                 587,
     domain:               'autismserviceslocator.com',
-    user_name:            ENV['OUTLOOK_USERNAME'] || 'registration@autismserviceslocator.com',
+    user_name:            ENV['OUTLOOK_USERNAME'] || 'noreply@autismserviceslocator.com',
     password:             ENV['OUTLOOK_PASSWORD'],
     authentication:       'plain',
     enable_starttls_auto: true
