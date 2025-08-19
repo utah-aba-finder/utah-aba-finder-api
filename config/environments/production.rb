@@ -63,8 +63,9 @@ Rails.application.configure do
     domain:               'autismserviceslocator.com',
     user_name:            ENV['OUTLOOK_USERNAME'] || 'noreply@autismserviceslocator.com',
     password:             ENV['OUTLOOK_PASSWORD'],
-    authentication:       'plain',
-    enable_starttls_auto: true
+    authentication:       'login',
+    enable_starttls_auto: true,
+    openssl_verify_mode:  'none'
   }
 
   # Prepend all log lines with the following tags.
