@@ -31,6 +31,9 @@ Rails.application.configure do
 
   # Store uploaded files on Amazon S3 for persistent storage
   config.active_storage.service = :amazon
+  
+  # Disable ACLs for S3 storage
+  config.active_storage.resolve_model_to_route = :rails_storage_proxy
 
   # Mount Action Cable outside main process or domain.
   # config.action_cable.mount_path = nil
@@ -58,6 +61,17 @@ Rails.application.configure do
   # Set ActiveStorage::Current.url_options for Disk service
   config.after_initialize do
     ActiveStorage::Current.url_options = { host: ENV.fetch('HOST', 'autismserviceslocator.com'), protocol: 'https' }
+    
+    # Disable ACLs for S3 storage
+    if Rails.application.config.active_storage.service == :amazon
+      # Configure S3 client to not use ACLs
+      Aws.config.update({
+        s3: {
+          force_path_style: false,
+          region: ENV.fetch('AWS_REGION', 'us-east-1')
+        }
+      })
+    end
   end
   
   # Email configuration for Gmail
