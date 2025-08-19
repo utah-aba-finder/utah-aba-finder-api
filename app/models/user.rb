@@ -46,6 +46,10 @@ class User < ApplicationRecord
 
   # Method to check if user can access a specific provider
   def can_access_provider?(provider_id)
+    # Super admins can access any provider
+    return true if role == 'super_admin' || role.to_s == '0'
+    
+    # Regular users can only access providers they manage
     all_managed_providers.where(id: provider_id.to_i).exists?
   end
   
