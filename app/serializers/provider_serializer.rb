@@ -75,9 +75,11 @@ class ProviderSerializer
   def self.logo_url_for(provider)
     # Handle both Active Storage attachments and string URLs
     if provider.logo.respond_to?(:attached?) && provider.logo.attached?
-      Rails.application.routes.url_helpers.rails_blob_url(
-        provider.logo,
-        **Rails.application.config.active_storage.default_url_options.symbolize_keys
+      # Direct presigned S3 URL (no Rails hop, no ACLs)
+      provider.logo.service_url(
+        expires_in: 1.hour,
+        disposition: "inline",
+        filename: provider.logo.filename.to_s
       )
     elsif provider.logo.is_a?(String) && provider.logo.present?
       # In test environment, return nil for string logos to match test expectations
