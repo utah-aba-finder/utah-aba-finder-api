@@ -14,8 +14,6 @@ amazon:
   region: <%= ENV.fetch('AWS_REGION', 'us-east-1') %>
   bucket: asl-logos
   public: true
-  url_options:
-    virtual_host: true
 
 # Remember not to checkin your GCS keyfile to a repository
 # google:
