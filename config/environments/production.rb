@@ -32,8 +32,8 @@ Rails.application.configure do
   # Store uploaded files on Amazon S3 for persistent storage
   config.active_storage.service = :amazon
   
-  # Use rails storage proxy for better URL handling
-  config.active_storage.resolve_model_to_route = :rails_storage_proxy
+  # Use presigned URLs (no ACLs required, works with private buckets)
+config.active_storage.resolve_model_to_route = :rails_storage_redirect
 
   # Mount Action Cable outside main process or domain.
   # config.action_cable.mount_path = nil
