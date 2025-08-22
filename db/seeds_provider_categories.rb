@@ -100,16 +100,16 @@ categories = [
     description: "General and specialized dental care",
     display_order: 8,
     fields: [
-      { name: "Specialties", field_type: "multi_select", required: true, options: { choices: ["General Dentistry", "Pediatric Dentistry", "Special Needs Dentistry", "Sedation Dentistry", "Emergency Care", "Preventive Care", "Restorative Dentistry", "Cosmetic Dentistry", "Endodontics", "Periodontics"] } },
-      { name: "Certifications", field_type: "multi_select", required: true, options: { choices: ["DDS", "DMD", "Board Certified", "Pediatric Specialist", "Special Needs Certified", "Sedation Certified", "Fellowship Trained"] } },
+      { name: "Services", field_type: "multi_select", required: true, options: { choices: ["General Dentistry", "Pediatric Dentistry", "Special Needs Dentistry", "Preventive Care", "Restorative", "Orthodontics", "Endodontics", "Periodontics", "Oral Surgery", "Emergency Care"] } },
+      { name: "Credentials", field_type: "multi_select", required: true, options: { choices: ["DDS", "DMD", "Licensed Dentist", "Pediatric Specialist", "Special Needs Experience", "Board Certified", "Fellowship Trained"] } },
       { name: "Age Groups", field_type: "multi_select", required: true, options: { choices: ["0-3", "3-5", "5-12", "12-18", "18+", "All Ages"] } },
-      { name: "Insurance Accepted", field_type: "multi_select", required: false, options: { choices: ["Dental Insurance", "Medicaid", "Private Insurance", "Self-Pay", "Payment Plans", "Medicare", "Tricare", "CHIP"] } },
-      { name: "Special Needs Accommodations", field_type: "boolean", required: false, help_text: "Special accommodations for special needs patients" }
+      { name: "Insurance Accepted", field_type: "multi_select", required: false, options: { choices: ["Dental Insurance", "Medical Insurance", "Self-Pay", "Payment Plans", "Medicaid", "Medicare", "Tricare", "CHIP"] } },
+      { name: "Sedation Available", field_type: "boolean", required: false, help_text: "Sedation options for anxious patients" }
     ]
   },
   {
-    name: "Physical Therapists",
-    slug: "physical_therapists",
+    name: "Physical Therapy",
+    slug: "physical_therapy",
     description: "Physical therapy and rehabilitation services",
     display_order: 9,
     fields: [
@@ -179,6 +179,9 @@ categories.each do |category_data|
   
   # Create fields for this category
   fields_data.each_with_index do |field_data, index|
+    # Generate slug for the field
+    field_slug = field_data[:name].downcase.gsub(/[^a-z0-9]+/, '_').gsub(/^_|_$/, '')
+    
     # Extract options from the nested structure
     options_data = field_data[:options]
     field_options = options_data[:choices] if options_data && options_data[:choices]
@@ -189,7 +192,8 @@ categories.each do |category_data|
         required: field_data[:required],
         options: field_options,
         display_order: index + 1,
-        help_text: field_data[:help_text]
+        help_text: field_data[:help_text],
+        slug: field_slug
       )
     end
     
@@ -200,7 +204,8 @@ categories.each do |category_data|
         required: field_data[:required],
         options: field_options,
         display_order: index + 1,
-        help_text: field_data[:help_text]
+        help_text: field_data[:help_text],
+        slug: field_slug
       )
     end
     

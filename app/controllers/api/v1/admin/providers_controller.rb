@@ -6,7 +6,21 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
 
   def update
     provider = Provider.find(params[:id])
+    
+    # Handle practice types separately if provided
+    practice_type_params = nil
+    if params[:data]&.first&.dig(:attributes, :provider_type)&.present?
+      practice_type_params = params[:data].first[:attributes][:provider_type]
+    elsif params[:provider_type].present?
+      practice_type_params = params[:provider_type]
+    end
+    
     if provider.update(admin_provider_params)
+      # Update practice types if provided
+      if practice_type_params.present?
+        provider.update_practice_types(practice_type_params)
+      end
+      
       provider.touch # Ensure updated_at is updated
       render json: ProviderSerializer.format_providers([provider])
     else
@@ -32,7 +46,6 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :at_home_services,
         :in_clinic_services,
         :status,
-        :provider_type,
         :in_home_only,
         logo: [],
         service_delivery: {}
@@ -52,7 +65,6 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :at_home_services,
         :in_clinic_services,
         :status,
-        :provider_type,
         :in_home_only,
         logo: [],
         service_delivery: {}
