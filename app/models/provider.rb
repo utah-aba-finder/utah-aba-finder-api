@@ -294,11 +294,29 @@ class Provider < ApplicationRecord
     return if practice_type_params.blank?
 
     practice_type_params.each do |type_info|
-      practice_type = PracticeType.find(type_info[:id])
-      ProviderPracticeType.create!(
-        provider: self,
-        practice_type: practice_type
-      )
+      # Handle both name-based and id-based input for backward compatibility
+      if type_info[:name].present?
+        practice_type = PracticeType.find_by(name: type_info[:name])
+        if practice_type
+          ProviderPracticeType.create!(
+            provider: self,
+            practice_type: practice_type
+          )
+        else
+          Rails.logger.warn "Practice type not found by name: #{type_info[:name]}"
+        end
+      elsif type_info[:id].present?
+        # Fallback to ID lookup for backward compatibility
+        practice_type = PracticeType.find_by(id: type_info[:id])
+        if practice_type
+          ProviderPracticeType.create!(
+            provider: self,
+            practice_type: practice_type
+          )
+        else
+          Rails.logger.warn "Practice type not found by ID: #{type_info[:id]}"
+        end
+      end
     end
   end
 
@@ -308,10 +326,25 @@ class Provider < ApplicationRecord
     # Clear existing practice types
     self.practice_types.clear
 
-    # Add new practice types
+    # Add new practice types by name lookup (more robust than ID lookup)
     practice_type_params.each do |type_info|
-      practice_type = PracticeType.find(type_info[:id])
-      self.practice_types << practice_type
+      # Handle both name-based and id-based input for backward compatibility
+      if type_info[:name].present?
+        practice_type = PracticeType.find_by(name: type_info[:name])
+        if practice_type
+          self.practice_types << practice_type
+        else
+          Rails.logger.warn "Practice type not found by name: #{type_info[:name]}"
+        end
+      elsif type_info[:id].present?
+        # Fallback to ID lookup for backward compatibility
+        practice_type = PracticeType.find_by(id: type_info[:id])
+        if practice_type
+          self.practice_types << practice_type
+        else
+          Rails.logger.warn "Practice type not found by ID: #{type_info[:id]}"
+        end
+      end
     end
   end
 
