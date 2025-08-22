@@ -1,4 +1,6 @@
 class Api::V1::States::ProvidersController < ApplicationController
+  skip_before_action :authenticate_client
+  
   def index
     state = State.find_by(id: params[:state_id])
 
