@@ -49,7 +49,7 @@ service_distribution.each do |category, count|
   # Get the next batch of providers
   batch = providers[current_index, count] || []
   batch.each do |provider|
-    provider.update!(category: category)
+    provider.update_columns(category: category) # Use update_columns to bypass validations
     puts "✅ #{provider.name} → #{category}" if provider.id <= 10 # Show first 10 for verification
   end
   
