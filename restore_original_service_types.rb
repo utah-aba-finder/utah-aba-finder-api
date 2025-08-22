@@ -32,19 +32,9 @@ puts "✅ Created: Occupational Therapy (ID: #{ot_type.id})"
 # Now restore the original provider categorization
 puts "\n🔗 Restoring original provider categorization..."
 
-# First, let's check what the original provider_type values were
-puts "\n📊 Checking original provider_type values..."
-Provider.distinct.pluck(:provider_type).compact.each do |pt|
-  puts "  Found provider_type: #{pt}"
-end
-
 # Since we don't have the original provider_type field anymore, 
-# let's restore based on the original migration logic
-puts "\n🔍 Restoring based on original migration logic..."
-
-# Based on the migration, providers with category 'aba_therapy' should get "ABA Therapy"
-# Providers with category 'autism_evaluation' should get "Autism Evaluation"
-# The rest can be categorized appropriately
+# let's restore based on the current category field and make educated guesses
+puts "\n🔍 Restoring based on current category field..."
 
 # Restore ABA Therapy providers (these were the main ones)
 aba_providers = Provider.where(category: 'aba_therapy').limit(80) # Target ~70-80
