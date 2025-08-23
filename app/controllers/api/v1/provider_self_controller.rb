@@ -80,7 +80,7 @@ class Api::V1::ProviderSelfController < ApplicationController
     params.permit(
       :name, :website, :email, :cost, :min_age, :max_age, :waitlist,
       :telehealth_services, :spanish_speakers, :at_home_services, 
-      :in_clinic_services, :in_home_only, :service_delivery
+      :in_clinic_services, :in_home_only, :service_delivery, :phone
     )
   end
 
@@ -89,13 +89,13 @@ class Api::V1::ProviderSelfController < ApplicationController
       params.require(:data).first.require(:attributes).permit(
         :name, :website, :email, :cost, :min_age, :max_age, :waitlist,
         :telehealth_services, :spanish_speakers, :at_home_services, 
-        :in_clinic_services, :in_home_only, :service_delivery
+        :in_clinic_services, :in_home_only, :service_delivery, :phone
       )
     else
       params.permit(
         :name, :website, :email, :cost, :min_age, :max_age, :waitlist,
         :telehealth_services, :spanish_speakers, :at_home_services, 
-        :in_clinic_services, :in_home_only, :service_delivery
+        :in_clinic_services, :in_home_only, :service_delivery, :phone
       )
     end
   end
