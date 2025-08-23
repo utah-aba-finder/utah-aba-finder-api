@@ -78,17 +78,25 @@ class Api::V1::ProviderSelfController < ApplicationController
 
   def multipart_provider_params
     params.permit(
-      :name, :description, :website, :phone, :email, :in_home_only, :service_delivery
+      :name, :website, :email, :cost, :min_age, :max_age, :waitlist,
+      :telehealth_services, :spanish_speakers, :at_home_services, 
+      :in_clinic_services, :in_home_only, :service_delivery
     )
   end
 
   def provider_params
     if params[:data]&.first&.dig(:attributes)
       params.require(:data).first.require(:attributes).permit(
-        :name, :description, :website, :phone, :email, :in_home_only, :service_delivery
+        :name, :website, :email, :cost, :min_age, :max_age, :waitlist,
+        :telehealth_services, :spanish_speakers, :at_home_services, 
+        :in_clinic_services, :in_home_only, :service_delivery
       )
     else
-      params.permit(:name, :description, :website, :phone, :email, :in_home_only, :service_delivery)
+      params.permit(
+        :name, :website, :email, :cost, :min_age, :max_age, :waitlist,
+        :telehealth_services, :spanish_speakers, :at_home_services, 
+        :in_clinic_services, :in_home_only, :service_delivery
+      )
     end
   end
 end 
