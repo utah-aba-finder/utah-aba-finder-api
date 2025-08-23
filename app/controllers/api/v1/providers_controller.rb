@@ -690,7 +690,7 @@ class Api::V1::ProvidersController < ApplicationController
           :status,
           :provider_type,
           :in_home_only,
-          logo: [],
+          :logo,  # Changed from logo: [] to :logo to accept single file
           service_delivery: {}
         )
       elsif params[:data]&.dig(:attributes)
@@ -710,7 +710,7 @@ class Api::V1::ProvidersController < ApplicationController
           :status,
           :provider_type,
           :in_home_only,
-          logo: [],
+          :logo,  # Changed from logo: [] to :logo to accept single file
           service_delivery: {}
         )
       else
@@ -730,7 +730,7 @@ class Api::V1::ProvidersController < ApplicationController
           :status,
           :provider_type,
           :in_home_only,
-          logo: [],
+          :logo,  # Changed from logo: [] to :logo to accept single file
           service_delivery: {}
         )
       end
@@ -751,7 +751,7 @@ class Api::V1::ProvidersController < ApplicationController
         :status,
         :provider_type,
         :in_home_only,
-        logo: [],
+        :logo,  # Changed from logo: [] to :logo to accept single file
         service_delivery: {}
       )
     end

@@ -47,7 +47,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :in_clinic_services,
         :status,
         :in_home_only,
-        logo: [],
+        :logo,  # Changed from logo: [] to :logo to accept single file
         service_delivery: {}
       )
     else
@@ -66,7 +66,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :in_clinic_services,
         :status,
         :in_home_only,
-        logo: [],
+        :logo,  # Changed from logo: [] to :logo to accept single file
         service_delivery: {}
       )
     end
