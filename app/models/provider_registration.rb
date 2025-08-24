@@ -187,20 +187,37 @@ class ProviderRegistration < ApplicationRecord
   end
 
   def create_provider_from_registration
-    # Map submitted data to provider attributes (simplified)
+    # Map submitted data to provider attributes (comprehensive)
     provider_attributes = {
       name: provider_name,
       email: email,
       category: category,
       status: :approved,
-      in_home_only: true,  # Set to true to avoid location requirement
-      # Set default values for required fields
+      
+      # Basic business info
       website: submitted_data['website'] || '',
       phone: submitted_data['contact_phone'] || '',
-      spanish_speakers: 'Unknown',
-      telehealth_services: 'Unknown',
-      at_home_services: 'Unknown',
-      in_clinic_services: 'Unknown'
+      
+      # Service delivery options
+      in_home_only: determine_in_home_only,
+      service_delivery: determine_service_delivery,
+      
+      # Service availability
+      at_home_services: determine_at_home_services,
+      in_clinic_services: determine_in_clinic_services,
+      telehealth_services: determine_telehealth_services,
+      
+      # Accessibility and details
+      spanish_speakers: submitted_data['spanish_speakers'] || 'Unknown',
+      
+      # Business details
+      cost: submitted_data['cost'] || 'Contact us',
+      waitlist: submitted_data['waitlist'] || 'Contact us',
+      min_age: submitted_data['min_age'] || nil,
+      max_age: submitted_data['max_age'] || nil,
+      
+      # Default values for required fields
+      in_home_only: true  # Set to true to avoid location requirement
     }
 
     # Create the provider
@@ -209,6 +226,22 @@ class ProviderRegistration < ApplicationRecord
     if provider.save
       # Store the provider ID in metadata for reference
       update_columns(metadata: metadata.merge(provider_id: provider.id))
+      
+      # Set up practice types from service types
+      setup_practice_types(provider)
+      
+      # Set up insurance from registration data
+      setup_insurance(provider)
+      
+      # Set up counties served (default to "Contact Us" if none specified)
+      setup_counties_served(provider)
+      
+      # Create default location if needed
+      create_default_location(provider)
+      
+      # Create provider attributes for category-specific fields
+      create_provider_attributes(provider)
+      
       provider
     else
       Rails.logger.error "Failed to create provider: #{provider.errors.full_messages}"
@@ -299,6 +332,81 @@ class ProviderRegistration < ApplicationRecord
         { in_home: false, in_clinic: true, telehealth: false }
       end
     end
+  end
+
+  def determine_at_home_services
+    service_delivery = determine_service_delivery
+    service_delivery[:in_home] ? 'Yes' : 'No'
+  end
+
+  def determine_in_clinic_services
+    service_delivery = determine_service_delivery
+    service_delivery[:in_clinic] ? 'Yes' : 'No'
+  end
+
+  def determine_telehealth_services
+    service_delivery = determine_service_delivery
+    service_delivery[:telehealth] ? 'Yes' : 'No'
+  end
+
+  def setup_practice_types(provider)
+    return if service_types.blank?
+    
+    service_types.each do |service_type|
+      # Map service type to practice type
+      practice_type = case service_type
+      when 'aba_therapy'
+        PracticeType.find_by(name: 'ABA Therapy')
+      when 'speech_therapy'
+        PracticeType.find_by(name: 'Speech Therapy')
+      when 'occupational_therapy'
+        PracticeType.find_by(name: 'Occupational Therapy')
+      when 'autism_evaluation'
+        PracticeType.find_by(name: 'Autism Evaluation')
+      else
+        PracticeType.find_by(name: service_type.titleize)
+      end
+      
+      if practice_type
+        provider.practice_types << practice_type
+        Rails.logger.info "Added practice type: #{practice_type.name} to provider #{provider.id}"
+      end
+    end
+  end
+
+  def setup_insurance(provider)
+    insurance_data = submitted_data['insurance'] || submitted_data['insurance_preferences']
+    return if insurance_data.blank?
+    
+    # Process insurance using the InsuranceService
+    InsuranceService.link_insurances_to_provider(provider, insurance_data)
+    Rails.logger.info "Set up insurance for provider #{provider.id}: #{insurance_data}"
+  end
+
+  def setup_counties_served(provider)
+    counties_data = submitted_data['counties'] || submitted_data['counties_served'] || submitted_data['geographic_coverage']
+    
+    if counties_data.present?
+      # Process specific counties if provided
+      counties_data.each do |county_info|
+        if county_info.is_a?(Hash) && county_info['name'].present?
+          county = County.find_by(name: county_info['name'])
+          provider.counties << county if county
+        elsif county_info.is_a?(String)
+          county = County.find_by(name: county_info)
+          provider.counties << county if county
+        end
+      end
+    end
+    
+    # If no counties specified, add "Contact Us" county
+    if provider.counties.empty?
+      contact_county = County.find_by(name: 'Contact Us')
+      provider.counties << contact_county if contact_county
+      Rails.logger.info "Added default 'Contact Us' county for provider #{provider.id}"
+    end
+    
+    Rails.logger.info "Set up counties for provider #{provider.id}: #{provider.counties.pluck(:name).join(', ')}"
   end
 
   def service_delivery_includes_clinic?

@@ -15,6 +15,11 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       practice_type_params = params[:provider_type]
     end
     
+    # Debug logging
+    Rails.logger.info "🔍 Admin update - Provider ID: #{provider.id}"
+    Rails.logger.info "🔍 Admin update - Params: #{admin_provider_params.inspect}"
+    Rails.logger.info "🔍 Admin update - Current category: #{provider.category}"
+    
     if provider.update(admin_provider_params)
       # Update practice types if provided
       if practice_type_params.present?
@@ -24,6 +29,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       provider.touch # Ensure updated_at is updated
       render json: ProviderSerializer.format_providers([provider])
     else
+      Rails.logger.error "❌ Admin update failed - Errors: #{provider.errors.full_messages}"
       render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
     end
   end
@@ -37,6 +43,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :name,
         :website,
         :email,
+        :phone,
         :cost,
         :min_age,
         :max_age,
@@ -47,7 +54,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :in_clinic_services,
         :status,
         :in_home_only,
-        logo: [],
+        :logo,  # Changed from logo: [] to :logo to accept single file
         service_delivery: {}
       )
     else
@@ -56,6 +63,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :name,
         :website,
         :email,
+        :phone,
         :cost,
         :min_age,
         :max_age,
@@ -66,7 +74,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :in_clinic_services,
         :status,
         :in_home_only,
-        logo: [],
+        :logo,  # Changed from logo: [] to :logo to accept single file
         service_delivery: {}
       )
     end

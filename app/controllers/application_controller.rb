@@ -46,10 +46,21 @@ class ApplicationController < ActionController::API
     unless token
       render json: { error: 'No authorization token provided' }, status: :unauthorized and return
     end
+    
+    # Try to find user by ID first (for simple token auth)
     user = User.find_by(id: token)
+    
+    # If not found by ID, the token might be a session token or JWT
+    # For now, let's log this and provide a clearer error
     unless user
-      render json: { error: 'Invalid authorization token' }, status: :unauthorized and return
+      Rails.logger.warn "Token not found as user ID: #{token}"
+      Rails.logger.warn "This suggests the frontend is sending a different token format than expected"
+      render json: { 
+        error: 'Invalid authorization token format', 
+        details: 'Expected user ID as token, but received different format. Please check authentication setup.'
+      }, status: :unauthorized and return
     end
+    
     @current_user = user
   end
 

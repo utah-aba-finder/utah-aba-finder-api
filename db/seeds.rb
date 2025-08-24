@@ -49,31 +49,50 @@ unless Rails.env.test?
       # Add default values for required fields
       in_home_only: true, # Set to true to bypass location validation
       service_delivery: { in_home: true, in_clinic: false, telehealth: false },
-      status: :approved
+      status: :approved,
+      category: 'aba_therapy' # Add default category to satisfy validation
     )
   end
 end
 
-CSV.foreach(Rails.root.join('db', 'data', 'providers_insurance.csv'), headers: true) do |row|
-  ProviderInsurance.create!(
-    provider_id: row['provider_id'].to_i,
-    insurance_id: row['insurance_id'].to_i,
-    accepted: row['accepted']
-  )
+# Only create provider insurance records if providers exist
+unless Rails.env.test?
+  CSV.foreach(Rails.root.join('db', 'data', 'providers_insurance.csv'), headers: true) do |row|
+    provider_id = row['provider_id'].to_i
+    insurance_id = row['insurance_id'].to_i
+    
+    # Check if both provider and insurance exist before creating the relationship
+    if Provider.exists?(provider_id) && Insurance.exists?(insurance_id)
+      ProviderInsurance.find_or_create_by!(
+        provider_id: provider_id,
+        insurance_id: insurance_id,
+        accepted: row['accepted']
+      )
+    end
+  end
 end
 
-CSV.foreach(Rails.root.join('db', 'data', 'locations.csv'), headers: true) do |row|
-  Location.create!(
-    provider_id: row['provider_id'].to_i,
-    name: row['location_name'],
-    phone: row['phone'],
-    email: row['email'],
-    address_1: row['address_1'],
-    address_2: row['address_2'],
-    city: row['city'],
-    state: row['state'],
-    zip: row['zip']
-  )
+# Only create locations if providers exist
+unless Rails.env.test?
+  CSV.foreach(Rails.root.join('db', 'data', 'locations.csv'), headers: true) do |row|
+    provider_id = row['provider_id'].to_i
+    
+    # Check if provider exists before creating location
+    if Provider.exists?(provider_id)
+      Location.find_or_create_by!(
+        provider_id: provider_id,
+        name: row['location_name']
+      ) do |location|
+        location.phone = row['phone']
+        location.email = row['email']
+        location.address_1 = row['address_1']
+        location.address_2 = row['address_2']
+        location.city = row['city']
+        location.state = row['state']
+        location.zip = row['zip']
+      end
+    end
+  end
 end
 
 # Handle counties properly using the counties_providers join table
@@ -84,21 +103,26 @@ CSV.foreach(Rails.root.join('db', 'data', 'states_and_counties.csv'), headers: t
 end
 
 # Then create the provider-county relationships
-CSV.foreach(Rails.root.join('db', 'data', 'counties_served.csv'), headers: true) do |row|
-  provider_id = row['provider_id'].to_i
-  counties_served = row['counties_served']
-  
-  next unless counties_served.present?
-  
-  # Parse the counties string and create relationships
-  county_names = counties_served.split(',').map(&:strip)
-  county_names.each do |county_name|
-    county = County.find_by(name: county_name)
-    if county
-      CountiesProvider.find_or_create_by!(
-        provider_id: provider_id,
-        county_id: county.id
-      )
+unless Rails.env.test?
+  CSV.foreach(Rails.root.join('db', 'data', 'counties_served.csv'), headers: true) do |row|
+    provider_id = row['provider_id'].to_i
+    counties_served = row['counties_served']
+    
+    next unless counties_served.present?
+    
+    # Check if provider exists before creating county relationships
+    next unless Provider.exists?(provider_id)
+    
+    # Parse the counties string and create relationships
+    county_names = counties_served.split(',').map(&:strip)
+    county_names.each do |county_name|
+      county = County.find_by(name: county_name)
+      if county
+        CountiesProvider.find_or_create_by!(
+          provider_id: provider_id,
+          county_id: county.id
+        )
+      end
     end
   end
 end

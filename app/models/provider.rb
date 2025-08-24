@@ -98,7 +98,7 @@ class Provider < ApplicationRecord
   # Validations
   validates :in_home_only, inclusion: { in: [true, false] }
   validates :service_delivery, presence: true
-  validates :category, presence: true
+  validates :category, presence: true, on: :create
   # Only validate logo if it's an Active Storage attachment
   validates :logo, content_type: ['image/png', 'image/jpeg', 'image/gif'], size: { less_than: 5.megabytes }, if: -> { logo.respond_to?(:attached?) && logo.attached? && Rails.env != 'test' }
 
@@ -246,11 +246,17 @@ class Provider < ApplicationRecord
   def update_provider_insurance(insurance_params)
     return if insurance_params.blank?
 
-    array = insurance_params.map do |param|
-      param[:id]
+    # Handle both string array and object array formats
+    insurance_ids = if insurance_params.first.is_a?(String)
+      # Frontend sends: ["Contact us", "Aetna", ...]
+      insurance_params.map { |name| Insurance.find_by(name: name)&.id }.compact
+    else
+      # Frontend sends: [{"id"=>1, "name"=>"Contact us"}, ...]
+      insurance_params.map { |param| param[:id] }.compact
     end
+
     self.provider_insurances.each do |provider_info|
-      if array.include?(provider_info[:insurance_id])
+      if insurance_ids.include?(provider_info[:insurance_id])
         provider_insurance = self.provider_insurances.find_by(insurance_id: provider_info[:insurance_id])
         provider_insurance.update!(accepted: true)
       else
