@@ -75,8 +75,13 @@ class ProviderSerializer
   def self.logo_url_for(provider)
     # Handle both Active Storage attachments and string URLs
     if provider.logo.respond_to?(:attached?) && provider.logo.attached?
-      # Direct presigned S3 URL (no Rails hop, no ACLs)
-      provider.logo.blob.url
+      begin
+        # Try to get the URL, but handle cases where storage service isn't configured
+        provider.logo.blob.url
+      rescue => e
+        Rails.logger.warn "Could not generate logo URL for provider #{provider.id}: #{e.message}"
+        nil
+      end
     elsif provider.logo.is_a?(String) && provider.logo.present?
       # In test environment, return nil for string logos to match test expectations
       Rails.env.test? ? nil : provider.logo
