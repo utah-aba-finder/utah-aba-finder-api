@@ -7,14 +7,14 @@ local:
   root: <%= Rails.root.join("storage") %>
 
 # Use environment variables for AWS credentials
-# amazon:
-#   service: S3
-#   access_key_id: <%= ENV.fetch('AWS_ACCESS_KEY_ID') %>
-#   secret_access_key: <%= ENV.fetch('AWS_SECRET_ACCESS_KEY') %>
-#   region: <%= ENV.fetch('AWS_REGION', 'us-east-1') %>
-#   bucket: asl-logos
-#   public: false          # ← Keep false to avoid ACLs
-#   # No upload section needed
+amazon:
+  service: S3
+  access_key_id: <%= ENV.fetch('AWS_ACCESS_KEY_ID') %>
+  secret_access_key: <%= ENV.fetch('AWS_SECRET_ACCESS_KEY') %>
+  region: <%= ENV.fetch('AWS_REGION', 'us-east-1') %>
+  bucket: asl-logos
+  public: false          # ← Keep false to avoid ACLs
+  # No upload section needed
 
 # Remember not to checkin your GCS keyfile to a repository
 # google:

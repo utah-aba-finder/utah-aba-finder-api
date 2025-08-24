@@ -29,8 +29,8 @@ Rails.application.configure do
   # config.action_dispatch.x_sendfile_header = "X-Sendfile" # for Apache
   # config.action_dispatch.x_sendfile_header = "X-Accel-Redirect" # for NGINX
 
-  # Store uploaded files locally for now (can switch to S3 later when credentials are configured)
-  config.active_storage.service = :local
+  # Store uploaded files on AWS S3
+  config.active_storage.service = :amazon
   
   # Use presigned URLs (no ACLs required, works with private buckets)
 config.active_storage.resolve_model_to_route = :rails_storage_redirect
@@ -58,12 +58,10 @@ config.active_storage.resolve_model_to_route = :rails_storage_redirect
   # Active Storage URL configuration
   config.active_storage.default_url_options = { host: ENV.fetch('HOST', 'autismserviceslocator.com') }
   
-  # Set ActiveStorage::Current.url_options for Disk service
-  config.after_initialize do
-    ActiveStorage::Current.url_options = { host: ENV.fetch('HOST', 'autismserviceslocator.com'), protocol: 'https' }
-    
-
-  end
+  # S3 doesn't need local URL options
+  # config.after_initialize do
+  #   ActiveStorage::Current.url_options = { host: ENV.fetch('HOST', 'autismserviceslocator.com'), protocol: 'https' }
+  # end
   
   # Email configuration for Gmail
   config.action_mailer.delivery_method = :smtp
