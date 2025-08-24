@@ -15,6 +15,11 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       practice_type_params = params[:provider_type]
     end
     
+    # Debug logging
+    Rails.logger.info "🔍 Admin update - Provider ID: #{provider.id}"
+    Rails.logger.info "🔍 Admin update - Params: #{admin_provider_params.inspect}"
+    Rails.logger.info "🔍 Admin update - Current category: #{provider.category}"
+    
     if provider.update(admin_provider_params)
       # Update practice types if provided
       if practice_type_params.present?
@@ -24,6 +29,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       provider.touch # Ensure updated_at is updated
       render json: ProviderSerializer.format_providers([provider])
     else
+      Rails.logger.error "❌ Admin update failed - Errors: #{provider.errors.full_messages}"
       render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
     end
   end

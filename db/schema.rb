@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_08_16_174917) do
+ActiveRecord::Schema[7.1].define(version: 2025_08_23_022017) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_trgm"
   enable_extension "plpgsql"
@@ -54,11 +54,13 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_16_174917) do
     t.boolean "is_active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "slug", null: false
     t.index ["display_order"], name: "index_category_fields_on_display_order"
     t.index ["field_type"], name: "index_category_fields_on_field_type"
     t.index ["is_active"], name: "index_category_fields_on_is_active"
     t.index ["name"], name: "index_category_fields_on_name"
     t.index ["provider_category_id"], name: "index_category_fields_on_provider_category_id"
+    t.index ["slug"], name: "index_category_fields_on_slug"
   end
 
   create_table "clients", force: :cascade do |t|
@@ -214,11 +216,27 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_16_174917) do
     t.jsonb "metadata", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "idempotency_key"
+    t.string "service_types", default: [], array: true
     t.index ["category"], name: "index_provider_registrations_on_category"
     t.index ["email"], name: "index_provider_registrations_on_email"
+    t.index ["idempotency_key"], name: "index_provider_registrations_on_idempotency_key", unique: true
     t.index ["is_processed"], name: "index_provider_registrations_on_is_processed"
     t.index ["reviewed_by_id"], name: "index_provider_registrations_on_reviewed_by_id"
     t.index ["status"], name: "index_provider_registrations_on_status"
+  end
+
+  create_table "provider_service_types", force: :cascade do |t|
+    t.bigint "provider_id", null: false
+    t.bigint "provider_category_id", null: false
+    t.boolean "is_primary", default: false
+    t.jsonb "service_specific_data", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider_category_id"], name: "index_provider_service_types_on_provider_category_id"
+    t.index ["provider_id", "is_primary"], name: "index_provider_service_types_on_provider_id_and_is_primary"
+    t.index ["provider_id", "provider_category_id"], name: "index_provider_service_types_unique", unique: true
+    t.index ["provider_id"], name: "index_provider_service_types_on_provider_id"
   end
 
   create_table "providers", force: :cascade do |t|
@@ -241,6 +259,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_16_174917) do
     t.jsonb "service_delivery", default: {"in_home"=>false, "in_clinic"=>false, "telehealth"=>false}
     t.bigint "user_id"
     t.string "category", default: "aba_therapy"
+    t.string "phone"
     t.index ["category"], name: "index_providers_on_category"
     t.index ["user_id"], name: "index_providers_on_user_id"
   end
@@ -287,6 +306,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_16_174917) do
   add_foreign_key "provider_practice_types", "practice_types"
   add_foreign_key "provider_practice_types", "providers"
   add_foreign_key "provider_registrations", "users", column: "reviewed_by_id"
+  add_foreign_key "provider_service_types", "provider_categories"
+  add_foreign_key "provider_service_types", "providers"
   add_foreign_key "providers", "users"
   add_foreign_key "users", "providers", column: "active_provider_id"
 end
