@@ -199,7 +199,6 @@ class ProviderRegistration < ApplicationRecord
       phone: submitted_data['contact_phone'] || '',
       
       # Service delivery options
-      in_home_only: determine_in_home_only,
       service_delivery: determine_service_delivery,
       
       # Service availability
