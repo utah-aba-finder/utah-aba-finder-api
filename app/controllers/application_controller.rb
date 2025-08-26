@@ -47,20 +47,39 @@ class ApplicationController < ActionController::API
       render json: { error: 'No authorization token provided' }, status: :unauthorized and return
     end
     
+    Rails.logger.info "🔍 Auth - Token received: #{token.inspect}"
+    Rails.logger.info "🔍 Auth - Token length: #{token.length}"
+    Rails.logger.info "🔍 Auth - Token looks like ID: #{token.match?(/^\d+$/)}"
+    Rails.logger.info "🔍 Auth - Token looks like email: #{token.include?('@')}"
+    
     # Try to find user by ID first (for simple token auth)
     user = User.find_by(id: token)
+    Rails.logger.info "🔍 Auth - User found by ID: #{user.present?}"
     
-    # If not found by ID, the token might be a session token or JWT
-    # For now, let's log this and provide a clearer error
+    # If not found by ID, try to handle other token formats
     unless user
-      Rails.logger.warn "Token not found as user ID: #{token}"
-      Rails.logger.warn "This suggests the frontend is sending a different token format than expected"
-      render json: { 
-        error: 'Invalid authorization token format', 
-        details: 'Expected user ID as token, but received different format. Please check authentication setup.'
-      }, status: :unauthorized and return
+      begin
+        # Try to decode as JWT or handle other token formats
+        # For now, let's try to find by email if it looks like an email
+        if token.include?('@')
+          user = User.find_by(email: token)
+          Rails.logger.info "🔍 Auth - User found by email: #{user.present?}"
+        end
+        
+        # If still not found, try to handle session tokens or other formats
+        unless user
+          Rails.logger.warn "❌ Auth - Token not found as user ID or email: #{token}"
+          # For now, let's try to handle this more gracefully
+          # You might want to implement proper JWT decoding here
+          render json: { error: 'Invalid authorization token' }, status: :unauthorized and return
+        end
+      rescue => e
+        Rails.logger.error "❌ Auth - Token authentication error: #{e.message}"
+        render json: { error: 'Invalid authorization token' }, status: :unauthorized and return
+      end
     end
     
+    Rails.logger.info "✅ Auth - Authentication successful for user: #{user.id} (#{user.email})"
     @current_user = user
   end
 
