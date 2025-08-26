@@ -1,5 +1,6 @@
 class Provider < ApplicationRecord
-  has_one_attached :logo unless Rails.env.test?
+  # Temporarily comment out logo attachment to fix storage config error in development
+  # has_one_attached :logo unless Rails.env.test?
   
   has_many :old_counties
   # Temporarily comment out problematic association to fix SQL syntax error

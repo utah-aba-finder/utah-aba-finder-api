@@ -7,7 +7,7 @@ class ProviderSerializer
         {
           id: provider.id,
           type: "provider",
-          states: provider.counties.map {|county| county.state&.name}.compact.uniq,
+          states: get_provider_states(provider),
           attributes: {
             "name": provider.name,
             "provider_type": provider.practice_types.map do |type|
@@ -48,12 +48,7 @@ class ProviderSerializer
               }
             end,
             # "counties_served": provider.old_counties.map { |area| {county: area.counties_served} },
-            "counties_served": provider.counties.map do |area|
-              {
-                "county_id" => area.id,
-                "county_name" => area.name
-              }
-            end,
+            "counties_served": get_provider_counties(provider),
             "min_age": provider.min_age,
             "max_age": provider.max_age,
             "waitlist": provider.waitlist,
@@ -70,6 +65,34 @@ class ProviderSerializer
         }
       end
     }
+  end
+
+  private
+
+  def self.get_provider_states(provider)
+    # Use raw SQL to get states since the association is commented out
+    sql = "SELECT DISTINCT s.name FROM states s 
+            INNER JOIN counties c ON c.state_id = s.id 
+            INNER JOIN counties_providers cp ON cp.county_id = c.id 
+            WHERE cp.provider_id = #{provider.id}"
+    
+    result = ActiveRecord::Base.connection.execute(sql)
+    result.values.flatten.compact.uniq
+  end
+
+  def self.get_provider_counties(provider)
+    # Use raw SQL to get counties since the association is commented out
+    sql = "SELECT c.id, c.name FROM counties c 
+            INNER JOIN counties_providers cp ON cp.county_id = c.id 
+            WHERE cp.provider_id = #{provider.id}"
+    
+    result = ActiveRecord::Base.connection.execute(sql)
+    result.map do |row|
+      {
+        "county_id" => row['id'],
+        "county_name" => row['name']
+      }
+    end
   end
 
   def self.logo_url_for(provider)
