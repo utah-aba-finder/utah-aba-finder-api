@@ -39,7 +39,14 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
   def admin_provider_params
     # Handle both regular params and nested data format
     if params[:data].present?
-      params.require(:data).first[:attributes].permit(
+      # Filter out logo if it's just a URL string (not a file upload)
+      attributes = params.require(:data).first[:attributes]
+      if attributes[:logo].present? && attributes[:logo].is_a?(String) && attributes[:logo].start_with?('http')
+        # Don't update logo if it's just a URL string
+        attributes = attributes.except(:logo)
+      end
+      
+      attributes.permit(
         :name,
         :website,
         :email,
@@ -54,7 +61,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :in_clinic_services,
         :status,
         :in_home_only,
-        :logo,  # Changed from logo: [] to :logo to accept single file
+        :logo,  # Only permit if it's a file upload
         service_delivery: {}
       )
     else
@@ -74,7 +81,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :in_clinic_services,
         :status,
         :in_home_only,
-        :logo,  # Changed from logo: [] to :logo to accept single file
+        :logo,  # Only permit if it's a file upload
         service_delivery: {}
       )
     end
