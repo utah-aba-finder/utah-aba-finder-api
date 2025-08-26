@@ -26,6 +26,11 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         provider.update_practice_types(practice_type_params)
       end
       
+      # Update counties served if provided
+      if params[:data]&.first&.dig(:attributes, :counties_served)&.present?
+        update_counties_served(provider, params[:data].first[:attributes][:counties_served])
+      end
+      
       provider.touch # Ensure updated_at is updated
       render json: ProviderSerializer.format_providers([provider])
     else
@@ -35,6 +40,22 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
   end
 
   private
+
+  def update_counties_served(provider, counties_data)
+    Rails.logger.info "🔍 Updating counties for provider #{provider.id}: #{counties_data.inspect}"
+    
+    # Clear existing county associations
+    provider.counties_providers.destroy_all
+    
+    # Add new county associations
+    counties_data.each do |county_info|
+      county_id = county_info[:county_id] || county_info["county_id"]
+      if county_id.present?
+        provider.counties_providers.create!(county_id: county_id)
+        Rails.logger.info "✅ Added county #{county_id} for provider #{provider.id}"
+      end
+    end
+  end
 
   def admin_provider_params
     # Handle both regular params and nested data format
