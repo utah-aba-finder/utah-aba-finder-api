@@ -44,14 +44,14 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
   def update_counties_served(provider, counties_data)
     Rails.logger.info "🔍 Updating counties for provider #{provider.id}: #{counties_data.inspect}"
     
-    # Clear existing county associations
-    provider.counties_providers.destroy_all
+    # Clear existing county associations using the join table directly
+    CountiesProvider.where(provider_id: provider.id).destroy_all
     
     # Add new county associations
     counties_data.each do |county_info|
       county_id = county_info[:county_id] || county_info["county_id"]
       if county_id.present?
-        provider.counties_providers.create!(county_id: county_id)
+        CountiesProvider.create!(provider_id: provider.id, county_id: county_id)
         Rails.logger.info "✅ Added county #{county_id} for provider #{provider.id}"
       end
     end
