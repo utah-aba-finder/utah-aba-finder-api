@@ -44,14 +44,14 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
   def update_counties_served(provider, counties_data)
     Rails.logger.info "🔍 Updating counties for provider #{provider.id}: #{counties_data.inspect}"
     
-    # Clear existing county associations using raw SQL to avoid Rails association issues
-    ActiveRecord::Base.connection.execute("DELETE FROM counties_providers WHERE provider_id = #{provider.id}")
+    # Safer deletion with sanitization and no default_scope
+    CountiesProvider.unscoped.where(provider_id: provider.id).delete_all
     
-    # Add new county associations
+    # Recreate (also bypass default_scope to prevent the WHERE "" IS NULL filter)
     counties_data.each do |county_info|
       county_id = county_info[:county_id] || county_info["county_id"]
       if county_id.present?
-        ActiveRecord::Base.connection.execute("INSERT INTO counties_providers (provider_id, county_id) VALUES (#{provider.id}, #{county_id})")
+        CountiesProvider.unscoped.create!(provider_id: provider.id, county_id: county_id)
         Rails.logger.info "✅ Added county #{county_id} for provider #{provider.id}"
       end
     end
