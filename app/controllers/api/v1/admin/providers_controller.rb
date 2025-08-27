@@ -105,8 +105,14 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
     locations_data.each do |location_info|
       next unless location_info[:address_1].present? || location_info[:city].present?
       
+      # Permit the location parameters so they can be accessed during validation
+      permitted_location_info = location_info.permit(
+        :name, :address_1, :address_2, :city, :state, :zip, :phone,
+        :in_home_waitlist, :in_clinic_waitlist, services: [:id, :name]
+      )
+      
       # Determine if this location provides in-home services
-      has_in_home_services = location_info[:services]&.any? { |service| service[:name]&.downcase&.include?('home') || service[:name]&.downcase&.include?('in-home') }
+      has_in_home_services = permitted_location_info[:services]&.any? { |service| service[:name]&.downcase&.include?('home') || service[:name]&.downcase&.include?('in-home') }
       
       # Set appropriate waitlist defaults ONLY if not explicitly provided by frontend
       in_home_waitlist_default = if has_in_home_services
@@ -116,17 +122,17 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
                                  end
       
       # Use frontend values if provided, otherwise use intelligent defaults
-      in_home_waitlist = location_info[:in_home_waitlist].present? ? location_info[:in_home_waitlist] : in_home_waitlist_default
-      in_clinic_waitlist = location_info[:in_clinic_waitlist].present? ? location_info[:in_clinic_waitlist] : "Contact for availability"
+      in_home_waitlist = permitted_location_info[:in_home_waitlist].present? ? permitted_location_info[:in_home_waitlist] : in_home_waitlist_default
+      in_clinic_waitlist = permitted_location_info[:in_clinic_waitlist].present? ? permitted_location_info[:in_clinic_waitlist] : "Contact for availability"
       
       location = provider.locations.build(
-        name: location_info[:name],
-        address_1: location_info[:address_1],
-        address_2: location_info[:address_2],
-        city: location_info[:city],
-        state: location_info[:state],
-        zip: location_info[:zip],
-        phone: location_info[:phone],
+        name: permitted_location_info[:name],
+        address_1: permitted_location_info[:address_1],
+        address_2: permitted_location_info[:address_2],
+        city: permitted_location_info[:city],
+        state: permitted_location_info[:state],
+        zip: permitted_location_info[:zip],
+        phone: permitted_location_info[:phone],
         in_home_waitlist: in_home_waitlist,
         in_clinic_waitlist: in_clinic_waitlist
       )
@@ -135,8 +141,8 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         Rails.logger.info "✅ Added location #{location.id} for provider #{provider.id}"
         
         # Handle services for this location if provided
-        if location_info[:services].present?
-          update_location_services(location, location_info[:services])
+        if permitted_location_info[:services].present?
+          update_location_services(location, permitted_location_info[:services])
         end
       else
         Rails.logger.error "❌ Failed to save location: #{location.errors.full_messages}"
