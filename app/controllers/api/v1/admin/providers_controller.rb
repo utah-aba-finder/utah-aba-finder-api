@@ -1,7 +1,12 @@
 class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
   def index
     providers = Provider.all
-    render json: ProviderSerializer.format_providers(providers)
+    render json: {
+      data: ProviderSerializer.format_providers(providers),
+      meta: {
+        waitlist_options: Location::WAITLIST_OPTIONS
+      }
+    }
   end
 
   def update
@@ -87,13 +92,48 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         city: location_info[:city],
         state: location_info[:state],
         zip: location_info[:zip],
-        phone: location_info[:phone]
+        phone: location_info[:phone],
+        in_home_waitlist: location_info[:in_home_waitlist] || "Contact for availability",
+        in_clinic_waitlist: location_info[:in_clinic_waitlist] || "Contact for availability"
       )
       
       if location.save
         Rails.logger.info "✅ Added location #{location.id} for provider #{provider.id}"
+        
+        # Handle services for this location if provided
+        if location_info[:services].present?
+          update_location_services(location, location_info[:services])
+        end
       else
         Rails.logger.error "❌ Failed to save location: #{location.errors.full_messages}"
+      end
+    end
+  end
+
+  def update_location_services(location, services_data)
+    Rails.logger.info "🔍 Updating services for location #{location.id}: #{services_data.inspect}"
+    
+    # Clear existing services for this location
+    location.practice_types.clear
+    
+    # Add new services
+    services_data.each do |service_info|
+      if service_info[:id].present?
+        practice_type = PracticeType.find_by(id: service_info[:id])
+        if practice_type
+          location.practice_types << practice_type
+          Rails.logger.info "✅ Added service #{practice_type.name} to location #{location.id}"
+        else
+          Rails.logger.warn "⚠️ Practice type not found by ID: #{service_info[:id]}"
+        end
+      elsif service_info[:name].present?
+        practice_type = PracticeType.find_by(name: service_info[:name])
+        if practice_type
+          location.practice_types << practice_type
+          Rails.logger.info "✅ Added service #{practice_type.name} to location #{location.id}"
+        else
+          Rails.logger.warn "⚠️ Practice type not found by name: #{service_info[:name]}"
+        end
       end
     end
   end
