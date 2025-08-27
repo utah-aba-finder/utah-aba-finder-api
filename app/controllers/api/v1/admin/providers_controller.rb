@@ -175,14 +175,24 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
 
   def update_location_services(location, services_data)
     Rails.logger.info "🔍 Updating services for location #{location.id}: #{services_data.inspect}"
+    Rails.logger.info "🔍 DEBUG: services_data class: #{services_data.class}"
+    Rails.logger.info "🔍 DEBUG: services_data first item: #{services_data.first.inspect if services_data.any?}"
     
     # Clear existing services for this location
+    Rails.logger.info "🔍 DEBUG: Clearing existing practice_types for location #{location.id}"
     location.practice_types.clear
+    Rails.logger.info "🔍 DEBUG: After clear, practice_types count: #{location.practice_types.count}"
     
     # Add new services
     services_data.each do |service_info|
+      Rails.logger.info "🔍 DEBUG: Processing service_info: #{service_info.inspect}"
+      Rails.logger.info "🔍 DEBUG: service_info class: #{service_info.class}"
+      Rails.logger.info "🔍 DEBUG: service_info[:id]: #{service_info[:id]}"
+      Rails.logger.info "🔍 DEBUG: service_info[:name]: #{service_info[:name]}"
+      
       if service_info[:id].present?
         practice_type = PracticeType.find_by(id: service_info[:id])
+        Rails.logger.info "🔍 DEBUG: Found practice_type by ID: #{practice_type.inspect}"
         if practice_type
           location.practice_types << practice_type
           Rails.logger.info "✅ Added service #{practice_type.name} to location #{location.id}"
@@ -191,6 +201,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         end
       elsif service_info[:name].present?
         practice_type = PracticeType.find_by(name: service_info[:name])
+        Rails.logger.info "🔍 DEBUG: Found practice_type by name: #{practice_type.inspect}"
         if practice_type
           location.practice_types << practice_type
           Rails.logger.info "✅ Added service #{practice_type.name} to location #{location.id}"
@@ -199,6 +210,9 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         end
       end
     end
+    
+    Rails.logger.info "🔍 DEBUG: Final practice_types count for location #{location.id}: #{location.practice_types.count}"
+    Rails.logger.info "🔍 DEBUG: Final practice_types: #{location.practice_types.map(&:name)}"
   end
 
   def admin_provider_params
