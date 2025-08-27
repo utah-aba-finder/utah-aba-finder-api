@@ -15,6 +15,14 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       practice_type_params = params[:provider_type]
     end
     
+    # Handle locations separately if provided
+    locations_params = nil
+    if params[:data]&.first&.dig(:attributes, :locations)&.present?
+      locations_params = params[:data].first[:attributes][:locations]
+    elsif params[:locations].present?
+      locations_params = params[:locations]
+    end
+    
     # Debug logging
     Rails.logger.info "🔍 Admin update - Provider ID: #{provider.id}"
     Rails.logger.info "🔍 Admin update - Params: #{admin_provider_params.inspect}"
@@ -24,6 +32,11 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       # Update practice types if provided
       if practice_type_params.present?
         provider.update_practice_types(practice_type_params)
+      end
+      
+      # Update locations if provided
+      if locations_params.present?
+        update_locations(provider, locations_params)
       end
       
       # Update counties served if provided
@@ -53,6 +66,34 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       if county_id.present?
         CountiesProvider.unscoped.create!(provider_id: provider.id, county_id: county_id)
         Rails.logger.info "✅ Added county #{county_id} for provider #{provider.id}"
+      end
+    end
+  end
+
+  def update_locations(provider, locations_data)
+    Rails.logger.info "🔍 Updating locations for provider #{provider.id}: #{locations_data.inspect}"
+    
+    # Clear existing locations
+    provider.locations.destroy_all
+    
+    # Create new locations
+    locations_data.each do |location_info|
+      next unless location_info[:address_1].present? || location_info[:city].present?
+      
+      location = provider.locations.build(
+        name: location_info[:name],
+        address_1: location_info[:address_1],
+        address_2: location_info[:address_2],
+        city: location_info[:city],
+        state: location_info[:state],
+        zip: location_info[:zip],
+        phone: location_info[:phone]
+      )
+      
+      if location.save
+        Rails.logger.info "✅ Added location #{location.id} for provider #{provider.id}"
+      else
+        Rails.logger.error "❌ Failed to save location: #{location.errors.full_messages}"
       end
     end
   end
