@@ -88,12 +88,16 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       # Determine if this location provides in-home services
       has_in_home_services = location_info[:services]&.any? { |service| service[:name]&.downcase&.include?('home') || service[:name]&.downcase&.include?('in-home') }
       
-      # Set appropriate waitlist defaults
+      # Set appropriate waitlist defaults ONLY if not explicitly provided by frontend
       in_home_waitlist_default = if has_in_home_services
                                    "Contact for availability"
                                  else
                                    "No in-home services available at this location"
                                  end
+      
+      # Use frontend values if provided, otherwise use intelligent defaults
+      in_home_waitlist = location_info[:in_home_waitlist].present? ? location_info[:in_home_waitlist] : in_home_waitlist_default
+      in_clinic_waitlist = location_info[:in_clinic_waitlist].present? ? location_info[:in_clinic_waitlist] : "Contact for availability"
       
       location = provider.locations.build(
         name: location_info[:name],
@@ -103,8 +107,8 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         state: location_info[:state],
         zip: location_info[:zip],
         phone: location_info[:phone],
-        in_home_waitlist: location_info[:in_home_waitlist] || in_home_waitlist_default,
-        in_clinic_waitlist: location_info[:in_clinic_waitlist] || "Contact for availability"
+        in_home_waitlist: in_home_waitlist,
+        in_clinic_waitlist: in_clinic_waitlist
       )
       
       if location.save
