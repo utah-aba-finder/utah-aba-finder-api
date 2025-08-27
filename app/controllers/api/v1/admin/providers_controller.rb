@@ -190,24 +190,26 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       Rails.logger.info "🔍 DEBUG: service_info[:id]: #{service_info[:id]}"
       Rails.logger.info "🔍 DEBUG: service_info[:name]: #{service_info[:name]}"
       
+      practice_type = nil
+      
+      # Try to find by ID first
       if service_info[:id].present?
         practice_type = PracticeType.find_by(id: service_info[:id])
         Rails.logger.info "🔍 DEBUG: Found practice_type by ID: #{practice_type.inspect}"
-        if practice_type
-          location.practice_types << practice_type
-          Rails.logger.info "✅ Added service #{practice_type.name} to location #{location.id}"
-        else
-          Rails.logger.warn "⚠️ Practice type not found by ID: #{service_info[:id]}"
-        end
-      elsif service_info[:name].present?
+      end
+      
+      # If ID lookup failed, try by name
+      if practice_type.nil? && service_info[:name].present?
         practice_type = PracticeType.find_by(name: service_info[:name])
         Rails.logger.info "🔍 DEBUG: Found practice_type by name: #{practice_type.inspect}"
-        if practice_type
-          location.practice_types << practice_type
-          Rails.logger.info "✅ Added service #{practice_type.name} to location #{location.id}"
-        else
-          Rails.logger.warn "⚠️ Practice type not found by name: #{service_info[:name]}"
-        end
+      end
+      
+      # Add the service if found
+      if practice_type
+        location.practice_types << practice_type
+        Rails.logger.info "✅ Added service #{practice_type.name} to location #{location.id}"
+      else
+        Rails.logger.warn "⚠️ Practice type not found by ID (#{service_info[:id]}) or name (#{service_info[:name]})"
       end
     end
     
