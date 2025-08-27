@@ -84,7 +84,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :in_home_only,
         :logo,  # Only permit if it's a file upload
         service_delivery: {}
-      ).except(:counties_served, :states) # Filter out counties_served and states to prevent association conflicts
+      ) # Removed .except(:counties_served, :states) to allow these fields to be processed
     else
       # Handle direct params (for logo uploads)
       params.permit(
@@ -104,7 +104,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :in_home_only,
         :logo,  # Only permit if it's a file upload
         service_delivery: {}
-      ).except(:counties_served, :states) # Filter out counties_served and states to prevent association conflicts
+      ) # Removed .except(:counties_served, :states) to allow these fields to be processed
     end
   end
 end
