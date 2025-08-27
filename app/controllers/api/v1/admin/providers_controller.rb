@@ -96,6 +96,11 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
   end
 
   def update_locations(provider, locations_data)
+    Rails.logger.info "🔍 DEBUG: update_locations method called with provider_id: #{provider.id}"
+    Rails.logger.info "🔍 DEBUG: locations_data class: #{locations_data.class}"
+    Rails.logger.info "🔍 DEBUG: locations_data first item class: #{locations_data.first.class if locations_data.any?}"
+    Rails.logger.info "🔍 DEBUG: locations_data first item permitted?: #{locations_data.first.permitted? if locations_data.any?}"
+    
     Rails.logger.info "🔍 Updating locations for provider #{provider.id}: #{locations_data.inspect}"
     
     # Clear existing locations
@@ -105,11 +110,20 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
     locations_data.each do |location_info|
       next unless location_info[:address_1].present? || location_info[:city].present?
       
+      Rails.logger.info "🔍 DEBUG: Processing location_info: #{location_info.inspect}"
+      Rails.logger.info "🔍 DEBUG: location_info class: #{location_info.class}"
+      Rails.logger.info "🔍 DEBUG: location_info permitted?: #{location_info.permitted?}"
+      
       # Permit the location parameters so they can be accessed during validation
       permitted_location_info = location_info.permit(
         :name, :address_1, :address_2, :city, :state, :zip, :phone,
         :in_home_waitlist, :in_clinic_waitlist, services: [:id, :name]
       )
+      
+      Rails.logger.info "🔍 DEBUG: permitted_location_info: #{permitted_location_info.inspect}"
+      Rails.logger.info "🔍 DEBUG: permitted_location_info permitted?: #{permitted_location_info.permitted?}"
+      Rails.logger.info "🔍 DEBUG: in_home_waitlist value: #{permitted_location_info[:in_home_waitlist]}"
+      Rails.logger.info "🔍 DEBUG: in_clinic_waitlist value: #{permitted_location_info[:in_clinic_waitlist]}"
       
       # Determine if this location provides in-home services
       has_in_home_services = permitted_location_info[:services]&.any? { |service| service[:name]&.downcase&.include?('home') || service[:name]&.downcase&.include?('in-home') }
@@ -124,6 +138,9 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       # Use frontend values if provided, otherwise use intelligent defaults
       in_home_waitlist = permitted_location_info[:in_home_waitlist].present? ? permitted_location_info[:in_home_waitlist] : in_home_waitlist_default
       in_clinic_waitlist = permitted_location_info[:in_clinic_waitlist].present? ? permitted_location_info[:in_clinic_waitlist] : "Contact for availability"
+      
+      Rails.logger.info "🔍 DEBUG: Final in_home_waitlist: #{in_home_waitlist}"
+      Rails.logger.info "🔍 DEBUG: Final in_clinic_waitlist: #{in_clinic_waitlist}"
       
       location = provider.locations.build(
         name: permitted_location_info[:name],
