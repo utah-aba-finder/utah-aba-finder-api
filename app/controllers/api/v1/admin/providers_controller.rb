@@ -11,7 +11,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
 
   def update
     provider = Provider.find(params[:id])
-    
+
     # Handle practice types separately if provided
     practice_type_params = nil
     if params[:data]&.first&.dig(:attributes, :provider_type)&.present?
@@ -19,7 +19,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
     elsif params[:provider_type].present?
       practice_type_params = params[:provider_type]
     end
-    
+
     # Handle locations separately if provided
     locations_params = nil
     if params[:data]&.first&.dig(:attributes, :locations)&.present?
@@ -27,28 +27,47 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
     elsif params[:locations].present?
       locations_params = params[:locations]
     end
-    
+
+    # Handle counties served separately if provided
+    counties_params = nil
+    if params[:data]&.first&.dig(:attributes, :counties_served)&.present?
+      counties_params = params[:data].first[:attributes][:counties_served]
+    elsif params[:counties_served].present?
+      counties_params = params[:counties_served]
+    end
+
+    # Handle states separately if provided
+    states_params = nil
+    if params[:data]&.first&.dig(:attributes, :states)&.present?
+      states_params = params[:data].first[:attributes][:states]
+    elsif params[:states].present?
+      states_params = params[:states]
+    end
+
     # Debug logging
     Rails.logger.info "🔍 Admin update - Provider ID: #{provider.id}"
-    Rails.logger.info "🔍 Admin update - Params: #{admin_provider_params.inspect}"
+    Rails.logger.info "🔍 Admin update - Basic Params: #{admin_provider_params.inspect}"
+    Rails.logger.info "🔍 Admin update - Locations Params: #{locations_params.inspect}"
+    Rails.logger.info "🔍 Admin update - Counties Params: #{counties_params.inspect}"
+    Rails.logger.info "🔍 Admin update - States Params: #{states_params.inspect}"
     Rails.logger.info "🔍 Admin update - Current category: #{provider.category}"
-    
+
     if provider.update(admin_provider_params)
       # Update practice types if provided
       if practice_type_params.present?
         provider.update_practice_types(practice_type_params)
       end
-      
+
       # Update locations if provided
       if locations_params.present?
         update_locations(provider, locations_params)
       end
-      
+
       # Update counties served if provided
-      if params[:data]&.first&.dig(:attributes, :counties_served)&.present?
-        update_counties_served(provider, params[:data].first[:attributes][:counties_served])
+      if counties_params.present?
+        update_counties_served(provider, counties_params)
       end
-      
+
       provider.touch # Ensure updated_at is updated
       render json: ProviderSerializer.format_providers([provider])
     else
@@ -162,6 +181,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         attributes = attributes.except(:logo)
       end
       
+      # Only permit the basic scalar fields, complex nested data is handled separately
       attributes.permit(
         :name,
         :website,
@@ -178,10 +198,6 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :status,
         :in_home_only,
         :logo,  # Only permit if it's a file upload
-        :locations,  # Add locations to permitted params
-        :counties_served,  # Add counties_served to permitted params
-        :states,  # Add states to permitted params
-        :provider_type,  # Add provider_type to permitted params
         service_delivery: {}
       )
     else
@@ -202,10 +218,6 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :status,
         :in_home_only,
         :logo,  # Only permit if it's a file upload
-        :locations,  # Add locations to permitted params
-        :counties_served,  # Add counties_served to permitted params
-        :states,  # Add states to permitted params
-        :provider_type,  # Add provider_type to permitted params
         service_delivery: {}
       )
     end
