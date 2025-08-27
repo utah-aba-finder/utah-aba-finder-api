@@ -6,13 +6,14 @@ class Location < ApplicationRecord
   # Predefined waitlist options for consistent user experience
   WAITLIST_OPTIONS = [
     "No waitlist",
-    "1-2 weeks", 
+    "1-2 weeks",
     "2-4 weeks",
     "1-3 months",
     "3-6 months",
     "6+ months",
     "Not accepting new clients",
-    "Contact for availability"
+    "Contact for availability",
+    "No in-home services available at this location"
   ].freeze
   
   # Validations for waitlist fields
@@ -23,4 +24,5 @@ class Location < ApplicationRecord
   scope :accepting_new_clients, -> { where.not(in_home_waitlist: "Not accepting new clients").where.not(in_clinic_waitlist: "Not accepting new clients") }
   scope :no_waitlist, -> { where(in_home_waitlist: "No waitlist").or(where(in_clinic_waitlist: "No waitlist")) }
   scope :short_waitlist, -> { where(in_home_waitlist: ["1-2 weeks", "2-4 weeks"]).or(where(in_clinic_waitlist: ["1-2 weeks", "2-4 weeks"])) }
+  scope :no_in_home_services, -> { where(in_home_waitlist: "No in-home services available at this location") }
 end

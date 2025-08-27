@@ -85,6 +85,16 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
     locations_data.each do |location_info|
       next unless location_info[:address_1].present? || location_info[:city].present?
       
+      # Determine if this location provides in-home services
+      has_in_home_services = location_info[:services]&.any? { |service| service[:name]&.downcase&.include?('home') || service[:name]&.downcase&.include?('in-home') }
+      
+      # Set appropriate waitlist defaults
+      in_home_waitlist_default = if has_in_home_services
+                                   "Contact for availability"
+                                 else
+                                   "No in-home services available at this location"
+                                 end
+      
       location = provider.locations.build(
         name: location_info[:name],
         address_1: location_info[:address_1],
@@ -93,7 +103,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         state: location_info[:state],
         zip: location_info[:zip],
         phone: location_info[:phone],
-        in_home_waitlist: location_info[:in_home_waitlist] || "Contact for availability",
+        in_home_waitlist: location_info[:in_home_waitlist] || in_home_waitlist_default,
         in_clinic_waitlist: location_info[:in_clinic_waitlist] || "Contact for availability"
       )
       
@@ -164,8 +174,12 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :status,
         :in_home_only,
         :logo,  # Only permit if it's a file upload
+        :locations,  # Add locations to permitted params
+        :counties_served,  # Add counties_served to permitted params
+        :states,  # Add states to permitted params
+        :provider_type,  # Add provider_type to permitted params
         service_delivery: {}
-      ) # Removed .except(:counties_served, :states) to allow these fields to be processed
+      )
     else
       # Handle direct params (for logo uploads)
       params.permit(
@@ -184,8 +198,12 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :status,
         :in_home_only,
         :logo,  # Only permit if it's a file upload
+        :locations,  # Add locations to permitted params
+        :counties_served,  # Add counties_served to permitted params
+        :states,  # Add states to permitted params
+        :provider_type,  # Add provider_type to permitted params
         service_delivery: {}
-      ) # Removed .except(:counties_served, :states) to allow these fields to be processed
+      )
     end
   end
 end
