@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_08_27_004504) do
+ActiveRecord::Schema[7.1].define(version: 2025_08_27_024941) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_trgm"
   enable_extension "plpgsql"
@@ -115,8 +115,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_27_004504) do
     t.string "zip"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "in_home_waitlist", default: "Contact for availability"
-    t.string "in_clinic_waitlist", default: "Contact for availability"
+    t.text "in_home_waitlist", default: "Contact for availability"
+    t.text "in_clinic_waitlist", default: "Contact for availability"
     t.index ["in_clinic_waitlist"], name: "index_locations_on_in_clinic_waitlist"
     t.index ["in_home_waitlist"], name: "index_locations_on_in_home_waitlist"
     t.index ["provider_id"], name: "index_locations_on_provider_id"
