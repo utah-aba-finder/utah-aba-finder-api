@@ -52,15 +52,16 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
     Rails.logger.info "🔍 Admin update - States Params: #{states_params.inspect}"
     Rails.logger.info "🔍 Admin update - Current category: #{provider.category}"
 
+    # Create locations FIRST to satisfy validation
+    if locations_params.present?
+      update_locations(provider, locations_params)
+    end
+
+    # Now update the provider (validation should pass since locations exist)
     if provider.update(admin_provider_params)
       # Update practice types if provided
       if practice_type_params.present?
         provider.update_practice_types(practice_type_params)
-      end
-
-      # Update locations if provided
-      if locations_params.present?
-        update_locations(provider, locations_params)
       end
 
       # Update counties served if provided
