@@ -142,6 +142,12 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       Rails.logger.info "🔍 DEBUG: Final in_home_waitlist: #{in_home_waitlist}"
       Rails.logger.info "🔍 DEBUG: Final in_clinic_waitlist: #{in_clinic_waitlist}"
       
+      # Debug: Check exact string comparison
+      Rails.logger.info "🔍 DEBUG: in_home_waitlist bytes: #{in_home_waitlist.bytes.inspect}"
+      Rails.logger.info "🔍 DEBUG: in_home_waitlist length: #{in_home_waitlist.length}"
+      Rails.logger.info "🔍 DEBUG: in_home_waitlist in WAITLIST_OPTIONS?: #{Location::WAITLIST_OPTIONS.include?(in_home_waitlist)}"
+      Rails.logger.info "🔍 DEBUG: WAITLIST_OPTIONS: #{Location::WAITLIST_OPTIONS.inspect}"
+      
       location = provider.locations.build(
         name: permitted_location_info[:name],
         address_1: permitted_location_info[:address_1],
