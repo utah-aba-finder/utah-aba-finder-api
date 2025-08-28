@@ -55,7 +55,7 @@ class Api::V1::ProvidersController < ApplicationController
     end
     
     # Include necessary associations for performance
-    providers = providers.includes(:counties, :practice_types, :locations, :insurances)
+    providers = providers.includes(:counties, :practice_types, :locations, :insurances, :logo_attachment, :logo_blob)
     
     render json: ProviderSerializer.format_providers(providers)
   end

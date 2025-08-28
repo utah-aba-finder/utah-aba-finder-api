@@ -1,6 +1,6 @@
 class Provider < ApplicationRecord
-  # Temporarily comment out logo attachment to fix storage config error in development
-  # has_one_attached :logo unless Rails.env.test?
+  # Logo attachment for Active Storage
+  has_one_attached :logo unless Rails.env.test?
   
   has_many :old_counties
   has_many :counties_providers, dependent: :destroy
