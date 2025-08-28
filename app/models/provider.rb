@@ -3,9 +3,8 @@ class Provider < ApplicationRecord
   # has_one_attached :logo unless Rails.env.test?
   
   has_many :old_counties
-  # Temporarily comment out problematic association to fix SQL syntax error
-  # has_many :counties_providers, dependent: :destroy
-  # has_many :counties, through: :counties_providers
+  has_many :counties_providers, dependent: :destroy
+  has_many :counties, through: :counties_providers
   has_many :locations
   has_many :provider_insurances
   has_many :insurances, through: :provider_insurances

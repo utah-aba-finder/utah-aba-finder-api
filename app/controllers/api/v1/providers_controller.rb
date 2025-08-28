@@ -10,11 +10,53 @@ class Api::V1::ProvidersController < ApplicationController
   def index
     puts "🔍 Controller loaded: #{__FILE__}"
     puts "🔍 Actions: #{self.class.action_methods.to_a.sort.join(', ')}"
+    
+    # Start with approved providers
+    providers = Provider.where(status: :approved)
+    
+    # Filter by provider type if specified
     if params[:provider_type].present?
-      providers = Provider.where(status: :approved, provider_type: params[:provider_type])
-    else
-      providers = Provider.where(status: :approved)
+      # Try to find by practice_types first (new system)
+      practice_type_providers = providers.joins(:practice_types)
+                                        .where(practice_types: { name: params[:provider_type] })
+                                        .distinct
+      
+      # Also try to find by category field (legacy system)
+      category_providers = providers.where(category: params[:provider_type].downcase.gsub(' ', '_'))
+      
+      # Combine both results
+      provider_ids = (practice_type_providers.pluck(:id) + category_providers.pluck(:id)).uniq
+      providers = providers.where(id: provider_ids)
     end
+    
+    # Filter by state if specified
+    if params[:state].present?
+      # Find the state by name or abbreviation
+      state = State.find_by("LOWER(name) = ? OR LOWER(abbreviation) = ?", 
+                           params[:state].downcase, params[:state].downcase)
+      
+      if state
+        # Get providers that serve counties in this state
+        provider_ids = providers.joins(counties: :state)
+                               .where(counties: { state_id: state.id })
+                               .distinct
+                               .pluck(:id)
+        providers = providers.where(id: provider_ids)
+      end
+    end
+    
+    # Filter by state_id if specified (alternative to state name)
+    if params[:state_id].present?
+      provider_ids = providers.joins(counties: :state)
+                             .where(counties: { state_id: params[:state_id] })
+                             .distinct
+                             .pluck(:id)
+      providers = providers.where(id: provider_ids)
+    end
+    
+    # Include necessary associations for performance
+    providers = providers.includes(:counties, :practice_types, :locations, :insurances)
+    
     render json: ProviderSerializer.format_providers(providers)
   end
 
