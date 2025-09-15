@@ -142,7 +142,7 @@ class ProviderRegistration < ApplicationRecord
     self.service_types = service_types
       .map { |s| s.to_s.strip }
       .reject(&:blank?)
-      .map { |s| s.parameterize.gsub('_', '-') }  # Use hyphens instead of underscores to match DB slugs
+        .map { |s| s.parameterize }  # Use hyphens instead of underscores to match DB slugs
       .uniq
   end
 

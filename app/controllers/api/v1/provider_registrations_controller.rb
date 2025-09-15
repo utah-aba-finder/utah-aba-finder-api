@@ -4,6 +4,7 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
 
   # Ensure JSON keys are underscored
   before_action :underscore_params!
+  before_action :load_mailers
   
   def index
     # Super admin only
@@ -102,6 +103,12 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
   end
 
   private
+
+  def load_mailers
+    # Ensure mailers are loaded in the API namespace
+    AdminNotificationMailer
+    ProviderRegistrationMailer
+  end
 
   # Allow array for service_types and arbitrary nested JSON for submitted_data
   def reg_params
