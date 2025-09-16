@@ -31,6 +31,8 @@ Rails.application.configure do
 
   # Store uploaded files on AWS S3
   config.active_storage.service = :amazon
+  # Increase presigned URL expiry to reduce frequent re-signing
+  config.active_storage.service_urls_expire_in = 24.hours
   
   # Use presigned URLs (no ACLs required, works with private buckets)
 config.active_storage.resolve_model_to_route = :rails_storage_redirect

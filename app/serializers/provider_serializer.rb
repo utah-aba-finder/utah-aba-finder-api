@@ -57,6 +57,8 @@ class ProviderSerializer
             "at_home_services": provider.at_home_services,
             "in_clinic_services": provider.in_clinic_services,
             "logo": logo_url_for(provider),
+            # Backward-compatible key expected by older frontends
+            "logo_url": logo_url_for(provider),
             "updated_last": provider.updated_at,
             "status": provider.status,
             "in_home_only": provider.in_home_only,
