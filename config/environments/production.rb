@@ -55,13 +55,13 @@ config.active_storage.resolve_model_to_route = :rails_storage_redirect
     .then { |logger| ActiveSupport::TaggedLogging.new(logger) }
 
   # Devise mailer configuration
-  config.action_mailer.default_url_options = { host: 'autismserviceslocator.com' }
+  config.action_mailer.default_url_options = { host: 'www.autismserviceslocator.com' }
   
   # Active Storage URL configuration
-  config.active_storage.default_url_options = { host: ENV.fetch('HOST', 'autismserviceslocator.com') }
+  config.active_storage.default_url_options = { host: ENV.fetch('HOST', 'www.autismserviceslocator.com') }
   
   # Ensure URL helpers know the host for rails_blob_url
-  Rails.application.routes.default_url_options[:host] = ENV.fetch('HOST', 'autismserviceslocator.com')
+  Rails.application.routes.default_url_options[:host] = ENV.fetch('HOST', 'www.autismserviceslocator.com')
   
   # S3 doesn't need local URL options
   # config.after_initialize do
