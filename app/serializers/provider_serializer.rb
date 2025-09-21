@@ -98,19 +98,17 @@ class ProviderSerializer
   end
 
   def self.logo_url_for(provider)
-    # Handle both Active Storage attachments and string URLs
-    if provider.logo.respond_to?(:attached?) && provider.logo.attached?
-      begin
-        # Try to get the URL, but handle cases where storage service isn't configured
-        provider.logo.blob.url
-      rescue => e
-        Rails.logger.warn "Could not generate logo URL for provider #{provider.id}: #{e.message}"
-        nil
-      end
-    elsif provider.logo.is_a?(String) && provider.logo.present?
-      # In test environment, return nil for string logos to match test expectations
-      Rails.env.test? ? nil : provider.logo
-    else
+    return nil unless provider.logo.respond_to?(:attached?) && provider.logo.attached?
+
+    begin
+      # Use the Rails route helper so it respects `resolve_model_to_route = :rails_storage_redirect`
+      # This generates URLs like: /rails/active_storage/blobs/redirect/.../filename.jpg
+      Rails.application.routes.url_helpers.rails_blob_url(
+        provider.logo,
+        only_path: false
+      )
+    rescue => e
+      Rails.logger.warn "Could not generate logo URL for provider #{provider.id}: #{e.message}"
       nil
     end
   end

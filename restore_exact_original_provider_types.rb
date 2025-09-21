@@ -85,3 +85,4 @@ puts "\nProviders in Utah with ABA Therapy: #{Provider.joins(counties: :state).j
 puts "\n✅ Providers restored to their EXACT original service types based on their category field!"
 puts "This is exactly what you had before we started making any changes."
 
+
