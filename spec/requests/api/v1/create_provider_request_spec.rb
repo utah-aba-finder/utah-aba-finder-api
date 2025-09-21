@@ -74,8 +74,7 @@ RSpec.describe "Create Provider Request", type: :request do
               "spanish_speakers": "Yes",
               "at_home_services": "Yes",
               "in_clinic_services": "Yes",
-              "in_home_only": true,
-              "logo": "https://awesomelogo.com"
+              "in_home_only": true
             }
           }
         ]

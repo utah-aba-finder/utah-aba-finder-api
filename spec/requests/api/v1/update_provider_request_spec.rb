@@ -14,7 +14,6 @@ RSpec.describe "Get Providers Request", type: :request do
       at_home_services: "Available",
       in_clinic_services: "Available",
       spanish_speakers: "Yes",
-      logo: "https://logo.com",
       in_home_only: true,
       service_delivery: { in_home: false, in_clinic: false, telehealth: false }
     )
@@ -32,7 +31,6 @@ RSpec.describe "Get Providers Request", type: :request do
       at_home_services: "Unavailable",
       in_clinic_services: "Unavailable",
       spanish_speakers: "No",
-      logo: "https://otherlogo.com",
       in_home_only: true,
       service_delivery: { in_home: false, in_clinic: false, telehealth: false }
     )
@@ -134,8 +132,7 @@ RSpec.describe "Get Providers Request", type: :request do
               "telehealth_services": "Yes",
               "spanish_speakers": "Yes",
               "at_home_services": "Yes",
-              "in_clinic_services": "Yes",
-              "logo": "https://awesomelogo.com"
+              "in_clinic_services": "Yes"
             }
           }
         ]
