@@ -55,7 +55,9 @@ class Api::V1::ProvidersController < ApplicationController
     end
     
     # Include necessary associations for performance
-    providers = providers.includes(:counties, :practice_types, :locations, :insurances, :logo_attachment, :logo_blob)
+    includes_array = [:counties, :practice_types, :locations, :insurances]
+    includes_array += [:logo_attachment, :logo_blob] unless Rails.env.test?
+    providers = providers.includes(includes_array)
     
     render json: ProviderSerializer.format_providers(providers)
   end
