@@ -29,8 +29,8 @@ Rails.application.configure do
   # config.action_dispatch.x_sendfile_header = "X-Sendfile" # for Apache
   # config.action_dispatch.x_sendfile_header = "X-Accel-Redirect" # for NGINX
 
-  # Store uploaded files on AWS S3
-  config.active_storage.service = :amazon
+  # Store uploaded files on AWS S3 (only if credentials are available)
+  config.active_storage.service = ENV['AWS_ACCESS_KEY_ID'].present? ? :amazon : :local
   # Increase presigned URL expiry to reduce frequent re-signing
   config.active_storage.service_urls_expire_in = 24.hours
   
