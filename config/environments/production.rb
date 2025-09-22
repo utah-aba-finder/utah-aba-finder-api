@@ -34,8 +34,8 @@ Rails.application.configure do
   # Increase presigned URL expiry to reduce frequent re-signing
   config.active_storage.service_urls_expire_in = 24.hours
   
-  # Use presigned URLs (no ACLs required, works with private buckets)
-config.active_storage.resolve_model_to_route = :rails_storage_redirect
+  # Use direct S3 URLs instead of redirects
+  # config.active_storage.resolve_model_to_route = :rails_storage_redirect
 
   # Mount Action Cable outside main process or domain.
   # config.action_cable.mount_path = nil

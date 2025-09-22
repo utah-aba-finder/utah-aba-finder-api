@@ -105,12 +105,9 @@ class ProviderSerializer
     return nil unless provider.respond_to?(:logo) && provider.logo.respond_to?(:attached?) && provider.logo.attached?
 
     begin
-      # Use the Rails route helper so it respects `resolve_model_to_route = :rails_storage_redirect`
-      # This generates URLs like: /rails/active_storage/blobs/redirect/.../filename.jpg
-      Rails.application.routes.url_helpers.rails_blob_url(
-        provider.logo,
-        only_path: false
-      )
+      # Use direct S3 URLs since Rails redirect is not working properly
+      # This generates URLs like: https://utahabalogos.s3.us-west-1.amazonaws.com/...
+      provider.logo.blob.url
     rescue => e
       Rails.logger.warn "Could not generate logo URL for provider #{provider.id}: #{e.message}"
       nil
