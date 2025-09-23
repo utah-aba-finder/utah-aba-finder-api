@@ -105,9 +105,10 @@ class ProviderSerializer
     return nil unless provider.respond_to?(:logo) && provider.logo.respond_to?(:attached?) && provider.logo.attached?
 
     begin
-      # Use direct S3 URLs since Rails redirect is not working properly
-      # This generates URLs like: https://utahabalogos.s3.us-west-1.amazonaws.com/...
-      provider.logo.blob.url
+      # Use direct S3 URLs since the bucket is public
+      # This generates URLs like: https://asl-logos.s3.amazonaws.com/...
+      blob = provider.logo.blob
+      "https://asl-logos.s3.amazonaws.com/#{blob.key}"
     rescue => e
       Rails.logger.warn "Could not generate logo URL for provider #{provider.id}: #{e.message}"
       nil
