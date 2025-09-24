@@ -96,6 +96,9 @@ class Provider < ApplicationRecord
 
   enum status: { pending: 1, approved: 2, denied: 3 }
 
+  # Normalize status before validation
+  before_validation :normalize_status
+
   # Validations
   validates :in_home_only, inclusion: { in: [true, false] }
   validates :service_delivery, presence: true
@@ -373,6 +376,20 @@ class Provider < ApplicationRecord
   end
 
   private
+
+  def normalize_status
+    return unless status.present?
+    
+    # Convert capitalized status to lowercase to match enum values
+    case status.to_s.downcase
+    when 'approved'
+      self.status = 'approved'
+    when 'pending'
+      self.status = 'pending'
+    when 'denied'
+      self.status = 'denied'
+    end
+  end
 
   def locations_required_unless_in_home_only
     if !in_home_only && locations.empty?
