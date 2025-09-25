@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_08_27_024941) do
+ActiveRecord::Schema[7.1].define(version: 2025_08_28_024453) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_trgm"
   enable_extension "plpgsql"
@@ -255,7 +255,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_08_27_024941) do
     t.string "spanish_speakers"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "logo"
     t.integer "status", default: 1, null: false
     t.boolean "in_home_only", default: false, null: false
     t.jsonb "service_delivery", default: {"in_home"=>false, "in_clinic"=>false, "telehealth"=>false}
