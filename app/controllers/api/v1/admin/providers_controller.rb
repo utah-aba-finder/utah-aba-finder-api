@@ -1,10 +1,26 @@
 class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
+  include Pagy::Backend
+  
   def index
-    providers = Provider.all
+    # Add pagination to prevent memory issues
+    per_page = params[:per_page]&.to_i || 50
+    per_page = [per_page, 100].min # Cap at 100 to prevent abuse
+    
+    providers_query = Provider.includes(:counties, :practice_types, :locations, :insurances)
+                             .order(:name)
+    
+    @pagy, providers = pagy(providers_query, items: per_page)
+    
     render json: {
       data: ProviderSerializer.format_providers(providers),
       meta: {
-        waitlist_options: Location::WAITLIST_OPTIONS
+        waitlist_options: Location::WAITLIST_OPTIONS,
+        pagination: {
+          current_page: @pagy.page,
+          total_pages: @pagy.pages,
+          total_count: @pagy.count,
+          per_page: @pagy.items
+        }
       }
     }
   end
