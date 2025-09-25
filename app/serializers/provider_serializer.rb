@@ -2,13 +2,15 @@ class ProviderSerializer
   include JSONAPI::Serializer
 
   def self.format_providers(providers)
-    # Preload associations to avoid N+1 queries
-    providers = providers.includes(
-      :practice_types, 
-      { :locations => :practice_types }, 
-      { :provider_insurances => :insurance },
-      :counties
-    ) unless providers.loaded?
+    # Preload associations to avoid N+1 queries (only for ActiveRecord::Relation)
+    if providers.respond_to?(:includes) && !providers.loaded?
+      providers = providers.includes(
+        :practice_types, 
+        { :locations => :practice_types }, 
+        { :provider_insurances => :insurance },
+        :counties
+      )
+    end
     
     {
       data: providers.map do |provider|
