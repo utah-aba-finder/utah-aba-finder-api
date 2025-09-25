@@ -5,8 +5,8 @@ class ProviderSerializer
     # Preload associations to avoid N+1 queries
     providers = providers.includes(
       :practice_types, 
-      :locations => :practice_types, 
-      :provider_insurances => :insurance,
+      { :locations => :practice_types }, 
+      { :provider_insurances => :insurance },
       :counties
     ) unless providers.loaded?
     
