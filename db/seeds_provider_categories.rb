@@ -12,7 +12,7 @@ categories = [
       { name: "Specialties", field_type: "multi_select", required: true, options: { choices: ["Autism", "ADHD", "Behavioral Issues", "Developmental Delays", "Social Skills", "Anxiety", "Depression", "OCD", "Tourette's", "Learning Disabilities"] } },
       { name: "Certifications", field_type: "multi_select", required: true, options: { choices: ["BCBA", "BCaBA", "RBT", "Licensed Therapist", "Licensed Psychologist", "Licensed Social Worker", "Licensed Counselor"] } },
       { name: "Age Groups", field_type: "multi_select", required: true, options: { choices: ["0-3", "3-5", "5-12", "12-18", "18+", "All Ages"] } },
-      { name: "Insurance Accepted", field_type: "multi_select", required: false, options: { choices: ["Medicaid", "Private Insurance", "Self-Pay", "Sliding Scale", "School District Contracts", "Medicare", "Tricare"] } },
+      { name: "Insurance Accepted", field_type: "multi_select", required: false, options: { choices: ["Medicaid", "Private Insurance", "Self-Pay", "Flexible pricing based on your circumstances", "School District Contracts", "Medicare", "Tricare"] } },
       { name: "Emergency Services", field_type: "boolean", required: false, help_text: "Available for urgent behavioral needs" }
     ]
   },
@@ -25,7 +25,7 @@ categories = [
       { name: "Evaluation Types", field_type: "multi_select", required: true, options: { choices: ["ADOS-2", "ADI-R", "CARS-2", "GARS-3", "M-CHAT", "Comprehensive Assessment", "Cognitive Testing", "Adaptive Behavior", "Language Assessment", "Motor Skills Assessment"] } },
       { name: "Credentials", field_type: "multi_select", required: true, options: { choices: ["Licensed Psychologist", "Developmental Pediatrician", "Child Psychiatrist", "Licensed Clinical Social Worker", "Board Certified Behavior Analyst", "Neuropsychologist", "School Psychologist", "Licensed Professional Counselor"] } },
       { name: "Age Range Served", field_type: "multi_select", required: true, options: { choices: ["0-3 (Early Intervention)", "3-5 (Preschool)", "5-12 (School Age)", "12-18 (Adolescent)", "18+ (Adult)", "All Ages"] } },
-      { name: "Insurance Accepted", field_type: "multi_select", required: false, options: { choices: ["Medicaid", "Private Insurance", "Self-Pay", "Sliding Scale", "School District Contracts", "Medicare", "Tricare"] } },
+      { name: "Insurance Accepted", field_type: "multi_select", required: false, options: { choices: ["Medicaid", "Private Insurance", "Self-Pay", "Flexible pricing based on your circumstances", "School District Contracts", "Medicare", "Tricare"] } },
       { name: "Report Turnaround", field_type: "select", required: false, options: { choices: ["1-2 weeks", "2-4 weeks", "4-6 weeks", "6+ weeks"] } }
     ]
   },
@@ -38,7 +38,7 @@ categories = [
       { name: "Speech Disorders", field_type: "multi_select", required: true, options: { choices: ["Articulation", "Language Delay", "Stuttering", "Voice Disorders", "Swallowing", "Social Communication", "Apraxia", "Dysarthria", "Phonological Disorders", "Fluency Disorders"] } },
       { name: "Certifications", field_type: "multi_select", required: true, options: { choices: ["SLP", "SLPA", "CCC-SLP", "Licensed Speech Therapist", "Board Certified", "Specialist Certification", "Pediatric Specialist"] } },
       { name: "Age Groups", field_type: "multi_select", required: true, options: { choices: ["0-3 (Early Intervention)", "3-5 (Preschool)", "5-12 (School Age)", "12-18 (Adolescent)", "18+ (Adult)", "All Ages"] } },
-      { name: "Insurance Accepted", field_type: "multi_select", required: false, options: { choices: ["Medicaid", "Private Insurance", "Self-Pay", "School District Contracts", "Medicare", "Tricare", "Sliding Scale"] } },
+      { name: "Insurance Accepted", field_type: "multi_select", required: false, options: { choices: ["Medicaid", "Private Insurance", "Self-Pay", "School District Contracts", "Medicare", "Tricare", "Flexible pricing based on your circumstances"] } },
       { name: "Teletherapy Available", field_type: "boolean", required: false, help_text: "Virtual therapy sessions available" }
     ]
   },
@@ -51,7 +51,7 @@ categories = [
       { name: "Focus Areas", field_type: "multi_select", required: true, options: { choices: ["Sensory Processing", "Fine Motor Skills", "Gross Motor Skills", "ADL Training", "Handwriting", "Visual Motor", "Feeding Therapy", "Dressing Skills", "Play Skills", "Social Skills", "Executive Functioning"] } },
       { name: "Certifications", field_type: "multi_select", required: true, options: { choices: ["OT", "OTA", "Licensed Occupational Therapist", "Board Certified", "Pediatric Specialist", "Sensory Integration Certified", "Feeding Specialist"] } },
       { name: "Age Groups", field_type: "multi_select", required: true, options: { choices: ["0-3 (Early Intervention)", "3-5 (Preschool)", "5-12 (School Age)", "12-18 (Adolescent)", "18+ (Adult)", "All Ages"] } },
-      { name: "Insurance Accepted", field_type: "multi_select", required: false, options: { choices: ["Medicaid", "Private Insurance", "Self-Pay", "School District Contracts", "Medicare", "Tricare", "Sliding Scale"] } },
+      { name: "Insurance Accepted", field_type: "multi_select", required: false, options: { choices: ["Medicaid", "Private Insurance", "Self-Pay", "School District Contracts", "Medicare", "Tricare", "Flexible pricing based on your circumstances"] } },
       { name: "Sensory Integration", field_type: "boolean", required: false, help_text: "Specialized sensory integration therapy" }
     ]
   },
@@ -65,7 +65,7 @@ categories = [
       { name: "Credentials", field_type: "multi_select", required: true, options: { choices: ["Certified Coach", "Licensed Counselor", "Social Worker", "Life Coach", "Mentor", "Board Certified", "Special Education Teacher", "Behavioral Specialist", "Parent Coach"] } },
       { name: "Age Groups", field_type: "multi_select", required: true, options: { choices: ["12-18 (Teen)", "18-25 (Young Adult)", "25+ (Adult)", "All Ages"] } },
       { name: "Session Format", field_type: "multi_select", required: false, options: { choices: ["Individual", "Group", "Family", "Virtual", "In-Person", "Phone", "Text/Email Support"] } },
-      { name: "Sliding Scale", field_type: "boolean", required: false, help_text: "Income-based pricing available" }
+      { name: "Flexible Pricing", field_type: "boolean", required: false, help_text: "Pricing varies based on your specific situation and needs" }
     ]
   },
   {
@@ -77,7 +77,7 @@ categories = [
       { name: "Specialties", field_type: "multi_select", required: true, options: { choices: ["General Pediatrics", "Developmental Pediatrics", "Behavioral Pediatrics", "Autism Specialist", "ADHD Specialist", "Neurology", "Cardiology", "Endocrinology", "Gastroenterology", "Allergy/Immunology"] } },
       { name: "Board Certifications", field_type: "multi_select", required: true, options: { choices: ["Board Certified Pediatrician", "Fellowship Trained", "Developmental Pediatrician", "Behavioral Pediatrician", "Subspecialty Board Certified", "Pediatric Neurology", "Pediatric Psychiatry"] } },
       { name: "Age Range", field_type: "multi_select", required: true, options: { choices: ["0-3", "3-5", "5-12", "12-18", "18-21", "All Ages"] } },
-      { name: "Insurance Accepted", field_type: "multi_select", required: false, options: { choices: ["Medicaid", "Private Insurance", "Self-Pay", "Sliding Scale", "Medicare", "Tricare", "CHIP"] } },
+      { name: "Insurance Accepted", field_type: "multi_select", required: false, options: { choices: ["Medicaid", "Private Insurance", "Self-Pay", "Flexible pricing based on your circumstances", "Medicare", "Tricare", "CHIP"] } },
       { name: "Waitlist Status", field_type: "select", required: false, options: { choices: ["Accepting New Patients", "Short Waitlist", "Long Waitlist", "Not Accepting"] } }
     ]
   },
@@ -129,7 +129,7 @@ categories = [
       { name: "Services", field_type: "multi_select", required: true, options: { choices: ["Haircuts", "Hair Styling", "Special Needs Haircuts", "Sensory-Friendly", "Mobile Services", "Hair Coloring", "Hair Extensions", "Braiding", "Hair Treatments", "Kids Haircuts"] } },
       { name: "Experience", field_type: "multi_select", required: true, options: { choices: ["Special Needs Experience", "Pediatric Experience", "General Experience", "Certified Stylist", "Licensed Cosmetologist", "Barber License", "Specialized Training", "Continuing Education"] } },
       { name: "Age Groups", field_type: "multi_select", required: true, options: { choices: ["0-3", "3-5", "5-12", "12-18", "18+", "All Ages"] } },
-      { name: "Pricing", field_type: "multi_select", required: false, options: { choices: ["Standard Pricing", "Special Needs Pricing", "Sliding Scale", "Insurance Accepted", "Package Deals", "Family Discounts"] } },
+      { name: "Pricing", field_type: "multi_select", required: false, options: { choices: ["Standard Pricing", "Special Needs Pricing", "Flexible pricing based on your circumstances", "Insurance Accepted", "Package Deals", "Family Discounts"] } },
       { name: "Mobile Services", field_type: "boolean", required: false, help_text: "Home or mobile haircut services" }
     ]
   },
@@ -143,7 +143,7 @@ categories = [
       { name: "Credentials", field_type: "multi_select", required: true, options: { choices: ["Certified Advocate", "Attorney", "Social Worker", "Parent Advocate", "Professional Advocate", "Board Certified", "Special Education Background", "Legal Training", "Healthcare Background"] } },
       { name: "Age Groups", field_type: "multi_select", required: true, options: { choices: ["0-3 (Early Intervention)", "3-5 (Preschool)", "5-12 (School Age)", "12-18 (Adolescent)", "18+ (Adult)", "All Ages"] } },
       { name: "Services", field_type: "multi_select", required: false, options: { choices: ["Individual Advocacy", "Group Advocacy", "Legal Representation", "Consultation", "Training", "Mediation", "Documentation Review", "Meeting Attendance", "Appeal Support"] } },
-      { name: "Sliding Scale", field_type: "boolean", required: false, help_text: "Income-based pricing available" }
+      { name: "Flexible Pricing", field_type: "boolean", required: false, help_text: "Pricing varies based on your specific situation and needs" }
     ]
   },
   {
@@ -155,7 +155,7 @@ categories = [
       { name: "Therapy Types", field_type: "multi_select", required: true, options: { choices: ["Individual Therapy", "Family Therapy", "Group Therapy", "Play Therapy", "CBT", "DBT", "Art Therapy", "Music Therapy", "Animal-Assisted Therapy", "Trauma Therapy", "Anxiety Therapy", "Depression Therapy"] } },
       { name: "Licenses", field_type: "multi_select", required: true, options: { choices: ["Licensed Therapist", "Licensed Counselor", "Licensed Social Worker", "Psychologist", "Psychiatrist", "Marriage & Family Therapist", "Professional Counselor", "Clinical Social Worker", "Board Certified"] } },
       { name: "Age Groups", field_type: "multi_select", required: true, options: { choices: ["0-3", "3-5", "5-12", "12-18", "18+", "All Ages"] } },
-      { name: "Insurance Accepted", field_type: "multi_select", required: false, options: { choices: ["Medicaid", "Private Insurance", "Self-Pay", "Sliding Scale", "Medicare", "Tricare", "School District Contracts"] } },
+      { name: "Insurance Accepted", field_type: "multi_select", required: false, options: { choices: ["Medicaid", "Private Insurance", "Self-Pay", "Flexible pricing based on your circumstances", "Medicare", "Tricare", "School District Contracts"] } },
       { name: "Special Needs Experience", field_type: "boolean", required: false, help_text: "Experience with autism and special needs" }
     ]
   }
