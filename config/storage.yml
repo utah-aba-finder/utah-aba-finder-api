@@ -11,8 +11,8 @@ amazon:
   service: S3
   access_key_id: <%= ENV.fetch('AWS_ACCESS_KEY_ID', 'dummy') %>
   secret_access_key: <%= ENV.fetch('AWS_SECRET_ACCESS_KEY', 'dummy') %>
-  region: <%= ENV.fetch('AWS_REGION', 'us-east-1') %>
-  bucket: asl-logos
+  region: <%= ENV.fetch('AWS_REGION', 'us-west-1') %>
+  bucket: utahabalogos
   public: false
 
 # Remember not to checkin your GCS keyfile to a repository
