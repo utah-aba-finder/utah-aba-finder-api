@@ -1,4 +1,8 @@
 class Api::V1::InsurancesController < ApplicationController
+  # Allow authenticated users or API keys to access insurances
+  skip_before_action :authenticate_client, only: [:index, :search]
+  before_action :authenticate_user_or_client, only: [:index, :search]
+
   def index
     insurances = Insurance.all
     render json: InsuranceSerializer.format_insurances(insurances)
@@ -72,6 +76,31 @@ class Api::V1::InsurancesController < ApplicationController
   end
 
   private
+  
+  def authenticate_user_or_client
+    auth = request.headers['Authorization'].to_s
+    
+    # Check for Bearer token (user authentication)
+    if auth.start_with?('Bearer ')
+      token = auth.sub(/^Bearer\s+/, '')
+      user = User.find_by(id: token)
+      if user
+        @current_user = user
+        return
+      end
+    end
+    
+    # Check for API key (client authentication)
+    client = Client.find_by(api_key: auth)
+    if client
+      @current_client = client
+      return
+    end
+    
+    # If neither authentication method works, return unauthorized
+    render json: { error: 'Unauthorized' }, status: :unauthorized
+  end
+  
   def insurance_params
     params.require(:data).first[:attributes].permit(
       :name
