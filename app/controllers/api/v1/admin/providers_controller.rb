@@ -1,3 +1,5 @@
+require 'securerandom'
+
 class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
   include Pagy::Backend
   
@@ -23,6 +25,55 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         }
       }
     }
+  end
+
+  def create
+    # Create provider with all necessary setup
+    provider = Provider.new(admin_provider_params)
+    
+    # Set default status to approved for admin-created providers
+    provider.status = :approved
+    
+    # Set default service delivery if not provided
+    provider.service_delivery ||= { "in_home" => true, "in_clinic" => false }
+    
+    # Set default in_home_only to true to avoid location requirement initially
+    provider.in_home_only = true if provider.in_home_only.nil?
+    
+    if provider.save
+      # Create user account for the provider
+      user = create_provider_user_account(provider)
+      
+      # Set up practice types if provided
+      if params[:data]&.first&.dig(:attributes, :provider_type)&.present?
+        provider.create_practice_types(params[:data].first[:attributes][:provider_type])
+      end
+      
+      # Set up locations if provided
+      if params[:data]&.first&.dig(:attributes, :locations)&.present?
+        create_locations(provider, params[:data].first[:attributes][:locations])
+      end
+      
+      # Set up counties served if provided
+      if params[:data]&.first&.dig(:attributes, :counties_served)&.present?
+        update_counties_served(provider, params[:data].first[:attributes][:counties_served])
+      end
+      
+      # Set up insurance if provided
+      if params[:data]&.first&.dig(:attributes, :insurance)&.present?
+        setup_insurance(provider, params[:data].first[:attributes][:insurance])
+      end
+      
+      # Send welcome email to provider
+      if user
+        send_welcome_email(provider, user)
+      end
+      
+      render json: ProviderSerializer.format_providers([provider]), status: :created
+    else
+      Rails.logger.error "❌ Admin create failed - Errors: #{provider.errors.full_messages}"
+      render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
+    end
   end
 
   def update
@@ -94,6 +145,83 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
   end
 
   private
+
+  def create_provider_user_account(provider)
+    # Generate a secure random password
+    password = SecureRandom.alphanumeric(12)
+    
+    # Create user account linked to the provider
+    user = User.new(
+      email: provider.email,
+      password: password,
+      password_confirmation: password,
+      provider_id: provider.id,
+      role: 'user'  # Regular provider user, not admin
+    )
+    
+    if user.save
+      # Store the password temporarily for email (it will be hashed)
+      user.instance_variable_set(:@plain_password, password)
+      Rails.logger.info "✅ Created user account for provider #{provider.id}: #{user.email}"
+      user
+    else
+      Rails.logger.error "❌ Failed to create user account: #{user.errors.full_messages}"
+      nil
+    end
+  end
+
+  def create_locations(provider, locations_data)
+    locations_data.each do |location_info|
+      location = provider.locations.build(
+        name: location_info[:name] || location_info['name'],
+        address_1: location_info[:address_1] || location_info['address_1'],
+        address_2: location_info[:address_2] || location_info['address_2'],
+        city: location_info[:city] || location_info['city'],
+        state: location_info[:state] || location_info['state'],
+        zip: location_info[:zip] || location_info['zip'],
+        phone: location_info[:phone] || location_info['phone'],
+        in_home_waitlist: location_info[:in_home_waitlist] || location_info['in_home_waitlist'] || 'Contact us',
+        in_clinic_waitlist: location_info[:in_clinic_waitlist] || location_info['in_clinic_waitlist'] || 'Contact us'
+      )
+      
+      if location.save
+        Rails.logger.info "✅ Created location #{location.id} for provider #{provider.id}"
+        
+        # Handle services for this location if provided
+        if location_info[:services].present? || location_info['services'].present?
+          services = location_info[:services] || location_info['services']
+          update_location_services(location, services)
+        end
+      else
+        Rails.logger.error "❌ Failed to create location: #{location.errors.full_messages}"
+      end
+    end
+  end
+
+  def setup_insurance(provider, insurance_data)
+    insurance_data.each do |insurance_info|
+      insurance_id = insurance_info[:id] || insurance_info['id']
+      if insurance_id.present?
+        insurance = Insurance.find_by(id: insurance_id)
+        if insurance
+          provider_insurance = provider.provider_insurances.find_or_initialize_by(insurance: insurance)
+          provider_insurance.accepted = true
+          provider_insurance.save!
+          Rails.logger.info "✅ Added insurance #{insurance.name} for provider #{provider.id}"
+        end
+      end
+    end
+  end
+
+  def send_welcome_email(provider, user)
+    begin
+      # Send welcome email with login credentials
+      ProviderRegistrationMailer.admin_created_provider(provider, user).deliver_later
+      Rails.logger.info "✅ Welcome email sent to #{provider.email}"
+    rescue => e
+      Rails.logger.error "❌ Failed to send welcome email: #{e.message}"
+    end
+  end
 
   def update_counties_served(provider, counties_data)
     Rails.logger.info "🔍 Updating counties for provider #{provider.id}: #{counties_data.inspect}"
@@ -259,6 +387,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :in_clinic_services,
         :status,
         :in_home_only,
+        :category,  # Allow category for creation
         :logo,  # Only permit if it's a file upload
         service_delivery: {}
       )
@@ -279,6 +408,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         :in_clinic_services,
         :status,
         :in_home_only,
+        :category,  # Allow category for creation
         :logo,  # Only permit if it's a file upload
         service_delivery: {}
       )

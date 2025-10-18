@@ -39,4 +39,15 @@ class ProviderRegistrationMailer < ApplicationMailer
 
     )
   end
+
+  def admin_created_provider(provider, user)
+    @provider = provider
+    @user = user
+    @password = user.instance_variable_get(:@plain_password)
+    
+    mail(
+      to: @provider.email,
+      subject: "Welcome! Your Provider Account Has Been Created - #{provider.name}"
+    )
+  end
 end 
