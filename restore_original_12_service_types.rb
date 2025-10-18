@@ -99,3 +99,5 @@ puts "\nProviders in Utah with ABA Therapy: #{Provider.joins(counties: :state).j
 puts "\n✅ Original 12 service types restored! This matches your Provider Registration system exactly."
 
 
+
+

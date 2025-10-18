@@ -79,6 +79,9 @@ Rails.application.routes.draw do
         end
       end
       
+      # Practice types
+      resources :practice_types, only: [:index]
+      
       # Provider categories and registration
       resources :provider_categories, only: [:index, :show, :create, :update]
       resources :provider_registrations, only: [:index, :show, :create] do
