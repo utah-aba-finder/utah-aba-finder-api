@@ -44,24 +44,27 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       # Create user account for the provider
       user = create_provider_user_account(provider)
       
+      # Get attributes for nested data processing
+      attributes = get_request_attributes
+      
       # Set up practice types if provided
-      if params[:data]&.first&.dig(:attributes, :provider_type)&.present?
-        provider.create_practice_types(params[:data].first[:attributes][:provider_type])
+      if attributes[:provider_type].present?
+        provider.create_practice_types(attributes[:provider_type])
       end
       
       # Set up locations if provided
-      if params[:data]&.first&.dig(:attributes, :locations)&.present?
-        create_locations(provider, params[:data].first[:attributes][:locations])
+      if attributes[:locations].present?
+        create_locations(provider, attributes[:locations])
       end
       
       # Set up counties served if provided
-      if params[:data]&.first&.dig(:attributes, :counties_served)&.present?
-        update_counties_served(provider, params[:data].first[:attributes][:counties_served])
+      if attributes[:counties_served].present?
+        update_counties_served(provider, attributes[:counties_served])
       end
       
       # Set up insurance if provided
-      if params[:data]&.first&.dig(:attributes, :insurance)&.present?
-        setup_insurance(provider, params[:data].first[:attributes][:insurance])
+      if attributes[:insurance].present?
+        setup_insurance(provider, attributes[:insurance])
       end
       
       # Send welcome email to provider
@@ -367,57 +370,64 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
     Rails.logger.info "🔍 DEBUG: Final practice_types: #{location.practice_types.map(&:name)}"
   end
 
-  def admin_provider_params
-    # Handle both regular params and nested data format
-    if params[:data].present?
-      # Filter out logo if it's just a URL string (not a file upload)
-      attributes = params.require(:data).first[:attributes]
-      if attributes[:logo].present? && attributes[:logo].is_a?(String) && attributes[:logo].start_with?('http')
-        # Don't update logo if it's just a URL string
-        attributes = attributes.except(:logo)
-      end
-      
-      # Only permit the basic scalar fields, complex nested data is handled separately
-      attributes.permit(
-        :name,
-        :website,
-        :email,
-        :phone,
-        :cost,
-        :min_age,
-        :max_age,
-        :waitlist,
-        :telehealth_services,
-        :spanish_speakers,
-        :at_home_services,
-        :in_clinic_services,
-        :status,
-        :in_home_only,
-        :category,  # Allow category for creation
-        :logo,  # Only permit if it's a file upload
-        service_delivery: {}
-      )
+  def get_request_attributes
+    # Handle both data array format and direct attributes format
+    if params[:data].present? && params[:data].is_a?(Array)
+      # Format: { data: [{ attributes: {...} }] }
+      params[:data].first[:attributes]
+    elsif params[:data].present? && params[:data][:attributes].present?
+      # Format: { data: { attributes: {...} } }
+      params[:data][:attributes]
+    elsif params[:attributes].present?
+      # Format: { attributes: {...} }
+      params[:attributes]
     else
-      # Handle direct params (for logo uploads)
-      params.permit(
-        :name,
-        :website,
-        :email,
-        :phone,
-        :cost,
-        :min_age,
-        :max_age,
-        :waitlist,
-        :telehealth_services,
-        :spanish_speakers,
-        :at_home_services,
-        :in_clinic_services,
-        :status,
-        :in_home_only,
-        :category,  # Allow category for creation
-        :logo,  # Only permit if it's a file upload
-        service_delivery: {}
-      )
+      # Fallback to direct params
+      params
     end
+  end
+
+  def admin_provider_params
+    # Handle both data array format and direct attributes format
+    if params[:data].present? && params[:data].is_a?(Array)
+      # Format: { data: [{ attributes: {...} }] }
+      attributes = params.require(:data).first[:attributes]
+    elsif params[:data].present? && params[:data][:attributes].present?
+      # Format: { data: { attributes: {...} } }
+      attributes = params.require(:data)[:attributes]
+    elsif params[:attributes].present?
+      # Format: { attributes: {...} }
+      attributes = params[:attributes]
+    else
+      # Fallback to direct params
+      attributes = params
+    end
+    
+    # Filter out logo if it's just a URL string (not a file upload)
+    if attributes[:logo].present? && attributes[:logo].is_a?(String) && attributes[:logo].start_with?('http')
+      # Don't update logo if it's just a URL string
+      attributes = attributes.except(:logo)
+    end
+    
+    # Only permit the basic scalar fields, complex nested data is handled separately
+    attributes.permit(
+      :name,
+      :website,
+      :email,
+      :phone,
+      :cost,
+      :min_age,
+      :max_age,
+      :waitlist,
+      :telehealth_services,
+      :spanish_speakers,
+      :at_home_services,
+      :in_clinic_services,
+      :status,
+      :in_home_only,
+      :category,  # Allow category for creation
+      :logo,  # Only permit if it's a file upload
+      service_delivery: {}
+    )
   end
 end
