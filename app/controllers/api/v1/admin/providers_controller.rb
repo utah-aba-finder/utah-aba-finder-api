@@ -28,6 +28,9 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
   end
 
   def create
+    # Get attributes for nested data processing
+    attributes = get_request_attributes
+    
     # Create provider with all necessary setup
     provider = Provider.new(admin_provider_params)
     
@@ -40,12 +43,15 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
     # Set default in_home_only to true to avoid location requirement initially
     provider.in_home_only = true if provider.in_home_only.nil?
     
+    # If this is a clinic-based provider (in_home_only = false), we need to create locations first
+    if !provider.in_home_only && attributes[:locations].present?
+      # Temporarily set in_home_only to true to bypass validation
+      provider.in_home_only = true
+    end
+    
     if provider.save
       # Create user account for the provider
       user = create_provider_user_account(provider)
-      
-      # Get attributes for nested data processing
-      attributes = get_request_attributes
       
       # Set up practice types if provided
       if attributes[:provider_type].present?
@@ -55,6 +61,11 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       # Set up locations if provided
       if attributes[:locations].present?
         create_locations(provider, attributes[:locations])
+        
+        # If this was a clinic-based provider, update in_home_only to false after locations are created
+        if !admin_provider_params[:in_home_only]
+          provider.update!(in_home_only: false)
+        end
       end
       
       # Set up counties served if provided
