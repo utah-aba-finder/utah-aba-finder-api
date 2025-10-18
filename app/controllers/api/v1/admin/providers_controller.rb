@@ -72,7 +72,13 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       render json: ProviderSerializer.format_providers([provider]), status: :created
     else
       Rails.logger.error "❌ Admin create failed - Errors: #{provider.errors.full_messages}"
-      render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
+      Rails.logger.error "❌ Admin create failed - Provider attributes: #{provider.attributes.inspect}"
+      Rails.logger.error "❌ Admin create failed - Params: #{params.inspect}"
+      render json: { 
+        errors: provider.errors.full_messages,
+        details: provider.errors.details,
+        attributes: provider.attributes
+      }, status: :unprocessable_entity
     end
   end
 
