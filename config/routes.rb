@@ -65,7 +65,7 @@ Rails.application.routes.draw do
       end
 
       namespace :admin do
-        resources :providers, only: [:index, :update]
+        resources :providers, only: [:index, :create, :update]
       end
 
       resources :states, only: [:index] do
