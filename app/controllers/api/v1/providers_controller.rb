@@ -36,22 +36,44 @@ class Api::V1::ProvidersController < ApplicationController
                            params[:state].downcase, params[:state].downcase)
       
       if state
-        # Get providers that serve counties in this state
-        provider_ids = providers.joins(counties: :state)
-                               .where(counties: { state_id: state.id })
-                               .distinct
-                               .pluck(:id)
+        # Get providers that serve this state through:
+        # 1. Counties (for in-home services)
+        # 2. Locations (for clinic-based services)
+        county_provider_ids = providers.joins(counties: :state)
+                                      .where(counties: { state_id: state.id })
+                                      .distinct
+                                      .pluck(:id)
+        
+        location_provider_ids = providers.joins(:locations)
+                                       .where(locations: { state: state.abbreviation })
+                                       .distinct
+                                       .pluck(:id)
+        
+        # Combine both sets of provider IDs
+        provider_ids = (county_provider_ids + location_provider_ids).uniq
         providers = providers.where(id: provider_ids)
       end
     end
     
     # Filter by state_id if specified (alternative to state name)
     if params[:state_id].present?
-      provider_ids = providers.joins(counties: :state)
-                             .where(counties: { state_id: params[:state_id] })
-                             .distinct
-                             .pluck(:id)
-      providers = providers.where(id: provider_ids)
+      state = State.find_by(id: params[:state_id])
+      if state
+        # Get providers that serve this state through counties or locations
+        county_provider_ids = providers.joins(counties: :state)
+                                      .where(counties: { state_id: state.id })
+                                      .distinct
+                                      .pluck(:id)
+        
+        location_provider_ids = providers.joins(:locations)
+                                       .where(locations: { state: state.abbreviation })
+                                       .distinct
+                                       .pluck(:id)
+        
+        # Combine both sets of provider IDs
+        provider_ids = (county_provider_ids + location_provider_ids).uniq
+        providers = providers.where(id: provider_ids)
+      end
     end
     
     # Include necessary associations for performance
