@@ -47,7 +47,7 @@ class ProviderRegistrationMailer < ApplicationMailer
     
     mail(
       to: @provider.email,
-      subject: "Your Practice Added to Utah ABA Finder (Free Service) - #{provider.name}"
+      subject: "Your Practice Added to Autism Services Locator (Free Service) - #{provider.name}"
     )
   end
 end 
