@@ -235,8 +235,8 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
 
   def send_welcome_email(provider, user)
     begin
-      # Send welcome email with login credentials
-      ProviderRegistrationMailer.admin_created_provider(provider, user).deliver_later
+      # Send welcome email with login credentials (synchronous for immediate delivery)
+      ProviderRegistrationMailer.admin_created_provider(provider, user).deliver_now
       Rails.logger.info "✅ Welcome email sent to #{provider.email}"
     rescue => e
       Rails.logger.error "❌ Failed to send welcome email: #{e.message}"
