@@ -44,7 +44,8 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
     provider.in_home_only = true if provider.in_home_only.nil?
     
     # If this is a clinic-based provider (in_home_only = false), we need to create locations first
-    if !provider.in_home_only && attributes[:locations].present?
+    # Exception: telehealth-only providers don't need physical locations
+    if !provider.in_home_only && !provider.telehealth_only? && attributes[:locations].present?
       # Temporarily set in_home_only to true to bypass validation
       provider.in_home_only = true
     end
@@ -272,7 +273,13 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
     
     # Create new locations
     locations_data.each do |location_info|
-      next unless location_info[:address_1].present? || location_info[:city].present?
+      # For telehealth-only providers, only require phone number
+      # For other providers, require address or city
+      if provider.telehealth_only?
+        next unless location_info[:phone].present?
+      else
+        next unless location_info[:address_1].present? || location_info[:city].present?
+      end
       
       Rails.logger.info "🔍 DEBUG: Processing location_info: #{location_info.inspect}"
       Rails.logger.info "🔍 DEBUG: location_info class: #{location_info.class}"
@@ -312,8 +319,14 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       Rails.logger.info "🔍 DEBUG: in_home_waitlist in WAITLIST_OPTIONS?: #{Location::WAITLIST_OPTIONS.include?(in_home_waitlist)}"
       Rails.logger.info "🔍 DEBUG: WAITLIST_OPTIONS: #{Location::WAITLIST_OPTIONS.inspect}"
       
+      # For telehealth-only providers, set default virtual location name if not provided
+      location_name = permitted_location_info[:name]
+      if provider.telehealth_only? && location_name.blank?
+        location_name = "Virtual Location"
+      end
+      
       location = provider.locations.build(
-        name: permitted_location_info[:name],
+        name: location_name,
         address_1: permitted_location_info[:address_1],
         address_2: permitted_location_info[:address_2],
         city: permitted_location_info[:city],

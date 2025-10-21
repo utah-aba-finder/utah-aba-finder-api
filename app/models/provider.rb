@@ -392,9 +392,20 @@ class Provider < ApplicationRecord
   end
 
   def locations_required_unless_in_home_only
-    if !in_home_only && locations.empty?
+    # Skip location validation if:
+    # 1. Provider is in-home only (no clinic locations needed)
+    # 2. Provider only offers telehealth services (no physical locations needed)
+    if !in_home_only && !telehealth_only? && locations.empty?
       errors.add(:locations, "are required for clinic-based providers")
     end
+  end
+
+  def telehealth_only?
+    return false unless service_delivery.present?
+    
+    service_delivery['telehealth'] == true && 
+    service_delivery['in_home'] == false && 
+    service_delivery['in_clinic'] == false
   end
 
   def validate_service_delivery_structure
