@@ -408,6 +408,8 @@ class Provider < ApplicationRecord
     service_delivery['in_clinic'] == false
   end
 
+  public :telehealth_only?
+
   def validate_service_delivery_structure
     return unless service_delivery.present?
 
