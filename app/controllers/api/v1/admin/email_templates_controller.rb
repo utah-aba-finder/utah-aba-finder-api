@@ -89,18 +89,21 @@ class Api::V1::Admin::EmailTemplatesController < Api::V1::Admin::BaseController
       email: "sample@practice.com"
     )
     
-    # Set instance variables that the template expects
-    @provider = mock_provider
-    @user = mock_user
-    @password = "SamplePassword123"
-    
     begin
       if template_name.include?('admin_created_provider')
-        mailer = ProviderRegistrationMailer.new
-        mail = mailer.admin_created_provider(mock_provider, mock_user)
+        # For admin created provider, we need to set the password on the user
+        mock_user.instance_variable_set(:@plain_password, "SamplePassword123")
+        mail = ProviderRegistrationMailer.admin_created_provider(mock_provider, mock_user)
       else
-        mailer = MassNotificationMailer.new
-        mail = mailer.password_update_reminder(mock_provider)
+        # For mass notification emails
+        case template_name
+        when 'password_update_reminder'
+          mail = MassNotificationMailer.password_update_reminder(mock_provider)
+        when 'system_update'
+          mail = MassNotificationMailer.system_update_notification(mock_provider)
+        else
+          raise "Unknown template: #{template_name}"
+        end
       end
       
       render json: {
