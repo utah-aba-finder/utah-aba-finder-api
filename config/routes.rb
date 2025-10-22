@@ -66,6 +66,13 @@ Rails.application.routes.draw do
 
       namespace :admin do
         resources :providers, only: [:index, :create, :update]
+        resources :mass_emails, only: [:index] do
+          collection do
+            post :send_password_reminders
+            post :send_system_updates
+            get :preview_email
+          end
+        end
       end
 
       resources :states, only: [:index] do
