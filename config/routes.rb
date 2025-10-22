@@ -73,6 +73,12 @@ Rails.application.routes.draw do
             get :preview_email
           end
         end
+        resources :email_templates, only: [:index, :show, :update] do
+          member do
+            get :preview
+            post :reset
+          end
+        end
       end
 
       resources :states, only: [:index] do
