@@ -29,17 +29,24 @@ class Api::V1::Admin::EmailTemplatesController < Api::V1::Admin::BaseController
 
   def show
     template_name = params[:id]
-    template_path = "app/views/mass_notification_mailer/#{template_name}.html.erb"
+    template_type = params[:type] || 'html'
+    
+    # Determine the correct file path based on template name
+    if template_name.include?('admin_created_provider')
+      template_path = "app/views/provider_registration_mailer/#{template_name}.#{template_type}.erb"
+    else
+      template_path = "app/views/mass_notification_mailer/#{template_name}.#{template_type}.erb"
+    end
     
     if File.exist?(template_path)
       content = File.read(template_path)
       render json: { 
         template_name: template_name,
         content: content,
-        type: 'html'
+        type: template_type
       }
     else
-      render json: { error: "Template not found" }, status: :not_found
+      render json: { error: "Template not found at path: #{template_path}" }, status: :not_found
     end
   end
 
