@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Template API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        input { width: 100%; padding: 8px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>Email Template API Test</h1>
+    
+    <div class="test-section">
+        <h3>1. Authentication Token</h3>
+        <input type="text" id="authToken" placeholder="Enter your Bearer token (e.g., 50)" value="50">
+        <button onclick="testAuth()">Test Authentication</button>
+        <div id="authResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. List Templates</h3>
+        <button onclick="listTemplates()">Get All Templates</button>
+        <div id="templatesResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Load Template Content</h3>
+        <select id="templateSelect">
+            <option value="password_update_reminder">Password Update Reminder</option>
+            <option value="admin_created_provider">Admin Created Provider</option>
+            <option value="system_update">System Update</option>
+        </select>
+        <button onclick="loadTemplate()">Load Template</button>
+        <div id="templateResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Preview Template</h3>
+        <button onclick="previewTemplate()">Preview Template</button>
+        <div id="previewResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>5. Update Template</h3>
+        <textarea id="templateContent" rows="10" cols="80" placeholder="Enter template content here..."></textarea>
+        <br>
+        <button onclick="updateTemplate()">Update Template</button>
+        <div id="updateResult"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://utah-aba-finder-api-c9d143f02ce8.herokuapp.com/api/v1/admin';
+        
+        function getAuthToken() {
+            return document.getElementById('authToken').value;
+        }
+        
+        function showResult(elementId, content, isError = false) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = content;
+            element.className = isError ? 'error' : 'success';
+        }
+        
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = 'Loading...';
+            element.className = 'loading';
+        }
+        
+        async function testAuth() {
+            showLoading('authResult');
+            try {
+                const response = await fetch(`${API_BASE}/email_templates`, {
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    showResult('authResult', '✅ Authentication successful!');
+                } else {
+                    const error = await response.text();
+                    showResult('authResult', `❌ Authentication failed: ${response.status} - ${error}`, true);
+                }
+            } catch (error) {
+                showResult('authResult', `❌ Network error: ${error.message}`, true);
+            }
+        }
+        
+        async function listTemplates() {
+            showLoading('templatesResult');
+            console.log('Fetching email templates list');
+            console.log('API Base URL:', API_BASE);
+            
+            try {
+                const response = await fetch(`${API_BASE}/email_templates`, {
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Templates data:', data);
+                    showResult('templatesResult', `<pre>${JSON.stringify(data, null, 2)}</pre>`);
+                } else {
+                    const error = await response.text();
+                    console.error('API Error:', response.status, error);
+                    showResult('templatesResult', `❌ Failed to load templates: ${response.status} - ${error}`, true);
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                showResult('templatesResult', `❌ Network error: ${error.message}`, true);
+            }
+        }
+        
+        async function loadTemplate() {
+            const templateName = document.getElementById('templateSelect').value;
+            showLoading('templateResult');
+            
+            try {
+                const response = await fetch(`${API_BASE}/email_templates/${templateName}?type=html`, {
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('templateContent').value = data.content;
+                    showResult('templateResult', `✅ Template loaded successfully!`);
+                } else {
+                    const error = await response.text();
+                    showResult('templateResult', `❌ Failed to load template: ${response.status} - ${error}`, true);
+                }
+            } catch (error) {
+                showResult('templateResult', `❌ Network error: ${error.message}`, true);
+            }
+        }
+        
+        async function previewTemplate() {
+            const templateName = document.getElementById('templateSelect').value;
+            showLoading('previewResult');
+            
+            try {
+                const response = await fetch(`${API_BASE}/email_templates/${templateName}/preview?type=html`, {
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        showResult('previewResult', `
+                            <h4>Preview Results:</h4>
+                            <p><strong>Subject:</strong> ${data.subject}</p>
+                            <p><strong>To:</strong> ${data.to}</p>
+                            <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
+                                <h5>HTML Content:</h5>
+                                <div style="max-height: 300px; overflow-y: auto;">${data.html_content}</div>
+                            </div>
+                        `);
+                    } else {
+                        showResult('previewResult', `❌ Preview failed: ${data.error}`, true);
+                    }
+                } else {
+                    const error = await response.text();
+                    showResult('previewResult', `❌ Failed to preview: ${response.status} - ${error}`, true);
+                }
+            } catch (error) {
+                showResult('previewResult', `❌ Network error: ${error.message}`, true);
+            }
+        }
+        
+        async function updateTemplate() {
+            const templateName = document.getElementById('templateSelect').value;
+            const content = document.getElementById('templateContent').value;
+            showLoading('updateResult');
+            
+            try {
+                const response = await fetch(`${API_BASE}/email_templates/${templateName}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        content: content,
+                        type: 'html'
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('updateResult', `✅ Template updated successfully!`);
+                } else {
+                    const error = await response.text();
+                    showResult('updateResult', `❌ Failed to update template: ${response.status} - ${error}`, true);
+                }
+            } catch (error) {
+                showResult('updateResult', `❌ Network error: ${error.message}`, true);
+            }
+        }
+        
+        // Auto-load templates on page load
+        window.onload = function() {
+            listTemplates();
+        };
+    </script>
+</body>
+</html>
