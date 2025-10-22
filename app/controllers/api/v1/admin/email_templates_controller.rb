@@ -35,7 +35,9 @@ class Api::V1::Admin::EmailTemplatesController < Api::V1::Admin::BaseController
     if template_name.include?('admin_created_provider')
       template_path = "app/views/provider_registration_mailer/#{template_name}.#{template_type}.erb"
     else
-      template_path = "app/views/mass_notification_mailer/#{template_name}.#{template_type}.erb"
+      # Handle naming mismatch for system_update -> system_update_notification
+      actual_template_name = template_name == 'system_update' ? 'system_update_notification' : template_name
+      template_path = "app/views/mass_notification_mailer/#{actual_template_name}.#{template_type}.erb"
     end
     
     if File.exist?(template_path)
@@ -58,7 +60,9 @@ class Api::V1::Admin::EmailTemplatesController < Api::V1::Admin::BaseController
     if template_name.include?('admin_created_provider')
       file_path = "app/views/provider_registration_mailer/#{template_name}.#{template_type}.erb"
     else
-      file_path = "app/views/mass_notification_mailer/#{template_name}.#{template_type}.erb"
+      # Handle naming mismatch for system_update -> system_update_notification
+      actual_template_name = template_name == 'system_update' ? 'system_update_notification' : template_name
+      file_path = "app/views/mass_notification_mailer/#{actual_template_name}.#{template_type}.erb"
     end
     
     begin
