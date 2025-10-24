@@ -1,28 +1,22 @@
 class Api::V1::Admin::EmailTemplatesController < Api::V1::Admin::BaseController
   def index
-    templates = {
-      password_update_reminder: {
-        name: "Password Update Reminder",
-        description: "Sent to users who need to update their passwords",
-        subject: "Important: Action Required for Your Autism Services Locator Account",
-        html_file: "password_update_reminder.html.erb",
-        text_file: "password_update_reminder.text.erb"
-      },
-      admin_created_provider: {
-        name: "Admin Created Provider Welcome",
-        description: "Sent when you manually add a provider to the platform",
-        subject: "Your Practice Added to Autism Services Locator (Free Service)",
-        html_file: "admin_created_provider.html.erb",
-        text_file: "admin_created_provider.text.erb"
-      },
-      system_update: {
-        name: "System Update Notification",
-        description: "General system updates and announcements",
-        subject: "Important Updates from Autism Services Locator",
-        html_file: "system_update_notification.html.erb",
-        text_file: "system_update_notification.text.erb"
+    # Seed default templates if they don't exist
+    EmailTemplate.seed_default_templates if EmailTemplate.count == 0
+    
+    # Group templates by name for easier frontend consumption
+    templates = {}
+    EmailTemplate.all.group_by(&:name).each do |name, template_records|
+      html_template = template_records.find { |t| t.template_type == 'html' }
+      text_template = template_records.find { |t| t.template_type == 'text' }
+      
+      templates[name] = {
+        name: html_template&.name || text_template&.name,
+        description: html_template&.description || text_template&.description,
+        subject: html_template&.subject || text_template&.subject,
+        html_file: html_template ? "#{name}.html.erb" : nil,
+        text_file: text_template ? "#{name}.text.erb" : nil
       }
-    }
+    end
     
     render json: { templates: templates }
   end
@@ -31,24 +25,17 @@ class Api::V1::Admin::EmailTemplatesController < Api::V1::Admin::BaseController
     template_name = params[:id]
     template_type = params[:type] || 'html'
     
-    # Determine the correct file path based on template name
-    if template_name.include?('admin_created_provider')
-      template_path = "app/views/provider_registration_mailer/#{template_name}.#{template_type}.erb"
-    else
-      # Handle naming mismatch for system_update -> system_update_notification
-      actual_template_name = template_name == 'system_update' ? 'system_update_notification' : template_name
-      template_path = "app/views/mass_notification_mailer/#{actual_template_name}.#{template_type}.erb"
-    end
+    # Find template in database
+    template = EmailTemplate.find_by(name: template_name, template_type: template_type)
     
-    if File.exist?(template_path)
-      content = File.read(template_path)
+    if template
       render json: { 
-        template_name: template_name,
-        content: content,
-        type: template_type
+        template_name: template.name,
+        content: template.content,
+        type: template.template_type
       }
     else
-      render json: { error: "Template not found at path: #{template_path}" }, status: :not_found
+      render json: { error: "Template not found: #{template_name} (#{template_type})" }, status: :not_found
     end
   end
 
@@ -56,29 +43,30 @@ class Api::V1::Admin::EmailTemplatesController < Api::V1::Admin::BaseController
     template_name = params[:id]
     template_type = params[:type] || 'html'
     
-    # Determine the correct file path
-    if template_name.include?('admin_created_provider')
-      file_path = "app/views/provider_registration_mailer/#{template_name}.#{template_type}.erb"
-    else
-      # Handle naming mismatch for system_update -> system_update_notification
-      actual_template_name = template_name == 'system_update' ? 'system_update_notification' : template_name
-      file_path = "app/views/mass_notification_mailer/#{actual_template_name}.#{template_type}.erb"
-    end
-    
     begin
-      # Write the new content to the file
-      File.write(file_path, params[:content])
+      # Find or create template in database
+      template = EmailTemplate.find_or_initialize_by(name: template_name, template_type: template_type)
       
-      # If this is a production environment, we might want to reload the templates
-      # In development, Rails will auto-reload
+      # Log the update attempt
+      Rails.logger.info "📝 Updating template: #{template_name} (#{template_type})"
+      Rails.logger.info "📝 Content length: #{params[:content]&.length || 0} characters"
+      
+      # Update the template content
+      template.content = params[:content]
+      template.save!
+      
+      Rails.logger.info "✅ Template updated successfully in database"
       
       render json: { 
         success: true, 
         message: "Template updated successfully",
-        template_name: template_name,
-        type: template_type
+        template_name: template.name,
+        type: template.template_type,
+        content_length: template.content.length
       }
     rescue => e
+      Rails.logger.error "❌ Failed to update template: #{e.message}"
+      Rails.logger.error "❌ Backtrace: #{e.backtrace.first(5).join('\n')}"
       render json: { 
         success: false, 
         error: "Failed to update template: #{e.message}" 

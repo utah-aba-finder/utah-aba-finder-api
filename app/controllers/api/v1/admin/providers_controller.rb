@@ -5,13 +5,18 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
   
   def index
     # Add pagination to prevent memory issues
-    per_page = params[:per_page]&.to_i || 50
-    per_page = [per_page, 100].min # Cap at 100 to prevent abuse
+    per_page = params[:per_page]&.to_i || 25  # Reduced default from 50 to 25
+    per_page = [per_page, 50].min # Reduced max from 100 to 50
     
-    providers_query = Provider.includes(:counties, :practice_types, :locations, :insurances)
+    # Use select to only load necessary columns
+    providers_query = Provider.select(:id, :name, :email, :status, :created_at, :updated_at)
+                             .includes(:counties, :practice_types, :locations, :insurances)
                              .order(:name)
     
     @pagy, providers = pagy(providers_query, items: per_page)
+    
+    # Log memory usage
+    Rails.logger.info "📊 Memory usage - Providers loaded: #{providers.count}, Per page: #{per_page}"
     
     render json: {
       data: ProviderSerializer.format_providers(providers),

@@ -9,12 +9,17 @@ namespace :mass_email do
     
     puts "📊 Found #{total_providers} approved providers"
     
-    # Filter providers who have user accounts and likely need password updates
-    # Only target providers with existing user accounts
-    providers_needing_updates = providers.joins(:user).where(
-      "providers.created_at < ?", 
+    # Filter users who are linked to providers and likely need password updates
+    # Use the correct relationship: User has provider_id, not Provider has user_id
+    users_with_providers = User.where.not(provider_id: nil)
+    users_needing_updates = users_with_providers.where(
+      "created_at < ?", 
       1.week.ago
     )
+    
+    # Get the providers for these users
+    provider_ids = users_needing_updates.pluck(:provider_id)
+    providers_needing_updates = providers.where(id: provider_ids)
     
     puts "📧 #{providers_needing_updates.count} providers need password updates"
     
@@ -26,9 +31,15 @@ namespace :mass_email do
     providers_needing_updates.find_in_batches(batch_size: batch_size) do |batch|
       batch.each do |provider|
         begin
-          MassNotificationMailer.password_update_reminder(provider).deliver_now
-          sent_count += 1
-          puts "✅ Sent to: #{provider.name} (#{provider.email})"
+          # Find the user associated with this provider
+          user = User.find_by(provider_id: provider.id)
+          if user
+            MassNotificationMailer.password_update_reminder(provider).deliver_now
+            sent_count += 1
+            puts "✅ Sent to: #{provider.name} (User: #{user.email})"
+          else
+            puts "⚠️  No user found for provider: #{provider.name}"
+          end
         rescue => e
           error_count += 1
           puts "❌ Failed to send to #{provider.name}: #{e.message}"
@@ -86,10 +97,13 @@ namespace :mass_email do
     puts "=" * 50
     
     providers = Provider.where(status: :approved)
-    providers_needing_updates = providers.joins(:user).where(
-      "providers.created_at < ?", 
+    users_with_providers = User.where.not(provider_id: nil)
+    users_needing_updates = users_with_providers.where(
+      "created_at < ?", 
       1.week.ago
     )
+    provider_ids = users_needing_updates.pluck(:provider_id)
+    providers_needing_updates = providers.where(id: provider_ids)
     
     providers_needing_updates.each_with_index do |provider, index|
       user_status = provider.user ? "Has user account" : "No user account"

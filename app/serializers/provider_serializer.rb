@@ -12,6 +12,9 @@ class ProviderSerializer
       )
     end
     
+    # Log memory usage
+    Rails.logger.info "📊 ProviderSerializer - Processing #{providers.count} providers"
+    
     {
       data: providers.map do |provider|
         {

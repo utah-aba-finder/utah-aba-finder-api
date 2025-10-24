@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_09_26_005450) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_24_165653) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_trgm"
   enable_extension "plpgsql"
@@ -95,6 +95,17 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_26_005450) do
     t.index ["county_id"], name: "index_counties_providers_on_county_id"
     t.index ["provider_id", "county_id"], name: "index_counties_providers_on_provider_id_and_county_id", unique: true
     t.index ["provider_id"], name: "index_counties_providers_on_provider_id"
+  end
+
+  create_table "email_templates", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "content", null: false
+    t.string "template_type", default: "html", null: false
+    t.string "description"
+    t.string "subject"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name", "template_type"], name: "index_email_templates_on_name_and_template_type", unique: true
   end
 
   create_table "insurances", force: :cascade do |t|
