@@ -48,6 +48,9 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
     # Set default in_home_only to true to avoid location requirement initially
     provider.in_home_only = true if provider.in_home_only.nil?
     
+    # Set default category if not provided (required for validation)
+    provider.category ||= 'aba_therapy' if provider.category.blank?
+    
     # If this is a clinic-based provider (in_home_only = false), we need to create locations first
     # Exception: telehealth-only providers don't need physical locations
     if !provider.in_home_only && !provider.telehealth_only? && attributes[:locations].present?
@@ -66,7 +69,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       
       # Set up locations if provided
       if attributes[:locations].present?
-        create_locations(provider, attributes[:locations])
+        update_locations(provider, attributes[:locations])
         
         # If this was a clinic-based provider, update in_home_only to false after locations are created
         if !admin_provider_params[:in_home_only]
@@ -173,6 +176,15 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
   private
 
   def create_provider_user_account(provider)
+    # Check if user already exists with this email
+    existing_user = User.find_by(email: provider.email)
+    if existing_user
+      Rails.logger.info "✅ User already exists for provider #{provider.id}: #{existing_user.email}"
+      # Update the existing user to link to this provider
+      existing_user.update!(provider_id: provider.id) if existing_user.provider_id != provider.id
+      return existing_user
+    end
+    
     # Generate a secure random password
     password = SecureRandom.alphanumeric(12)
     
@@ -312,8 +324,29 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
                                  end
       
       # Use frontend values if provided, otherwise use intelligent defaults
-      in_home_waitlist = permitted_location_info[:in_home_waitlist].present? ? permitted_location_info[:in_home_waitlist] : in_home_waitlist_default
-      in_clinic_waitlist = permitted_location_info[:in_clinic_waitlist].present? ? permitted_location_info[:in_clinic_waitlist] : "Contact for availability"
+      # Ensure values are properly trimmed and match valid options
+      in_home_waitlist = if permitted_location_info[:in_home_waitlist].present?
+                           permitted_location_info[:in_home_waitlist].to_s.strip
+                         else
+                           in_home_waitlist_default
+                         end
+      
+      in_clinic_waitlist = if permitted_location_info[:in_clinic_waitlist].present?
+                             permitted_location_info[:in_clinic_waitlist].to_s.strip
+                           else
+                             "Contact for availability"
+                           end
+      
+      # Validate that the waitlist values are in the allowed options
+      unless Location::WAITLIST_OPTIONS.include?(in_home_waitlist)
+        Rails.logger.warn "⚠️ Invalid in_home_waitlist value: '#{in_home_waitlist}', using default"
+        in_home_waitlist = in_home_waitlist_default
+      end
+      
+      unless Location::WAITLIST_OPTIONS.include?(in_clinic_waitlist)
+        Rails.logger.warn "⚠️ Invalid in_clinic_waitlist value: '#{in_clinic_waitlist}', using default"
+        in_clinic_waitlist = "Contact for availability"
+      end
       
       Rails.logger.info "🔍 DEBUG: Final in_home_waitlist: #{in_home_waitlist}"
       Rails.logger.info "🔍 DEBUG: Final in_clinic_waitlist: #{in_clinic_waitlist}"
