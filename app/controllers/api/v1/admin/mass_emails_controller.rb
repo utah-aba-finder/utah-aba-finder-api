@@ -12,13 +12,6 @@ class Api::V1::Admin::MassEmailsController < Api::V1::Admin::BaseController
       .where("reset_password_sent_at >= ?", 1.week.ago)
       .where.not(reset_password_sent_at: nil)
     
-    # Get provider details for users needing updates
-    # Get providers where user is primary owner (via Provider.user_id) or legacy provider_id
-    old_provider_ids = Provider.where(user_id: old_users.pluck(:id)).pluck(:id)
-    legacy_provider_ids = old_users.where.not(provider_id: nil).pluck(:provider_id).compact
-    all_provider_ids = (old_provider_ids + legacy_provider_ids).uniq
-    providers_needing_updates = Provider.where(id: all_provider_ids, status: :approved)
-    
     # Get providers for users who recently reset their password
     recently_reset_provider_ids = Provider.where(user_id: recently_reset_password.pluck(:id)).pluck(:id)
     legacy_recently_reset_provider_ids = recently_reset_password.where.not(provider_id: nil).pluck(:provider_id).compact
@@ -42,6 +35,16 @@ class Api::V1::Admin::MassEmailsController < Api::V1::Admin::BaseController
       recently_updated_provider_ids
     ).uniq
     recently_updated_providers = Provider.where(id: all_recently_updated_provider_ids, status: :approved)
+    
+    # Get provider details for users needing updates
+    # Get providers where user is primary owner (via Provider.user_id) or legacy provider_id
+    # EXCLUDE providers that are already recently updated
+    old_provider_ids = Provider.where(user_id: old_users.pluck(:id)).pluck(:id)
+    legacy_provider_ids = old_users.where.not(provider_id: nil).pluck(:provider_id).compact
+    all_provider_ids = (old_provider_ids + legacy_provider_ids).uniq
+    # Exclude recently updated providers from needing updates
+    providers_needing_updates_ids = all_provider_ids - all_recently_updated_provider_ids
+    providers_needing_updates = Provider.where(id: providers_needing_updates_ids, status: :approved)
     
     render json: {
       statistics: {
