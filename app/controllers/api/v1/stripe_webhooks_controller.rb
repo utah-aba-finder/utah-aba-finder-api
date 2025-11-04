@@ -1,6 +1,5 @@
 class Api::V1::StripeWebhooksController < ApplicationController
   skip_before_action :authenticate_client
-  skip_before_action :authenticate_user!
   
   # Stripe webhook endpoint
   def handle
