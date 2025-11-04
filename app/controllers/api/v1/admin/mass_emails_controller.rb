@@ -24,8 +24,15 @@ class Api::V1::Admin::MassEmailsController < Api::V1::Admin::BaseController
     all_recently_updated_user_provider_ids = (recently_updated_user_provider_ids + legacy_recently_updated_user_provider_ids).uniq
     
     # Also include providers that were recently updated themselves (indicating they logged in and updated info)
+    # BUT only if they have user accounts (can't reset password without a user account)
     recently_updated_provider_ids = Provider.where(status: :approved)
       .where("updated_at >= ?", 1.week.ago)
+      .where(
+        "user_id IN (SELECT id FROM users) OR " \
+        "id IN (SELECT DISTINCT provider_id FROM provider_assignments) OR " \
+        "id IN (SELECT DISTINCT provider_id FROM users WHERE provider_id IS NOT NULL) OR " \
+        "email IN (SELECT email FROM users)"
+      )
       .pluck(:id)
     
     # Combine all: providers with recent password resets OR recent user updates OR recent provider updates
