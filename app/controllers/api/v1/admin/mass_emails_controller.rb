@@ -23,7 +23,25 @@ class Api::V1::Admin::MassEmailsController < Api::V1::Admin::BaseController
     recently_reset_provider_ids = Provider.where(user_id: recently_reset_password.pluck(:id)).pluck(:id)
     legacy_recently_reset_provider_ids = recently_reset_password.where.not(provider_id: nil).pluck(:provider_id).compact
     all_recently_reset_provider_ids = (recently_reset_provider_ids + legacy_recently_reset_provider_ids).uniq
-    recently_updated_providers = Provider.where(id: all_recently_reset_provider_ids, status: :approved)
+    
+    # Also include providers where the user was recently updated (happens when password reset is completed)
+    recently_updated_users = users_with_providers.where("updated_at >= ?", 1.week.ago)
+    recently_updated_user_provider_ids = Provider.where(user_id: recently_updated_users.pluck(:id)).pluck(:id)
+    legacy_recently_updated_user_provider_ids = recently_updated_users.where.not(provider_id: nil).pluck(:provider_id).compact
+    all_recently_updated_user_provider_ids = (recently_updated_user_provider_ids + legacy_recently_updated_user_provider_ids).uniq
+    
+    # Also include providers that were recently updated themselves (indicating they logged in and updated info)
+    recently_updated_provider_ids = Provider.where(status: :approved)
+      .where("updated_at >= ?", 1.week.ago)
+      .pluck(:id)
+    
+    # Combine all: providers with recent password resets OR recent user updates OR recent provider updates
+    all_recently_updated_provider_ids = (
+      all_recently_reset_provider_ids + 
+      all_recently_updated_user_provider_ids + 
+      recently_updated_provider_ids
+    ).uniq
+    recently_updated_providers = Provider.where(id: all_recently_updated_provider_ids, status: :approved)
     
     render json: {
       statistics: {
