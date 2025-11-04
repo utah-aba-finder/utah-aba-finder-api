@@ -46,16 +46,32 @@ class Api::V1::Admin::MassEmailsController < Api::V1::Admin::BaseController
     # Get provider details for users needing updates
     # Get providers where user is primary owner (via Provider.user_id) or legacy provider_id
     # EXCLUDE providers that are already recently updated
+    # ALSO only include providers that have user accounts (can't reset password without user account)
     old_provider_ids = Provider.where(user_id: old_users.pluck(:id)).pluck(:id)
     legacy_provider_ids = old_users.where.not(provider_id: nil).pluck(:provider_id).compact
     all_provider_ids = (old_provider_ids + legacy_provider_ids).uniq
     # Exclude recently updated providers from needing updates
     providers_needing_updates_ids = all_provider_ids - all_recently_updated_provider_ids
-    providers_needing_updates = Provider.where(id: providers_needing_updates_ids, status: :approved)
+    # Only include approved providers that have user accounts
+    providers_needing_updates = Provider.where(id: providers_needing_updates_ids, status: :approved).where(
+      "user_id IN (SELECT id FROM users) OR " \
+      "id IN (SELECT DISTINCT provider_id FROM provider_assignments) OR " \
+      "id IN (SELECT DISTINCT provider_id FROM users WHERE provider_id IS NOT NULL) OR " \
+      "email IN (SELECT email FROM users)"
+    )
+    
+    # Get all unique providers that have user accounts (for accurate total count)
+    all_providers_with_users = Provider.where(status: :approved).where(
+      "user_id IN (SELECT id FROM users) OR " \
+      "id IN (SELECT DISTINCT provider_id FROM provider_assignments) OR " \
+      "id IN (SELECT DISTINCT provider_id FROM users WHERE provider_id IS NOT NULL) OR " \
+      "email IN (SELECT email FROM users)"
+    ).distinct
     
     render json: {
       statistics: {
         total_users_with_providers: users_with_providers.count,
+        total_providers_with_users: all_providers_with_users.count,
         users_needing_password_updates: old_users.count,
         recently_reset_password_count: recently_reset_password.count,
         providers_needing_updates: providers_needing_updates.count,
