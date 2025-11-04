@@ -5,8 +5,10 @@ class AuthController < ActionController::API
     Rails.logger.info "🔍 Login attempt - Params: #{params.inspect}"
     Rails.logger.info "🔍 Login attempt - User params: #{params[:user].inspect}"
     
-    email = params[:user]&.dig(:email)
-    password = params[:user]&.dig(:password)
+    # Handle both string and symbol keys
+    user_params = params[:user] || params['user']
+    email = user_params&.dig(:email) || user_params&.dig('email')
+    password = user_params&.dig(:password) || user_params&.dig('password')
     
     Rails.logger.info "🔍 Login attempt - Email: #{email.inspect}, Password present: #{password.present?}"
     
