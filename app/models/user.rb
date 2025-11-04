@@ -16,10 +16,11 @@ class User < ApplicationRecord
   
   # Helper method to get all providers this user can manage
   def all_managed_providers
-    # Get providers where user is primary owner OR has assignments
+    # Get providers where user is primary owner OR has assignments OR has legacy provider_id
     Provider
       .left_outer_joins(:provider_assignments)
-      .where("providers.user_id = :uid OR provider_assignments.user_id = :uid", uid: id)
+      .where("providers.user_id = :uid OR provider_assignments.user_id = :uid OR providers.id = :legacy_provider_id", 
+             uid: id, legacy_provider_id: provider_id)
       .distinct
       .includes(:locations, :practice_types, :insurances, :counties)
   end

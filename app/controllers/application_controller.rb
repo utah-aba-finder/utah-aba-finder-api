@@ -104,15 +104,11 @@ class ApplicationController < ActionController::API
           return
         end
 
-        # Primary owner
-        if current_user.provider_id.to_s == provider_id
+        # Legacy provider_id relationship OR primary owner OR assigned/managed providers
+        # All are treated equally - any assigned user can edit
+        if current_user.provider_id.to_s == provider_id || 
+           current_user.all_managed_providers.where(id: provider_id).exists?
           Rails.logger.info "Provider auth - User provider access granted"
-          return
-        end
-
-        # Assigned/managed providers
-        if current_user.all_managed_providers.where(id: provider_id).exists?
-          Rails.logger.info "Provider auth - User managed provider access granted"
           return
         end
 
