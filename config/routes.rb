@@ -136,8 +136,20 @@ Rails.application.routes.draw do
       resources :payments, only: [] do
         collection do
           post :create_payment_intent
+          post :confirm_sponsorship
         end
       end
+      
+      # Sponsorship routes
+      resources :sponsorships, only: [:index, :show, :create, :destroy] do
+        collection do
+          get :tiers
+          get :sponsored_providers
+        end
+      end
+      
+      # Stripe webhook
+      post 'stripe/webhook', to: 'stripe_webhooks#handle'
     end
   end
 end

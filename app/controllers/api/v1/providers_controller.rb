@@ -81,6 +81,18 @@ class Api::V1::ProvidersController < ApplicationController
     includes_array += [:logo_attachment, :logo_blob] unless Rails.env.test?
     providers = providers.includes(includes_array)
     
+    # Order providers: sponsored first (by tier), then non-sponsored
+    # Tier priority: featured > premium > basic > none
+    providers = providers.order(
+      Arel.sql("CASE 
+        WHEN is_sponsored = true AND sponsorship_tier = 'featured' THEN 1
+        WHEN is_sponsored = true AND sponsorship_tier = 'premium' THEN 2
+        WHEN is_sponsored = true AND sponsorship_tier = 'basic' THEN 3
+        ELSE 4
+      END"),
+      :name
+    )
+    
     render json: ProviderSerializer.format_providers(providers)
   end
 

@@ -21,6 +21,10 @@ class Provider < ApplicationRecord
   belongs_to :user, optional: true
   has_many :provider_assignments, dependent: :destroy
   has_many :assigned_users, through: :provider_assignments, source: :user
+  
+  # Sponsorship relationships
+  has_many :sponsorships, dependent: :destroy
+  has_one :active_sponsorship, -> { active_sponsorships }, class_name: 'Sponsorship'
 
   # Service Type Relationships
   has_many :provider_service_types, dependent: :destroy
