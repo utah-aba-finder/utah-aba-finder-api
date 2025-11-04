@@ -2,26 +2,12 @@ class AuthController < ActionController::API
   # This controller doesn't inherit from ApplicationController, so no API key required
 
   def login
-    Rails.logger.info "🔍 Login attempt - Raw params: #{params.inspect}"
-    Rails.logger.info "🔍 Login attempt - Request body: #{request.body.read}"
-    request.body.rewind # Reset body stream
+    Rails.logger.info "🔍 Login attempt - Raw params keys: #{params.keys.inspect}"
     Rails.logger.info "🔍 Login attempt - Content-Type: #{request.content_type}"
     
+    # Rails API should auto-parse JSON into params
     # Try multiple ways to access user params
-    user_params = params[:user] || params['user'] || JSON.parse(request.body.read) rescue nil
-    request.body.rewind if user_params.nil?
-    
-    if user_params.nil?
-      # Try parsing from raw body
-      begin
-        body = request.body.read
-        request.body.rewind
-        parsed = JSON.parse(body) if body.present?
-        user_params = parsed['user'] if parsed
-      rescue => e
-        Rails.logger.error "Failed to parse request body: #{e.message}"
-      end
-    end
+    user_params = params[:user] || params['user']
     
     Rails.logger.info "🔍 Login attempt - User params: #{user_params.inspect}"
     
@@ -39,7 +25,7 @@ class AuthController < ActionController::API
     user = User.find_by(email: email)
     
     Rails.logger.info "🔍 Login attempt - User found: #{user.present?}"
-    Rails.logger.info "🔍 Login attempt - User ID: #{user.id if user}"
+    Rails.logger.info "🔍 Login attempt - User ID: #{user.id if user}" if user
     
     if user
       password_valid = user.valid_password?(password)
