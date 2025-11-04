@@ -2,32 +2,56 @@ class AuthController < ActionController::API
   # This controller doesn't inherit from ApplicationController, so no API key required
 
   def login
-    Rails.logger.info "🔍 Login attempt - Params: #{params.inspect}"
-    Rails.logger.info "🔍 Login attempt - User params: #{params[:user].inspect}"
+    Rails.logger.info "🔍 Login attempt - Raw params: #{params.inspect}"
+    Rails.logger.info "🔍 Login attempt - Request body: #{request.body.read}"
+    request.body.rewind # Reset body stream
+    Rails.logger.info "🔍 Login attempt - Content-Type: #{request.content_type}"
     
-    # Handle both string and symbol keys
-    user_params = params[:user] || params['user']
-    email = user_params&.dig(:email) || user_params&.dig('email')
-    password = user_params&.dig(:password) || user_params&.dig('password')
+    # Try multiple ways to access user params
+    user_params = params[:user] || params['user'] || JSON.parse(request.body.read) rescue nil
+    request.body.rewind if user_params.nil?
+    
+    if user_params.nil?
+      # Try parsing from raw body
+      begin
+        body = request.body.read
+        request.body.rewind
+        parsed = JSON.parse(body) if body.present?
+        user_params = parsed['user'] if parsed
+      rescue => e
+        Rails.logger.error "Failed to parse request body: #{e.message}"
+      end
+    end
+    
+    Rails.logger.info "🔍 Login attempt - User params: #{user_params.inspect}"
+    
+    email = user_params&.dig(:email) || user_params&.dig('email') if user_params
+    password = user_params&.dig(:password) || user_params&.dig('password') if user_params
     
     Rails.logger.info "🔍 Login attempt - Email: #{email.inspect}, Password present: #{password.present?}"
     
-    user = User.find_by(email: email) if email.present?
+    unless email.present? && password.present?
+      Rails.logger.warn "❌ Login failed - Missing email or password"
+      render json: { error: 'Invalid email or password' }, status: :unauthorized
+      return
+    end
+    
+    user = User.find_by(email: email)
     
     Rails.logger.info "🔍 Login attempt - User found: #{user.present?}"
     Rails.logger.info "🔍 Login attempt - User ID: #{user.id if user}"
     
-    if user && password.present?
+    if user
       password_valid = user.valid_password?(password)
       Rails.logger.info "🔍 Login attempt - Password valid: #{password_valid}"
     end
     
-    if user && password.present? && user.valid_password?(password)
+    if user && user.valid_password?(password)
       # Convert string role to numeric for frontend compatibility
-      numeric_role = case user.role
-      when 'super_admin'
+      numeric_role = case user.role.to_s
+      when 'super_admin', '0'
         0
-      when 'user'
+      when 'user', '1', 'provider'
         1
       else
         1
