@@ -2,9 +2,25 @@ class AuthController < ActionController::API
   # This controller doesn't inherit from ApplicationController, so no API key required
 
   def login
-    user = User.find_by(email: params[:user][:email])
+    Rails.logger.info "🔍 Login attempt - Params: #{params.inspect}"
+    Rails.logger.info "🔍 Login attempt - User params: #{params[:user].inspect}"
     
-    if user && user.valid_password?(params[:user][:password])
+    email = params[:user]&.dig(:email)
+    password = params[:user]&.dig(:password)
+    
+    Rails.logger.info "🔍 Login attempt - Email: #{email.inspect}, Password present: #{password.present?}"
+    
+    user = User.find_by(email: email) if email.present?
+    
+    Rails.logger.info "🔍 Login attempt - User found: #{user.present?}"
+    Rails.logger.info "🔍 Login attempt - User ID: #{user.id if user}"
+    
+    if user && password.present?
+      password_valid = user.valid_password?(password)
+      Rails.logger.info "🔍 Login attempt - Password valid: #{password_valid}"
+    end
+    
+    if user && password.present? && user.valid_password?(password)
       # Convert string role to numeric for frontend compatibility
       numeric_role = case user.role
       when 'super_admin'
@@ -14,6 +30,8 @@ class AuthController < ActionController::API
       else
         1
       end
+      
+      Rails.logger.info "✅ Login successful for user: #{user.id} (#{user.email})"
       
       render json: { 
         message: 'Login successful',
@@ -25,6 +43,7 @@ class AuthController < ActionController::API
         }
       }, status: :ok
     else
+      Rails.logger.warn "❌ Login failed - User: #{user.present?}, Password valid: #{user ? user.valid_password?(password) : 'N/A'}"
       render json: { error: 'Invalid email or password' }, status: :unauthorized
     end
   end
