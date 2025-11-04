@@ -21,7 +21,11 @@ class Api::V1::ProviderAssignmentsController < ApplicationController
     end
     
     # Create the assignment
-    assignment = ProviderAssignment.create!(user: user, provider: provider)
+    assignment = ProviderAssignment.create!(
+      user: user, 
+      provider: provider,
+      assigned_by: @current_user&.email || user.email
+    )
     
     render json: { 
       success: true,
