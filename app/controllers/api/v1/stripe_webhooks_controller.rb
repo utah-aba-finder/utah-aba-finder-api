@@ -7,10 +7,15 @@ class Api::V1::StripeWebhooksController < ApplicationController
     sig_header = request.env['HTTP_STRIPE_SIGNATURE']
     endpoint_secret = Rails.configuration.stripe[:webhook_secret]
     
+    # Set Stripe API key for webhook processing
+    Stripe.api_key ||= Rails.configuration.stripe[:secret_key]
+    
     begin
       event = Stripe::Webhook.construct_event(
         payload, sig_header, endpoint_secret
       )
+      
+      Rails.logger.info "Webhook received: #{event.type} (id: #{event.id})"
     rescue JSON::ParserError => e
       Rails.logger.error "Webhook JSON parsing error: #{e.message}"
       render json: { error: 'Invalid payload' }, status: 400
@@ -72,8 +77,32 @@ class Api::V1::StripeWebhooksController < ApplicationController
   
   def handle_subscription_created(subscription)
     Rails.logger.info "Subscription created: #{subscription.id}"
+    Rails.logger.info "Subscription customer: #{subscription.customer}"
+    Rails.logger.info "Subscription metadata: #{subscription.metadata.inspect}"
     
+    # Try to find provider by stripe_customer_id first
     provider = Provider.find_by(stripe_customer_id: subscription.customer)
+    
+    # If not found, try to find by customer ID in metadata
+    unless provider && subscription.metadata.present?
+      provider_id = subscription.metadata['provider_id']
+      provider = Provider.find_by(id: provider_id) if provider_id.present?
+    end
+    
+    # If still not found, try to find by customer email
+    unless provider
+      Stripe.api_key ||= Rails.configuration.stripe[:secret_key]
+      begin
+        customer = Stripe::Customer.retrieve(subscription.customer)
+        if customer.email.present?
+          provider = Provider.find_by(email: customer.email)
+          # Update provider with customer ID if found
+          provider.update(stripe_customer_id: customer.id) if provider
+        end
+      rescue Stripe::StripeError => e
+        Rails.logger.error "Failed to retrieve Stripe customer: #{e.message}"
+      end
+    end
     
     if provider
       # Create or update sponsorship
@@ -94,7 +123,10 @@ class Api::V1::StripeWebhooksController < ApplicationController
       )
       
       sponsorship.activate!
-      Rails.logger.info "Subscription sponsorship activated: #{sponsorship.id}"
+      Rails.logger.info "Subscription sponsorship activated: #{sponsorship.id} for provider #{provider.name}"
+    else
+      Rails.logger.warn "No provider found for subscription #{subscription.id} with customer #{subscription.customer}"
+      Rails.logger.warn "Subscription metadata: #{subscription.metadata.inspect}"
     end
   end
   
