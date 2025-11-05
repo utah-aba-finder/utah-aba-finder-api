@@ -1,6 +1,5 @@
 class Api::V1::SponsorshipsController < ApplicationController
-  skip_before_action :authenticate_client, only: [:tiers, :sponsored_providers]
-  before_action :authenticate_user!, except: [:tiers, :sponsored_providers]
+  before_action :authenticate_user!
   before_action :set_sponsorship, only: [:show, :destroy]
   
   # GET /api/v1/sponsorships/tiers
@@ -8,36 +7,37 @@ class Api::V1::SponsorshipsController < ApplicationController
     render json: {
       tiers: [
         {
-          id: 'basic',
-          name: 'Basic Sponsorship',
-          price: 99.00,
-          price_in_cents: 99_00,
+          id: 'featured',
+          name: 'Featured Provider',
+          price: 25.00,
+          price_in_cents: 25_00,
           features: [
             'Featured listing (appears first in search results)',
             'Enhanced visibility in provider directory'
           ]
         },
         {
-          id: 'premium',
-          name: 'Premium Sponsorship',
-          price: 199.00,
-          price_in_cents: 199_00,
+          id: 'sponsor',
+          name: 'Provider Sponsor',
+          price: 54.00,
+          price_in_cents: 54_00,
           features: [
-            'All Basic features',
+            'All Featured Provider features',
             'Featured in homepage carousel',
             'Enhanced listing with badge'
           ]
         },
         {
-          id: 'featured',
-          name: 'Featured Sponsorship',
-          price: 299.00,
-          price_in_cents: 299_00,
+          id: 'partner',
+          name: 'Community Sponsor',
+          price: 99.00,
+          price_in_cents: 99_00,
           features: [
-            'All Premium features',
+            'All Provider Sponsor features',
             'Top placement in all search results',
             'Priority placement in homepage carousel',
-            'Premium badge display'
+            'Premium badge display',
+            'View statistics dashboard'
           ]
         }
       ]
