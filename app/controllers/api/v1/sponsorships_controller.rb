@@ -1,8 +1,9 @@
 class Api::V1::SponsorshipsController < ApplicationController
-  before_action :authenticate_user!
+  before_action :authenticate_user!, except: [:tiers, :sponsored_providers]
   before_action :set_sponsorship, only: [:show, :destroy]
   
   # GET /api/v1/sponsorships/tiers
+  # Public endpoint - no authentication required
   def tiers
     render json: {
       tiers: [
@@ -44,6 +45,7 @@ class Api::V1::SponsorshipsController < ApplicationController
   end
   
   # GET /api/v1/sponsorships/sponsored_providers
+  # Public endpoint - no authentication required (for carousel display)
   def sponsored_providers
     # Get all currently sponsored providers for carousel
     sponsored = Provider.where(is_sponsored: true)
