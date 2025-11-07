@@ -10,6 +10,9 @@ class Api::V1::SponsorshipsController < ApplicationController
         {
           id: 'featured',
           name: 'Featured Provider',
+          price: 25.00,
+          price_in_cents: 25_00,
+          price_display: '$25/Monthly',
           analytics_access: 'basic',
           analytics_description: 'Total views this month',
           features: [
@@ -42,6 +45,9 @@ class Api::V1::SponsorshipsController < ApplicationController
         {
           id: 'sponsor',
           name: 'Provider Sponsor',
+          price: 59.00,
+          price_in_cents: 59_00,
+          price_display: '$59/Monthly',
           analytics_access: 'standard',
           analytics_description: '30-day views, trend chart, clicks to website',
           features: [
@@ -75,6 +81,9 @@ class Api::V1::SponsorshipsController < ApplicationController
         {
           id: 'partner',
           name: 'Community Partner',
+          price: 99.00,
+          price_in_cents: 99_00,
+          price_display: '$99/Monthly',
           analytics_access: 'full',
           analytics_description: 'Daily stats, 90-day history, referral sources, geographic insights',
           features: [
