@@ -845,8 +845,10 @@ class Api::V1::ProvidersController < ApplicationController
       total_views = views.count
       
       # Calculate trend (comparing first half vs second half of period)
-      first_half = views.where(view_date: start_date..(start_date + (end_date - start_date).to_i / 2)).count
-      second_half = views.where(view_date: ((start_date + (end_date - start_date).to_i / 2) + 1.day)..end_date).count
+      days_diff = (end_date - start_date).to_i
+      midpoint = start_date + (days_diff / 2).days
+      first_half = views.where(view_date: start_date..midpoint).count
+      second_half = views.where(view_date: (midpoint + 1.day)..end_date).count
       trend = second_half > first_half ? 'up' : (second_half < first_half ? 'down' : 'stable')
       trend_percentage = first_half > 0 ? ((second_half - first_half).to_f / first_half * 100).round(1) : 0
       
@@ -863,7 +865,8 @@ class Api::V1::ProvidersController < ApplicationController
       total_views = views.count
       
       # Calculate trend
-      midpoint = start_date + (end_date - start_date).to_i / 2
+      days_diff = (end_date - start_date).to_i
+      midpoint = start_date + (days_diff / 2).days
       first_half = views.where(view_date: start_date..midpoint).count
       second_half = views.where(view_date: (midpoint + 1.day)..end_date).count
       trend = second_half > first_half ? 'up' : (second_half < first_half ? 'down' : 'stable')
