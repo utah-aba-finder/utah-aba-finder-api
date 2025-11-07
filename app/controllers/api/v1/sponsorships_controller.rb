@@ -10,21 +10,38 @@ class Api::V1::SponsorshipsController < ApplicationController
         {
           id: 'featured',
           name: 'Featured Provider',
-          price: 25.00,
-          price_in_cents: 25_00,
           analytics_access: 'basic',
           analytics_description: 'Total views this month',
           features: [
             'Featured listing (appears first in search results)',
             'Enhanced visibility in provider directory',
             'Basic analytics: Total views this month'
+          ],
+          pricing_options: [
+            {
+              id: 'monthly',
+              name: 'Monthly',
+              price: 25.00,
+              price_in_cents: 25_00,
+              billing_period: 'month',
+              interval: 'month'
+            },
+            {
+              id: 'annual',
+              name: '10 Months (2 Months Free)',
+              price: 250.00,
+              price_in_cents: 25_000,
+              billing_period: 'year',
+              interval: 'year',
+              months_included: 12,
+              months_paid: 10,
+              savings: '2 months free'
+            }
           ]
         },
         {
           id: 'sponsor',
           name: 'Provider Sponsor',
-          price: 59.00,
-          price_in_cents: 59_00,
           analytics_access: 'standard',
           analytics_description: '30-day views, trend chart, clicks to website',
           features: [
@@ -32,13 +49,32 @@ class Api::V1::SponsorshipsController < ApplicationController
             'Featured in homepage carousel',
             'Enhanced listing with badge',
             'Standard analytics: 30-day views, trend chart, clicks to website'
+          ],
+          pricing_options: [
+            {
+              id: 'monthly',
+              name: 'Monthly',
+              price: 59.00,
+              price_in_cents: 59_00,
+              billing_period: 'month',
+              interval: 'month'
+            },
+            {
+              id: 'annual',
+              name: '10 Months (2 Months Free)',
+              price: 590.00,
+              price_in_cents: 59_000,
+              billing_period: 'year',
+              interval: 'year',
+              months_included: 12,
+              months_paid: 10,
+              savings: '2 months free'
+            }
           ]
         },
         {
           id: 'partner',
           name: 'Community Partner',
-          price: 99.00,
-          price_in_cents: 99_00,
           analytics_access: 'full',
           analytics_description: 'Daily stats, 90-day history, referral sources, geographic insights',
           features: [
@@ -47,6 +83,27 @@ class Api::V1::SponsorshipsController < ApplicationController
             'Priority placement in homepage carousel',
             'Premium badge display',
             'Full analytics: Daily stats, 90-day history, referral sources, geographic insights'
+          ],
+          pricing_options: [
+            {
+              id: 'monthly',
+              name: 'Monthly',
+              price: 99.00,
+              price_in_cents: 99_00,
+              billing_period: 'month',
+              interval: 'month'
+            },
+            {
+              id: 'annual',
+              name: '10 Months (2 Months Free)',
+              price: 990.00,
+              price_in_cents: 99_000,
+              billing_period: 'year',
+              interval: 'year',
+              months_included: 12,
+              months_paid: 10,
+              savings: '2 months free'
+            }
           ]
         }
       ]

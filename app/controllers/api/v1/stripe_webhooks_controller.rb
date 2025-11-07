@@ -28,6 +28,8 @@ class Api::V1::StripeWebhooksController < ApplicationController
     
     # Handle the event
     case event.type
+    when 'checkout.session.completed'
+      handle_checkout_session_completed(event.data.object)
     when 'payment_intent.succeeded'
       handle_payment_intent_succeeded(event.data.object)
     when 'payment_intent.payment_failed'
@@ -50,6 +52,55 @@ class Api::V1::StripeWebhooksController < ApplicationController
   end
   
   private
+  
+  def handle_checkout_session_completed(checkout_session)
+    Rails.logger.info "Checkout session completed: #{checkout_session.id}"
+    
+    # Get provider from metadata
+    provider_id = checkout_session.metadata['provider_id']
+    plan = checkout_session.metadata['plan'] # "featured", "sponsor", or "partner"
+    
+    unless provider_id
+      Rails.logger.warn "No provider_id in checkout session metadata: #{checkout_session.id}"
+      return
+    end
+    
+    provider = Provider.find_by(id: provider_id)
+    unless provider
+      Rails.logger.warn "Provider not found for checkout session: #{checkout_session.id}, provider_id: #{provider_id}"
+      return
+    end
+    
+    # Get subscription from checkout session
+    subscription_id = checkout_session.subscription
+    
+    if subscription_id
+      # Retrieve subscription to get full details
+      subscription = Stripe::Subscription.retrieve(subscription_id)
+      
+      # Determine tier from price ID or plan metadata
+      tier = determine_tier_from_price_id_or_plan(subscription, plan)
+      
+      # Create or update sponsorship
+      sponsorship = provider.sponsorships.find_or_initialize_by(
+        stripe_subscription_id: subscription_id
+      )
+      
+      sponsorship.update!(
+        tier: tier,
+        stripe_customer_id: checkout_session.customer,
+        status: 'active',
+        starts_at: Time.at(subscription.current_period_start),
+        ends_at: Time.at(subscription.current_period_end),
+        amount_paid: subscription.items.data.first.price.unit_amount / 100.0
+      )
+      
+      sponsorship.activate!
+      Rails.logger.info "Checkout sponsorship activated: #{sponsorship.id} for provider #{provider.name} with tier #{tier}"
+    else
+      Rails.logger.warn "No subscription found in checkout session: #{checkout_session.id}"
+    end
+  end
   
   def handle_payment_intent_succeeded(payment_intent)
     Rails.logger.info "Payment succeeded: #{payment_intent.id}"
@@ -110,8 +161,8 @@ class Api::V1::StripeWebhooksController < ApplicationController
         stripe_subscription_id: subscription.id
       )
       
-      # Determine tier from subscription price
-      tier = determine_tier_from_price(subscription.items.data.first.price.unit_amount)
+      # Determine tier from price ID or plan
+      tier = determine_tier_from_price_id_or_plan(subscription, nil)
       
       sponsorship.update!(
         tier: tier,
@@ -137,7 +188,11 @@ class Api::V1::StripeWebhooksController < ApplicationController
     
     if sponsorship
       if subscription.status == 'active'
+        # Determine tier from price ID
+        tier = determine_tier_from_price_id_or_plan(subscription, nil)
+        
         sponsorship.update!(
+          tier: tier,
           status: 'active',
           ends_at: Time.at(subscription.current_period_end)
         )
@@ -206,6 +261,64 @@ class Api::V1::StripeWebhooksController < ApplicationController
     else
       'basic'
     end
+  end
+  
+  # Determine tier from price ID or plan name
+  # Maps to new tier names: featured, sponsor, partner
+  def determine_tier_from_price_id_or_plan(subscription, plan = nil)
+    # First try to get from plan metadata
+    if plan.present?
+      case plan.to_s.downcase
+      when 'featured'
+        return 'featured'
+      when 'sponsor'
+        return 'sponsor'
+      when 'partner'
+        return 'partner'
+      end
+    end
+    
+    # Fallback to price ID from environment variables (check both monthly and annual)
+    price_id = subscription.items.data.first&.price&.id
+    
+    if price_id
+      # Monthly prices
+      featured_price_monthly = ENV['STRIPE_PRICE_FEATURED']
+      sponsor_price_monthly = ENV['STRIPE_PRICE_SPONSOR']
+      partner_price_monthly = ENV['STRIPE_PRICE_PARTNER']
+      
+      # Annual (10-month) prices
+      featured_price_annual = ENV['STRIPE_PRICE_FEATURED_ANNUAL']
+      sponsor_price_annual = ENV['STRIPE_PRICE_SPONSOR_ANNUAL']
+      partner_price_annual = ENV['STRIPE_PRICE_PARTNER_ANNUAL']
+      
+      case price_id
+      when featured_price_monthly, featured_price_annual
+        return 'featured'
+      when sponsor_price_monthly, sponsor_price_annual
+        return 'sponsor'
+      when partner_price_monthly, partner_price_annual
+        return 'partner'
+      end
+    end
+    
+    # Fallback to amount if price IDs not available
+    amount = subscription.items.data.first&.price&.unit_amount
+    if amount
+      # Use amount-based mapping (adjust these values based on your actual pricing)
+      case amount
+      when 0..100_00
+        return 'featured'
+      when 100_01..200_00
+        return 'sponsor'
+      else
+        return 'partner'
+      end
+    end
+    
+    # Default fallback
+    Rails.logger.warn "Could not determine tier for subscription #{subscription.id}, defaulting to 'featured'"
+    'featured'
   end
 end
 
