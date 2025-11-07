@@ -20,16 +20,16 @@ class Api::V1::Billing::CheckoutController < ApplicationController
     price_id = if billing_period == 'year'
       # 10-month plan (annual)
       case plan
-      when "featured" then ENV.fetch("STRIPE_PRICE_FEATURED_ANNUAL", nil)
-      when "sponsor"  then ENV.fetch("STRIPE_PRICE_SPONSOR_ANNUAL", nil)
-      when "partner"  then ENV.fetch("STRIPE_PRICE_PARTNER_ANNUAL", nil)
+      when "featured" then ENV["STRIPE_PRICE_FEATURED_ANNUAL"]
+      when "sponsor"  then ENV["STRIPE_PRICE_SPONSOR_ANNUAL"]
+      when "partner"  then ENV["STRIPE_PRICE_PARTNER_ANNUAL"]
       end
     else
       # Monthly plan
       case plan
-      when "featured" then ENV.fetch("STRIPE_PRICE_FEATURED", nil)
-      when "sponsor"  then ENV.fetch("STRIPE_PRICE_SPONSOR", nil)
-      when "partner"  then ENV.fetch("STRIPE_PRICE_PARTNER", nil)
+      when "featured" then ENV["STRIPE_PRICE_FEATURED"]
+      when "sponsor"  then ENV["STRIPE_PRICE_SPONSOR"]
+      when "partner"  then ENV["STRIPE_PRICE_PARTNER"]
       end
     end
 
