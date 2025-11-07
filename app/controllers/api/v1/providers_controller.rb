@@ -767,7 +767,7 @@ class Api::V1::ProvidersController < ApplicationController
     end
     
     # Check if provider has an active sponsorship
-    unless provider.is_sponsored? && provider.sponsored_until&.> Time.current
+    unless provider.is_sponsored? && provider.sponsored_until && provider.sponsored_until > Time.current
       render json: { 
         error: 'View statistics are only available to sponsored providers. Please upgrade to a sponsored tier to access this feature.',
         requires_sponsorship: true,
