@@ -84,10 +84,7 @@ class Api::V1::ProvidersController < ApplicationController
     # Order providers: sponsored first (by tier), then non-sponsored
     # Tier priority: partner (3) > sponsor (2) > featured (1) > free (0)
     # Use DESC ordering so higher tier numbers come first
-    providers = providers.order(
-      sponsorship_tier: :desc,
-      :name
-    )
+    providers = providers.order(sponsorship_tier: :desc, name: :asc)
     
     render json: ProviderSerializer.format_providers(providers)
   end
