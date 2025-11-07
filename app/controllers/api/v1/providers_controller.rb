@@ -764,12 +764,18 @@ class Api::V1::ProvidersController < ApplicationController
     end
     
     # Check if provider has an active sponsorship
+    # Return success response with message instead of error to avoid logging users out
     unless provider.is_sponsored? && provider.sponsored_until && provider.sponsored_until > Time.current
       render json: { 
-        error: 'View statistics are only available to sponsored providers. Please upgrade to a sponsored tier to access this feature.',
+        message: 'No active subscription found. View statistics are only available to sponsored providers.',
+        has_subscription: false,
         requires_sponsorship: true,
-        current_tier: provider.sponsorship_tier
-      }, status: :forbidden
+        current_tier: provider.sponsorship_tier,
+        subscription_status: provider.is_sponsored? ? 'expired' : 'none',
+        sponsored_until: provider.sponsored_until,
+        upgrade_message: 'Please upgrade to a sponsored tier to access view statistics and analytics.',
+        tiers_url: '/api/v1/sponsorships/tiers'
+      }, status: :ok
       return
     end
     
@@ -783,10 +789,14 @@ class Api::V1::ProvidersController < ApplicationController
                         'full'
                       else
                         render json: { 
-                          error: 'View statistics are only available to sponsored providers.',
+                          message: 'No active subscription found. View statistics are only available to sponsored providers.',
+                          has_subscription: false,
                           requires_sponsorship: true,
-                          current_tier: provider.sponsorship_tier
-                        }, status: :forbidden
+                          current_tier: provider.sponsorship_tier,
+                          subscription_status: 'none',
+                          upgrade_message: 'Please upgrade to a sponsored tier to access view statistics and analytics.',
+                          tiers_url: '/api/v1/sponsorships/tiers'
+                        }, status: :ok
                         return
                       end
     
@@ -817,6 +827,7 @@ class Api::V1::ProvidersController < ApplicationController
     
     # Build response based on analytics level
     response = {
+      has_subscription: true,
       analytics_level: analytics_level,
       tier: case provider.sponsorship_tier_before_type_cast
             when 1 then 'featured'

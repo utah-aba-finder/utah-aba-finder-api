@@ -151,10 +151,17 @@ class Api::V1::SponsorshipsController < ApplicationController
       .order(created_at: :desc)
       .includes(:provider)
     
+    # Check if user has any active subscriptions
+    active_sponsorships = sponsorships.select { |s| s.status == 'active' && s.ends_at && s.ends_at > Time.current }
+    has_active_subscription = active_sponsorships.any?
+    
     render json: {
       sponsorships: sponsorships.map do |sponsorship|
         format_sponsorship(sponsorship)
-      end
+      end,
+      has_active_subscription: has_active_subscription,
+      message: has_active_subscription ? nil : 'No active subscriptions found. Upgrade to a sponsored tier to unlock premium features.',
+      tiers_url: '/api/v1/sponsorships/tiers'
     }
   end
   
