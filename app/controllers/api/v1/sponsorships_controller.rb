@@ -12,33 +12,41 @@ class Api::V1::SponsorshipsController < ApplicationController
           name: 'Featured Provider',
           price: 25.00,
           price_in_cents: 25_00,
+          analytics_access: 'basic',
+          analytics_description: 'Total views this month',
           features: [
             'Featured listing (appears first in search results)',
-            'Enhanced visibility in provider directory'
+            'Enhanced visibility in provider directory',
+            'Basic analytics: Total views this month'
           ]
         },
         {
           id: 'sponsor',
           name: 'Provider Sponsor',
-          price: 54.00,
-          price_in_cents: 54_00,
+          price: 59.00,
+          price_in_cents: 59_00,
+          analytics_access: 'standard',
+          analytics_description: '30-day views, trend chart, clicks to website',
           features: [
             'All Featured Provider features',
             'Featured in homepage carousel',
-            'Enhanced listing with badge'
+            'Enhanced listing with badge',
+            'Standard analytics: 30-day views, trend chart, clicks to website'
           ]
         },
         {
           id: 'partner',
-          name: 'Community Sponsor',
+          name: 'Community Partner',
           price: 99.00,
           price_in_cents: 99_00,
+          analytics_access: 'full',
+          analytics_description: 'Daily stats, 90-day history, referral sources, geographic insights',
           features: [
             'All Provider Sponsor features',
             'Top placement in all search results',
             'Priority placement in homepage carousel',
             'Premium badge display',
-            'View statistics dashboard'
+            'Full analytics: Daily stats, 90-day history, referral sources, geographic insights'
           ]
         }
       ]

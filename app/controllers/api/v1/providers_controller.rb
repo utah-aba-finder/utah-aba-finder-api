@@ -82,14 +82,10 @@ class Api::V1::ProvidersController < ApplicationController
     providers = providers.includes(includes_array)
     
     # Order providers: sponsored first (by tier), then non-sponsored
-    # Tier priority: featured > premium > basic > none
+    # Tier priority: partner (3) > sponsor (2) > featured (1) > free (0)
+    # Use DESC ordering so higher tier numbers come first
     providers = providers.order(
-      Arel.sql("CASE 
-        WHEN is_sponsored = true AND sponsorship_tier = 'featured' THEN 1
-        WHEN is_sponsored = true AND sponsorship_tier = 'premium' THEN 2
-        WHEN is_sponsored = true AND sponsorship_tier = 'basic' THEN 3
-        ELSE 4
-      END"),
+      sponsorship_tier: :desc,
       :name
     )
     
@@ -710,7 +706,199 @@ class Api::V1::ProvidersController < ApplicationController
     end
   end
 
+  # Track a provider view (called when ProviderModal opens)
+  def track_view
+    provider = Provider.find(params[:id])
+    fp = fingerprint(request)
+    
+    ProviderView.find_or_create_by!(
+      provider: provider,
+      fingerprint: fp,
+      view_date: Date.current
+    )
+    
+    head :ok
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Provider not found" }, status: :not_found
+  rescue ActiveRecord::RecordNotUnique
+    # Already tracked for this fingerprint today, that's fine
+    head :ok
+  rescue => e
+    Rails.logger.error "Error tracking view: #{e.message}"
+    head :ok # Fail silently to avoid breaking frontend
+  end
+
+  # Get view statistics for a provider
+  # Available to all sponsored tiers with different access levels:
+  # - Featured: Basic (total views this month)
+  # - Sponsor: Standard (30-day views, trend chart, clicks to website)
+  # - Partner: Full (daily stats, 90-day history, referral sources, geographic insights)
+  def view_stats
+    # Authenticate user to get their providers
+    token = request.headers['Authorization']&.gsub('Bearer ', '')
+    
+    if token.present?
+      user = User.find_by(id: token)
+      if user
+        @current_user = user
+      else
+        render json: { error: 'Invalid authorization token' }, status: :unauthorized
+        return
+      end
+    else
+      render json: { error: 'No authorization token provided' }, status: :unauthorized
+      return
+    end
+    
+    # Get provider from params or use active provider
+    provider_id = params[:provider_id] || @current_user.active_provider&.id
+    
+    unless provider_id
+      render json: { error: 'Provider ID is required or set an active provider' }, status: :bad_request
+      return
+    end
+    
+    provider = Provider.find(provider_id)
+    
+    # Check access
+    unless @current_user.can_access_provider?(provider.id)
+      render json: { error: 'Access denied' }, status: :forbidden
+      return
+    end
+    
+    # Check if provider has an active sponsorship
+    unless provider.is_sponsored? && provider.sponsored_until&.> Time.current
+      render json: { 
+        error: 'View statistics are only available to sponsored providers. Please upgrade to a sponsored tier to access this feature.',
+        requires_sponsorship: true,
+        current_tier: provider.sponsorship_tier
+      }, status: :forbidden
+      return
+    end
+    
+    # Determine analytics level based on tier
+    analytics_level = case provider.sponsorship_tier_before_type_cast
+                      when 1 # featured
+                        'basic'
+                      when 2 # sponsor
+                        'standard'
+                      when 3 # partner
+                        'full'
+                      else
+                        render json: { 
+                          error: 'View statistics are only available to sponsored providers.',
+                          requires_sponsorship: true,
+                          current_tier: provider.sponsorship_tier
+                        }, status: :forbidden
+                        return
+                      end
+    
+    # Calculate date ranges based on tier
+    current_month_start = Date.current.beginning_of_month
+    case analytics_level
+    when 'basic'
+      # Featured: Total views this month only
+      start_date = current_month_start
+      end_date = Date.current
+      days_requested = nil
+    when 'standard'
+      # Sponsor: 30-day views
+      start_date = Date.current - 30.days
+      end_date = Date.current
+      days_requested = 30
+    when 'full'
+      # Partner: Up to 90-day history (default 30, can request up to 90)
+      max_days = 90
+      requested_days = [(params[:days] || 30).to_i, max_days].min
+      start_date = Date.current - requested_days.days
+      end_date = Date.current
+      days_requested = requested_days
+    end
+    
+    # Get view data
+    views = ProviderView.where(provider: provider, view_date: start_date..end_date)
+    
+    # Build response based on analytics level
+    response = {
+      analytics_level: analytics_level,
+      tier: case provider.sponsorship_tier_before_type_cast
+            when 1 then 'featured'
+            when 2 then 'sponsor'
+            when 3 then 'partner'
+            else 'free'
+            end,
+      start_date: start_date,
+      end_date: end_date
+    }
+    
+    case analytics_level
+    when 'basic'
+      # Basic: Just total views this month
+      total_views = views.count
+      response.merge!({
+        total_views: total_views,
+        period: 'this_month'
+      })
+    when 'standard'
+      # Standard: 30-day views, trend chart data
+      by_day = views.group(:view_date).count
+      total_views = views.count
+      
+      # Calculate trend (comparing first half vs second half of period)
+      first_half = views.where(view_date: start_date..(start_date + (end_date - start_date).to_i / 2)).count
+      second_half = views.where(view_date: ((start_date + (end_date - start_date).to_i / 2) + 1.day)..end_date).count
+      trend = second_half > first_half ? 'up' : (second_half < first_half ? 'down' : 'stable')
+      trend_percentage = first_half > 0 ? ((second_half - first_half).to_f / first_half * 100).round(1) : 0
+      
+      response.merge!({
+        by_day: by_day,
+        total_views: total_views,
+        trend: trend,
+        trend_percentage: trend_percentage,
+        clicks_to_website: 0 # TODO: Implement website click tracking
+      })
+    when 'full'
+      # Full: Daily stats, extended history, referral sources, geographic insights
+      by_day = views.group(:view_date).count
+      total_views = views.count
+      
+      # Calculate trend
+      midpoint = start_date + (end_date - start_date).to_i / 2
+      first_half = views.where(view_date: start_date..midpoint).count
+      second_half = views.where(view_date: (midpoint + 1.day)..end_date).count
+      trend = second_half > first_half ? 'up' : (second_half < first_half ? 'down' : 'stable')
+      trend_percentage = first_half > 0 ? ((second_half - first_half).to_f / first_half * 100).round(1) : 0
+      
+      response.merge!({
+        by_day: by_day,
+        total_views: total_views,
+        days_requested: days_requested,
+        trend: trend,
+        trend_percentage: trend_percentage,
+        clicks_to_website: 0, # TODO: Implement website click tracking
+        referral_sources: {}, # TODO: Implement referral source tracking
+        geographic_insights: {} # TODO: Implement geographic insights tracking
+      })
+    end
+    
+    render json: response
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Provider not found" }, status: :not_found
+  rescue => e
+    Rails.logger.error "Error getting view stats: #{e.message}"
+    render json: { error: e.message }, status: :internal_server_error
+  end
+
   private
+
+  def fingerprint(req)
+    raw = [
+      req.remote_ip.to_s,
+      req.user_agent.to_s[0..100], # truncate to keep short
+      Date.current.to_s
+    ].join("|")
+    Digest::SHA256.hexdigest(raw)
+  end
   
   def multipart_provider_params
     params.permit(
