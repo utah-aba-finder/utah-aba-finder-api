@@ -70,9 +70,18 @@ class Api::V1::ProviderSelfController < ApplicationController
   private
 
   def set_provider
-    @provider = current_user.active_provider
+    # Try active_provider first, fall back to user.provider if not set
+    @provider = @current_user.active_provider || @current_user.provider
+    
     unless @provider
-      render json: { error: 'No active provider found. Please set an active provider first.' }, status: :not_found
+      render json: { error: 'No provider found. Please set an active provider or link a provider to your account.' }, status: :not_found
+      return
+    end
+    
+    # Verify user has access to this provider
+    unless @current_user.can_access_provider?(@provider.id)
+      render json: { error: 'Access denied. You do not have permission to access this provider.' }, status: :forbidden
+      return
     end
   end
 
