@@ -54,6 +54,11 @@ class Api::V1::ProviderSelfController < ApplicationController
           @provider.update_practice_types(params[:data].first[:attributes][:provider_type])
         end
         
+        # Handle provider_attributes (category-specific fields)
+        if params[:data]&.first&.dig(:attributes, :provider_attributes)&.present?
+          update_provider_attributes(params[:data].first[:attributes][:provider_attributes])
+        end
+        
         @provider.touch
         render json: ProviderSerializer.format_providers([@provider])
       else
@@ -106,6 +111,29 @@ class Api::V1::ProviderSelfController < ApplicationController
         :telehealth_services, :spanish_speakers, :at_home_services, 
         :in_clinic_services, :in_home_only, :service_delivery, :phone
       )
+    end
+  end
+
+  def update_provider_attributes(attributes_data)
+    # attributes_data should be a hash like: { "field_name" => "value", "another_field" => "value" }
+    return unless attributes_data.is_a?(Hash)
+
+    attributes_data.each do |field_name, value|
+      # Find the category field by name
+      field = @provider.category_fields.find_by(name: field_name)
+      next unless field
+
+      # Handle array values (for multi_select fields)
+      if value.is_a?(Array)
+        # Join array values with comma and space, preserving spaces within values
+        processed_value = value.map(&:to_s).map(&:strip).reject(&:blank?).join(', ')
+      else
+        # For text/textarea fields, preserve spaces and trim only leading/trailing whitespace
+        processed_value = value.to_s.strip
+      end
+
+      # Use set_attribute_value which handles find_or_initialize_by
+      @provider.set_attribute_value(field_name, processed_value)
     end
   end
 end 

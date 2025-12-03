@@ -8,6 +8,7 @@ class ProviderSerializer
         :practice_types, 
         { :locations => :practice_types }, 
         { :provider_insurances => :insurance },
+        { :provider_attributes => :category_field },
         :counties
       )
     end
@@ -75,7 +76,9 @@ class ProviderSerializer
             "updated_last": provider.updated_at,
             "status": provider.status,
             "in_home_only": provider.in_home_only,
-            "service_delivery": provider.service_delivery
+            "service_delivery": provider.service_delivery,
+            "provider_attributes": format_provider_attributes(provider),
+            "category_fields": format_category_fields(provider)
           }
         }
       end
@@ -125,6 +128,30 @@ class ProviderSerializer
     rescue => e
       Rails.logger.warn "Could not generate logo URL for provider #{provider.id}: #{e.message}"
       nil
+    end
+  end
+
+  def self.format_provider_attributes(provider)
+    # Return a hash of field_name => value for easy frontend access
+    provider.provider_attributes.includes(:category_field).each_with_object({}) do |attr, hash|
+      field_name = attr.category_field.name
+      hash[field_name] = attr.value
+    end
+  end
+
+  def self.format_category_fields(provider)
+    # Return category fields so frontend knows what fields are available
+    provider.category_fields.map do |field|
+      {
+        id: field.id,
+        name: field.name,
+        slug: field.slug,
+        field_type: field.field_type,
+        required: field.required,
+        options: field.options || {},
+        display_order: field.display_order,
+        help_text: field.help_text
+      }
     end
   end
 end
