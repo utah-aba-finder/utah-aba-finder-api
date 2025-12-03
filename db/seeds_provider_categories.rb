@@ -158,6 +158,21 @@ categories = [
       { name: "Insurance Accepted", field_type: "multi_select", required: false, options: { choices: ["Medicaid", "Private Insurance", "Self-Pay", "Flexible pricing based on your circumstances", "Medicare", "Tricare", "School District Contracts"] } },
       { name: "Special Needs Experience", field_type: "boolean", required: false, help_text: "Experience with autism and special needs" }
     ]
+  },
+  {
+    name: "Educational Programs",
+    slug: "educational_programs",
+    description: "Online and in-person learning programs for early childhood education, often integrated with ABA therapy or early education settings",
+    display_order: 13,
+    fields: [
+      { name: "Program Types", field_type: "multi_select", required: true, options: { choices: ["Early Learning Programs", "PreK-2 Curriculum", "Reading Programs", "Math Programs", "Social Skills Programs", "Language Development", "Cognitive Development", "ABA-Integrated Programs", "Early Education Support", "Homeschool Support", "Supplemental Learning", "Online Learning Platforms"] } },
+      { name: "Credentials/Qualifications", field_type: "multi_select", required: true, options: { choices: ["Licensed Teacher", "Certified Educator", "Early Childhood Specialist", "Special Education Teacher", "BCBA/ABA Specialist", "Curriculum Developer", "Educational Therapist", "Learning Specialist", "Non-Profit Organization", "Accredited Program"] } },
+      { name: "Age Groups", field_type: "multi_select", required: true, options: { choices: ["0-3 (Early Intervention)", "3-5 (PreK)", "5-7 (Kindergarten-2nd Grade)", "3-8 (PreK-2nd Grade)", "All Ages"] } },
+      { name: "Delivery Format", field_type: "multi_select", required: true, options: { choices: ["Online Only", "In-Person", "Hybrid (Online + In-Person)", "Self-Paced Online", "Live Online Sessions", "Recorded Content", "Interactive Platform"] } },
+      { name: "Integration Options", field_type: "multi_select", required: false, options: { choices: ["ABA Therapy Integration", "Early Education Integration", "School Integration", "Homeschool Integration", "Therapy Integration", "Standalone Program"] } },
+      { name: "Pricing", field_type: "multi_select", required: false, options: { choices: ["Free", "Sliding Scale", "Subscription-Based", "One-Time Fee", "Grant-Funded", "Non-Profit Pricing", "Flexible pricing based on your circumstances", "School District Contracts"] } },
+      { name: "Parent/Caregiver Support", field_type: "boolean", required: false, help_text: "Includes training or support for parents/caregivers" }
+    ]
   }
 ]
 
