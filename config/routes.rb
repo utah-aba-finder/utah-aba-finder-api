@@ -53,6 +53,7 @@ Rails.application.routes.draw do
           post :assign_provider_to_user
           post :remove_provider_from_user
           get :user_providers
+          get :view_stats
         end
         
         member do
@@ -61,6 +62,7 @@ Rails.application.routes.draw do
           patch 'locations/:location_id', to: 'providers#update_location'
           delete 'locations/:location_id', to: 'providers#remove_location'
           delete :remove_logo
+          post :track_view
         end
       end
 
@@ -150,6 +152,11 @@ Rails.application.routes.draw do
       
       # Stripe webhook
       post 'stripe/webhook', to: 'stripe_webhooks#handle'
+      
+      # Billing routes
+      namespace :billing do
+        post :checkout, to: "checkout#create"
+      end
     end
   end
 end

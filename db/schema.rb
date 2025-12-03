@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_24_165653) do
+ActiveRecord::Schema[7.1].define(version: 2025_11_04_201935) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_trgm"
   enable_extension "plpgsql"
@@ -252,6 +252,16 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_24_165653) do
     t.index ["provider_id"], name: "index_provider_service_types_on_provider_id"
   end
 
+  create_table "provider_views", force: :cascade do |t|
+    t.bigint "provider_id", null: false
+    t.string "fingerprint", null: false
+    t.date "view_date", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider_id", "fingerprint", "view_date"], name: "index_provider_views_unique", unique: true
+    t.index ["provider_id"], name: "index_provider_views_on_provider_id"
+  end
+
   create_table "providers", force: :cascade do |t|
     t.string "name"
     t.string "website"
@@ -272,8 +282,39 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_24_165653) do
     t.bigint "user_id"
     t.string "category", default: "aba_therapy"
     t.string "phone"
+    t.boolean "is_sponsored", default: false, null: false
+    t.datetime "sponsored_until"
+    t.integer "sponsorship_tier", default: 0, null: false
+    t.string "stripe_customer_id"
+    t.string "stripe_subscription_id"
     t.index ["category"], name: "index_providers_on_category"
+    t.index ["is_sponsored"], name: "index_providers_on_is_sponsored"
+    t.index ["sponsored_until"], name: "index_providers_on_sponsored_until"
+    t.index ["sponsorship_tier"], name: "index_providers_on_sponsorship_tier"
+    t.index ["stripe_customer_id"], name: "index_providers_on_stripe_customer_id"
     t.index ["user_id"], name: "index_providers_on_user_id"
+  end
+
+  create_table "sponsorships", force: :cascade do |t|
+    t.bigint "provider_id", null: false
+    t.string "stripe_payment_intent_id"
+    t.string "stripe_subscription_id"
+    t.string "stripe_customer_id"
+    t.string "tier", null: false
+    t.decimal "amount_paid", precision: 10, scale: 2
+    t.datetime "starts_at"
+    t.datetime "ends_at"
+    t.datetime "cancelled_at"
+    t.string "status", default: "pending"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider_id"], name: "index_sponsorships_on_provider_id"
+    t.index ["status"], name: "index_sponsorships_on_status"
+    t.index ["stripe_customer_id"], name: "index_sponsorships_on_stripe_customer_id"
+    t.index ["stripe_payment_intent_id"], name: "index_sponsorships_on_stripe_payment_intent_id"
+    t.index ["stripe_subscription_id"], name: "index_sponsorships_on_stripe_subscription_id"
+    t.index ["tier"], name: "index_sponsorships_on_tier"
   end
 
   create_table "states", force: :cascade do |t|
@@ -320,6 +361,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_24_165653) do
   add_foreign_key "provider_registrations", "users", column: "reviewed_by_id"
   add_foreign_key "provider_service_types", "provider_categories"
   add_foreign_key "provider_service_types", "providers"
+  add_foreign_key "provider_views", "providers"
   add_foreign_key "providers", "users"
+  add_foreign_key "sponsorships", "providers"
   add_foreign_key "users", "providers", column: "active_provider_id"
 end

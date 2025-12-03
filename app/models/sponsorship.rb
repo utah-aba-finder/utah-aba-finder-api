@@ -48,11 +48,23 @@ class Sponsorship < ApplicationRecord
       ends_at: calculate_end_date
     )
     
-    # Update provider
+    # Map tier string to integer enum value
+    tier_enum_value = case tier.to_s.downcase
+                     when 'featured'
+                       1 # featured
+                     when 'sponsor'
+                       2 # sponsor
+                     when 'partner'
+                       3 # partner
+                     else
+                       0 # free
+                     end
+    
+    # Update provider with integer enum value
     provider.update!(
       is_sponsored: true,
       sponsored_until: ends_at,
-      sponsorship_tier: tier,
+      sponsorship_tier: tier_enum_value,
       stripe_customer_id: stripe_customer_id,
       stripe_subscription_id: stripe_subscription_id
     )
@@ -70,11 +82,23 @@ class Sponsorship < ApplicationRecord
     )
     
     # Update provider if this is the active sponsorship
-    if provider.sponsorship_tier == tier && provider.is_sponsored?
+    # Compare tier string to provider's enum value
+    tier_enum_value = case tier.to_s.downcase
+                     when 'featured'
+                       1
+                     when 'sponsor'
+                       2
+                     when 'partner'
+                       3
+                     else
+                       0
+                     end
+    
+    if provider.sponsorship_tier_before_type_cast == tier_enum_value && provider.is_sponsored?
       provider.update!(
         is_sponsored: false,
         sponsored_until: nil,
-        sponsorship_tier: nil
+        sponsorship_tier: 0 # free
       )
     end
     

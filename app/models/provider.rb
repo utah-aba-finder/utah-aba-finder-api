@@ -25,6 +25,9 @@ class Provider < ApplicationRecord
   # Sponsorship relationships
   has_many :sponsorships, dependent: :destroy
   has_one :active_sponsorship, -> { active_sponsorships }, class_name: 'Sponsorship'
+  
+  # Provider views tracking
+  has_many :provider_views, dependent: :destroy
 
   # Service Type Relationships
   has_many :provider_service_types, dependent: :destroy
@@ -99,6 +102,9 @@ class Provider < ApplicationRecord
   end
 
   enum status: { pending: 1, approved: 2, denied: 3 }
+  
+  # Sponsorship tier enum: free: 0, featured: 1, sponsor: 2, partner: 3
+  enum sponsorship_tier: { free: 0, featured: 1, sponsor: 2, partner: 3 }, _prefix: :sponsorship
 
   # Normalize status before validation
   before_validation :normalize_status
