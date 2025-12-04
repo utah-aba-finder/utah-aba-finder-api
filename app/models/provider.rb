@@ -266,15 +266,13 @@ class Provider < ApplicationRecord
       insurance_params.map { |name| Insurance.find_by(name: name)&.id }.compact
     else
       # Frontend sends: [{"id"=>1, "name"=>"Contact us"}, ...]
-      insurance_params.map { |param| param[:id] }.compact
+      insurance_params.map { |param| param[:id] || param["id"] }.compact
     end
 
-    self.provider_insurances.each do |provider_info|
-      if insurance_ids.include?(provider_info[:insurance_id])
-        provider_insurance = self.provider_insurances.find_by(insurance_id: provider_info[:insurance_id])
+    self.provider_insurances.each do |provider_insurance|
+      if insurance_ids.include?(provider_insurance.insurance_id)
         provider_insurance.update!(accepted: true)
       else
-        provider_insurance = self.provider_insurances.find_by(insurance_id: provider_info[:insurance_id])
         provider_insurance.update!(accepted: false)
       end
     end
