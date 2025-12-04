@@ -382,13 +382,20 @@ class ProviderRegistration < ApplicationRecord
         PracticeType.find_by(name: 'Occupational Therapy')
       when 'autism_evaluation'
         PracticeType.find_by(name: 'Autism Evaluation')
+      when 'educational_programs'
+        # Educational Programs is a category, not a practice type
+        # Try to find or create a practice type for it
+        PracticeType.find_or_create_by(name: 'Educational Programs')
       else
-        PracticeType.find_by(name: service_type.titleize)
+        PracticeType.find_by(name: service_type.titleize) || 
+        PracticeType.find_or_create_by(name: service_type.titleize)
       end
       
       if practice_type
-        provider.practice_types << practice_type
+        provider.practice_types << practice_type unless provider.practice_types.include?(practice_type)
         Rails.logger.info "Added practice type: #{practice_type.name} to provider #{provider.id}"
+      else
+        Rails.logger.warn "Could not find or create practice type for: #{service_type}"
       end
     end
   end
