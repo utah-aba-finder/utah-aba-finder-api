@@ -58,7 +58,7 @@ class ProviderSerializer
             "email": provider.email,
             "cost": provider.cost,
             
-            "insurance": provider.provider_insurances.select(&:accepted).map do |provider_insurance|
+            "insurance": provider.provider_insurances.select(&:accepted).sort_by { |pi| pi.insurance.name }.map do |provider_insurance|
               {
                 name: provider_insurance.insurance.name, 
                 id: provider_insurance.insurance_id,
