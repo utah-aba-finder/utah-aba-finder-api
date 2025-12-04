@@ -80,7 +80,9 @@ class ProviderSerializer
             "updated_last": provider.updated_at,
             "status": provider.status,
             "in_home_only": provider.in_home_only,
-            "service_delivery": provider.service_delivery
+            "service_delivery": provider.service_delivery,
+            "category": provider.category,
+            "category_name": provider.provider_category&.name
           }
         }
         
