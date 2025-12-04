@@ -264,16 +264,24 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
   def update_counties_served(provider, counties_data)
     Rails.logger.info "🔍 Updating counties for provider #{provider.id}: #{counties_data.inspect}"
     
+    # Extract and deduplicate county IDs
+    county_ids = counties_data.map do |county_info|
+      county_info[:county_id] || county_info["county_id"]
+    end.compact.uniq
+    
+    Rails.logger.info "🔍 Deduplicated county IDs: #{county_ids.inspect}"
+    
     # Safer deletion with sanitization and no default_scope
     CountiesProvider.unscoped.where(provider_id: provider.id).delete_all
     
     # Recreate (also bypass default_scope to prevent the WHERE "" IS NULL filter)
-    counties_data.each do |county_info|
-      county_id = county_info[:county_id] || county_info["county_id"]
-      if county_id.present?
-        CountiesProvider.unscoped.create!(provider_id: provider.id, county_id: county_id)
-        Rails.logger.info "✅ Added county #{county_id} for provider #{provider.id}"
-      end
+    # Use find_or_create_by to avoid duplicate key errors
+    county_ids.each do |county_id|
+      CountiesProvider.unscoped.find_or_create_by!(
+        provider_id: provider.id,
+        county_id: county_id
+      )
+      Rails.logger.info "✅ Added county #{county_id} for provider #{provider.id}"
     end
   end
 
