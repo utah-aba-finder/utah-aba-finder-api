@@ -9,6 +9,7 @@ class ProviderSerializer
         { :locations => :practice_types }, 
         { :provider_insurances => :insurance },
         { :provider_attributes => :category_field },
+        { :provider_category => :category_fields },
         :counties
       )
     end
@@ -16,9 +17,12 @@ class ProviderSerializer
     # Log memory usage
     Rails.logger.info "📊 ProviderSerializer - Processing #{providers.count} providers"
     
+    # Determine if this is a single provider request (for including extra fields)
+    is_single_provider = providers.respond_to?(:count) ? providers.count == 1 : providers.is_a?(Array) && providers.length == 1
+    
     {
       data: providers.map do |provider|
-        {
+        provider_data = {
           id: provider.id,
           type: "provider",
           states: get_provider_states(provider),
@@ -76,11 +80,18 @@ class ProviderSerializer
             "updated_last": provider.updated_at,
             "status": provider.status,
             "in_home_only": provider.in_home_only,
-            "service_delivery": provider.service_delivery,
-            "provider_attributes": format_provider_attributes(provider),
-            "category_fields": format_category_fields(provider)
+            "service_delivery": provider.service_delivery
           }
         }
+        
+        # Only include provider_attributes and category_fields for single provider requests
+        # (not for index/list endpoints to avoid memory issues)
+        if is_single_provider
+          provider_data[:attributes]["provider_attributes"] = format_provider_attributes(provider)
+          provider_data[:attributes]["category_fields"] = format_category_fields(provider)
+        end
+        
+        provider_data
       end
     }
   end
@@ -133,15 +144,33 @@ class ProviderSerializer
 
   def self.format_provider_attributes(provider)
     # Return a hash of field_name => value for easy frontend access
-    provider.provider_attributes.includes(:category_field).each_with_object({}) do |attr, hash|
-      field_name = attr.category_field.name
-      hash[field_name] = attr.value
+    # Use preloaded associations to avoid N+1 queries
+    return {} unless provider.association(:provider_attributes).loaded?
+    
+    provider.provider_attributes.each_with_object({}) do |attr, hash|
+      # category_field should be preloaded, but check if it's loaded
+      field = if attr.association(:category_field).loaded?
+        attr.category_field
+      else
+        attr.category_field # Will trigger a query, but should be rare
+      end
+      hash[field.name] = attr.value if field
     end
   end
 
   def self.format_category_fields(provider)
     # Return category fields so frontend knows what fields are available
-    provider.category_fields.map do |field|
+    # Use preloaded association if available
+    return [] unless provider.association(:provider_category).loaded? || provider.provider_category.present?
+    
+    fields = if provider.provider_category&.association(:category_fields).loaded?
+      provider.provider_category.category_fields.active.ordered
+    else
+      # Fallback: load only if not already loaded (should be rare)
+      provider.category_fields
+    end
+    
+    fields.map do |field|
       {
         id: field.id,
         name: field.name,
