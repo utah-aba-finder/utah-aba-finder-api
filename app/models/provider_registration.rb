@@ -45,6 +45,10 @@ class ProviderRegistration < ApplicationRecord
   def approve!(admin_user, notes = nil)
     return false unless can_be_approved?
     
+    # Double-check to prevent race conditions
+    reload
+    return false unless can_be_approved?
+    
     begin
       Rails.logger.info "Starting approval process for registration #{id}"
       
@@ -72,14 +76,21 @@ class ProviderRegistration < ApplicationRecord
       reload
       Rails.logger.info "Registration status updated to approved"
       
-      # Create secure user account for the provider
+      # Create secure user account for the provider (check if user already exists)
       Rails.logger.info "Creating user account..."
-      user = create_provider_user_account(provider)
-      if user
-        Rails.logger.info "User account created successfully: #{user.id}"
+      existing_user = User.find_by(email: email)
+      if existing_user
+        Rails.logger.info "User account already exists: #{existing_user.id}, linking to provider"
+        existing_user.update(provider_id: provider.id) unless existing_user.provider_id == provider.id
+        user = existing_user
       else
-        Rails.logger.error "User account creation failed"
-        return false
+        user = create_provider_user_account(provider)
+        if user
+          Rails.logger.info "User account created successfully: #{user.id}"
+        else
+          Rails.logger.error "User account creation failed"
+          return false
+        end
       end
       
       # Send approval email with login credentials
@@ -187,6 +198,9 @@ class ProviderRegistration < ApplicationRecord
   end
 
   def create_provider_from_registration
+    # Get data from submitted_data, handling nested category structure
+    data = get_submitted_data
+    
     # Map submitted data to provider attributes (comprehensive)
     provider_attributes = {
       name: provider_name,
@@ -194,9 +208,9 @@ class ProviderRegistration < ApplicationRecord
       category: category,
       status: :approved,
       
-      # Basic business info
-      website: submitted_data['website'] || '',
-      phone: submitted_data['contact_phone'] || '',
+      # Basic business info - check both top level and nested category level
+      website: data['website'] || '',
+      phone: data['contact_phone'] || data['phone'] || '',
       
       # Service delivery options
       service_delivery: determine_service_delivery,
@@ -207,13 +221,13 @@ class ProviderRegistration < ApplicationRecord
       telehealth_services: determine_telehealth_services,
       
       # Accessibility and details
-      spanish_speakers: submitted_data['spanish_speakers'] || 'Unknown',
+      spanish_speakers: data['spanish_speakers'] || 'Unknown',
       
       # Business details
-      cost: submitted_data['cost'] || 'Contact us',
-      waitlist: submitted_data['waitlist'] || 'Contact us',
-      min_age: submitted_data['min_age'] || nil,
-      max_age: submitted_data['max_age'] || nil,
+      cost: data['pricing'] || data['cost'] || 'Contact us',
+      waitlist: data['waitlist_status'] || data['waitlist'] || 'Contact us',
+      min_age: extract_min_age(data),
+      max_age: extract_max_age(data),
       
       # Default values for required fields
       in_home_only: true  # Set to true to avoid location requirement
@@ -253,10 +267,12 @@ class ProviderRegistration < ApplicationRecord
     category_obj = ProviderCategory.find_by(slug: category)
     return unless category_obj
 
+    data = get_submitted_data
+
     category_obj.category_fields.each do |field|
       # Use slug for the key, but fall back to name if slug is nil (backward compatibility)
       key = field.slug || field.name.parameterize.underscore
-      value = submitted_data[key] || submitted_data[field.name.parameterize.underscore]
+      value = data[key] || data[field.name.parameterize.underscore]
       next unless value.present?
 
       # Special handling for insurance fields
@@ -304,25 +320,29 @@ class ProviderRegistration < ApplicationRecord
   end
 
   def determine_service_delivery
-    service_delivery = submitted_data['service_delivery']
+    data = get_submitted_data
+    service_delivery = data['service_delivery'] || data['delivery_format']
     
     if service_delivery.is_a?(Array)
       {
-        in_home: service_delivery.include?('Home Visits'),
-        in_clinic: service_delivery.include?('Clinic-Based') || service_delivery.include?('In-Person'),
-        telehealth: service_delivery.include?('Teletherapy') || service_delivery.include?('Virtual/Online')
+        in_home: service_delivery.any? { |s| s.to_s.downcase.include?('home') || s.to_s.downcase.include?('in-person') },
+        in_clinic: service_delivery.any? { |s| s.to_s.downcase.include?('clinic') || s.to_s.downcase.include?('in-person') },
+        telehealth: service_delivery.any? { |s| s.to_s.downcase.include?('online') || s.to_s.downcase.include?('virtual') || s.to_s.downcase.include?('telehealth') }
       }
     elsif service_delivery.is_a?(String)
+      service_delivery_lower = service_delivery.downcase
       {
-        in_home: service_delivery.include?('Home Visits'),
-        in_clinic: service_delivery.include?('Clinic-Based') || service_delivery.include?('In-Person'),
-        telehealth: service_delivery.include?('Teletherapy') || service_delivery.include?('Virtual/Online')
+        in_home: service_delivery_lower.include?('home') || service_delivery_lower.include?('in-person'),
+        in_clinic: service_delivery_lower.include?('clinic') || service_delivery_lower.include?('in-person'),
+        telehealth: service_delivery_lower.include?('online') || service_delivery_lower.include?('virtual') || service_delivery_lower.include?('telehealth')
       }
     else
       # Default based on category
       case category
       when 'aba_therapy', 'speech_therapy', 'occupational_therapy'
         { in_home: true, in_clinic: true, telehealth: true }
+      when 'educational_programs'
+        { in_home: false, in_clinic: false, telehealth: true } # Educational programs are typically online
       when 'dentists', 'orthodontists'
         { in_home: false, in_clinic: true, telehealth: false }
       when 'barbers_hair'
@@ -374,7 +394,8 @@ class ProviderRegistration < ApplicationRecord
   end
 
   def setup_insurance(provider)
-    insurance_data = submitted_data['insurance'] || submitted_data['insurance_preferences']
+    data = get_submitted_data
+    insurance_data = data['insurance'] || data['insurance_preferences']
     return if insurance_data.blank?
     
     # Process insurance using the InsuranceService
@@ -383,7 +404,8 @@ class ProviderRegistration < ApplicationRecord
   end
 
   def setup_counties_served(provider)
-    counties_data = submitted_data['counties'] || submitted_data['counties_served'] || submitted_data['geographic_coverage']
+    data = get_submitted_data
+    counties_data = data['counties'] || data['counties_served'] || data['geographic_coverage'] || data['service_areas']
     
     if counties_data.present?
       # Process specific counties if provided
@@ -415,18 +437,73 @@ class ProviderRegistration < ApplicationRecord
 
   def create_default_location(provider)
     # Create a basic location if we have address info
-    location_data = submitted_data['service_areas'] || submitted_data['geographic_coverage']
+    data = get_submitted_data
+    location_data = data['service_areas'] || data['geographic_coverage']
+    primary_address = data['primary_address'] || {}
     
-    if location_data.present?
+    if primary_address.present? && primary_address['street'].present?
+      provider.locations.create!(
+        name: "#{provider_name} - Main Office",
+        address_1: primary_address['street'] || primary_address['address_1'] || "Contact for address",
+        address_2: primary_address['suite'] || primary_address['address_2'] || '',
+        city: primary_address['city'] || "Contact for location",
+        state: primary_address['state'] || "Contact for location",
+        zip: primary_address['zip'] || "Contact for location",
+        phone: primary_address['phone'] || data['contact_phone'] || provider.phone
+      )
+    elsif location_data.present?
       provider.locations.create!(
         name: "#{provider_name} - Main Office",
         address_1: "Contact for address", # We don't have full address from registration
         city: "Contact for location",
         state: "Contact for location",
         zip: "Contact for location",
-        phone: submitted_data['contact_phone'] || provider.phone
+        phone: data['contact_phone'] || provider.phone
       )
     end
+  end
+
+  # Helper method to get submitted_data, handling nested category structure
+  def get_submitted_data
+    # Check if data is nested under category key (e.g., submitted_data['educational_programs'])
+    if submitted_data.is_a?(Hash) && submitted_data[category].is_a?(Hash)
+      # Merge top-level and category-specific data, with category data taking precedence
+      (submitted_data.except(category) || {}).merge(submitted_data[category] || {})
+    else
+      submitted_data || {}
+    end
+  end
+
+  def extract_min_age(data)
+    age_groups = data['age_groups'] || []
+    return nil if age_groups.blank?
+    
+    # Extract minimum age from age groups like "4-5 years", "Preschool (3-5)", etc.
+    min_ages = age_groups.map do |group|
+      if group.is_a?(String)
+        # Try to extract numbers from strings like "4-5 years", "Preschool (3-5)", "3-5"
+        numbers = group.scan(/\d+/).map(&:to_i)
+        numbers.min if numbers.any?
+      end
+    end.compact
+    
+    min_ages.min
+  end
+
+  def extract_max_age(data)
+    age_groups = data['age_groups'] || []
+    return nil if age_groups.blank?
+    
+    # Extract maximum age from age groups
+    max_ages = age_groups.map do |group|
+      if group.is_a?(String)
+        # Try to extract numbers from strings like "4-5 years", "Preschool (3-5)", "3-5"
+        numbers = group.scan(/\d+/).map(&:to_i)
+        numbers.max if numbers.any?
+      end
+    end.compact
+    
+    max_ages.max
   end
 
   def validate_service_types_exist
