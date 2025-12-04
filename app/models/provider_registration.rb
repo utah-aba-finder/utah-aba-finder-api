@@ -223,9 +223,8 @@ class ProviderRegistration < ApplicationRecord
     provider = Provider.new(provider_attributes)
     
     if provider.save
-      # Store the provider ID in metadata for reference
-      current_metadata = read_attribute(:metadata) || {}
-      update_columns(metadata: current_metadata.merge(provider_id: provider.id))
+      # Note: provider_id can be found via provider.provider_registrations association if needed
+      # We skip storing in metadata since the column may not exist in all environments
       
       # Set up practice types from service types
       setup_practice_types(provider)
