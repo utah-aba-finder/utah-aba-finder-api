@@ -145,14 +145,16 @@ class ProviderSerializer
   def self.format_provider_attributes(provider)
     # Return a hash of field_name => value for easy frontend access
     # Use preloaded associations to avoid N+1 queries
-    return {} unless provider.association(:provider_attributes).loaded?
+    return {} unless provider.association(:provider_attributes).loaded? || provider.provider_attributes.any?
     
     provider.provider_attributes.each_with_object({}) do |attr, hash|
       # category_field should be preloaded, but check if it's loaded
       field = if attr.association(:category_field).loaded?
         attr.category_field
-      else
+      elsif attr.category_field.present?
         attr.category_field # Will trigger a query, but should be rare
+      else
+        nil
       end
       hash[field.name] = attr.value if field
     end
@@ -160,11 +162,14 @@ class ProviderSerializer
 
   def self.format_category_fields(provider)
     # Return category fields so frontend knows what fields are available
-    # Use preloaded association if available
-    return [] unless provider.association(:provider_category).loaded? || provider.provider_category.present?
+    # Return empty array if provider has no category
+    return [] unless provider.provider_category.present?
     
-    fields = if provider.provider_category&.association(:category_fields).loaded?
-      provider.provider_category.category_fields.active.ordered
+    # Use preloaded association if available
+    category = provider.provider_category
+    
+    fields = if category.association(:category_fields).loaded?
+      category.category_fields.active.ordered
     else
       # Fallback: load only if not already loaded (should be rare)
       provider.category_fields
