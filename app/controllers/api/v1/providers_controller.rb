@@ -276,7 +276,14 @@ class Api::V1::ProvidersController < ApplicationController
   end
 
   def show
-    provider = Provider.find(params[:id])
+    provider = Provider.includes(
+      :practice_types,
+      { :locations => :practice_types },
+      { :provider_insurances => :insurance },
+      { :provider_attributes => :category_field },
+      { :provider_category => :category_fields },
+      :counties
+    ).find(params[:id])
     render json: ProviderSerializer.format_providers([provider])
   end
 
