@@ -194,6 +194,16 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       end
 
       provider.touch # Ensure updated_at is updated
+      # Reload provider with associations for serializer
+      provider.reload
+      provider = Provider.includes(
+        :practice_types,
+        { :locations => :practice_types },
+        { :provider_insurances => :insurance },
+        { :provider_attributes => :category_field },
+        { :provider_category => :category_fields },
+        :counties
+      ).find(provider.id)
       render json: ProviderSerializer.format_providers([provider])
     else
       Rails.logger.error "❌ Admin update failed - Errors: #{provider.errors.full_messages}"
