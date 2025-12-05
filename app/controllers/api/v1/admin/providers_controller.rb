@@ -140,12 +140,21 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       states_params = params[:states]
     end
 
+    # Handle provider_attributes (category-specific fields) separately if provided
+    provider_attributes_params = nil
+    if params[:data]&.first&.dig(:attributes, :provider_attributes)&.present?
+      provider_attributes_params = params[:data].first[:attributes][:provider_attributes]
+    elsif params[:provider_attributes].present?
+      provider_attributes_params = params[:provider_attributes]
+    end
+
     # Debug logging
     Rails.logger.info "🔍 Admin update - Provider ID: #{provider.id}"
     Rails.logger.info "🔍 Admin update - Basic Params: #{admin_provider_params.inspect}"
     Rails.logger.info "🔍 Admin update - Locations Params: #{locations_params.inspect}"
     Rails.logger.info "🔍 Admin update - Counties Params: #{counties_params.inspect}"
     Rails.logger.info "🔍 Admin update - States Params: #{states_params.inspect}"
+    Rails.logger.info "🔍 Admin update - Provider Attributes Params: #{provider_attributes_params.inspect}"
     Rails.logger.info "🔍 Admin update - Current category: #{provider.category}"
 
     # Create locations FIRST to satisfy validation
@@ -163,6 +172,11 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       # Update counties served if provided
       if counties_params.present?
         update_counties_served(provider, counties_params)
+      end
+
+      # Update provider_attributes (category-specific fields) if provided
+      if provider_attributes_params.present?
+        update_provider_attributes(provider, provider_attributes_params)
       end
 
       provider.touch # Ensure updated_at is updated
@@ -285,6 +299,38 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
     end
   end
 
+  def update_provider_attributes(provider, attributes_data)
+    # attributes_data should be a hash like: { "field_name" => "value", "another_field" => "value" }
+    return unless attributes_data.is_a?(Hash)
+
+    Rails.logger.info "🔍 Updating provider_attributes for provider #{provider.id}: #{attributes_data.inspect}"
+
+    attributes_data.each do |field_name, value|
+      # Find the category field by name (case-insensitive)
+      field = provider.category_fields.find_by('LOWER(name) = LOWER(?)', field_name)
+      unless field
+        Rails.logger.warn "⚠️ Category field '#{field_name}' not found for provider #{provider.id} (category: #{provider.category})"
+        next
+      end
+
+      # Handle array values (for multi_select fields)
+      if value.is_a?(Array)
+        # Join array values with comma and space, preserving spaces within values
+        processed_value = value.map(&:to_s).map(&:strip).reject(&:blank?).join(', ')
+      else
+        # For text/textarea fields, preserve spaces and trim only leading/trailing whitespace
+        processed_value = value.to_s.strip
+      end
+
+      # Use set_attribute_value which handles find_or_initialize_by
+      if provider.set_attribute_value(field_name, processed_value)
+        Rails.logger.info "✅ Updated attribute '#{field_name}' for provider #{provider.id}: #{processed_value}"
+      else
+        Rails.logger.error "❌ Failed to update attribute '#{field_name}' for provider #{provider.id}"
+      end
+    end
+  end
+
   def update_locations(provider, locations_data)
     Rails.logger.info "🔍 DEBUG: update_locations method called with provider_id: #{provider.id}"
     Rails.logger.info "🔍 DEBUG: locations_data class: #{locations_data.class}"
@@ -392,6 +438,38 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         end
       else
         Rails.logger.error "❌ Failed to save location: #{location.errors.full_messages}"
+      end
+    end
+  end
+
+  def update_provider_attributes(provider, attributes_data)
+    # attributes_data should be a hash like: { "field_name" => "value", "another_field" => "value" }
+    return unless attributes_data.is_a?(Hash)
+
+    Rails.logger.info "🔍 Updating provider_attributes for provider #{provider.id}: #{attributes_data.inspect}"
+
+    attributes_data.each do |field_name, value|
+      # Find the category field by name (case-insensitive)
+      field = provider.category_fields.find_by('LOWER(name) = LOWER(?)', field_name)
+      unless field
+        Rails.logger.warn "⚠️ Category field '#{field_name}' not found for provider #{provider.id} (category: #{provider.category})"
+        next
+      end
+
+      # Handle array values (for multi_select fields)
+      if value.is_a?(Array)
+        # Join array values with comma and space, preserving spaces within values
+        processed_value = value.map(&:to_s).map(&:strip).reject(&:blank?).join(', ')
+      else
+        # For text/textarea fields, preserve spaces and trim only leading/trailing whitespace
+        processed_value = value.to_s.strip
+      end
+
+      # Use set_attribute_value which handles find_or_initialize_by
+      if provider.set_attribute_value(field_name, processed_value)
+        Rails.logger.info "✅ Updated attribute '#{field_name}' for provider #{provider.id}: #{processed_value}"
+      else
+        Rails.logger.error "❌ Failed to update attribute '#{field_name}' for provider #{provider.id}"
       end
     end
   end
