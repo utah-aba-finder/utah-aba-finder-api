@@ -108,6 +108,13 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
   def update
     provider = Provider.find(params[:id])
 
+    # Debug: Log all incoming params to see what the frontend is sending
+    Rails.logger.info "🔍 Admin update - ALL PARAMS: #{params.inspect}"
+    Rails.logger.info "🔍 Admin update - Data structure: #{params[:data].inspect}"
+    if params[:data]&.first&.dig(:attributes)
+      Rails.logger.info "🔍 Admin update - Attributes keys: #{params[:data].first[:attributes].keys.inspect}"
+    end
+
     # Handle practice types separately if provided
     practice_type_params = nil
     if params[:data]&.first&.dig(:attributes, :provider_type)&.present?
@@ -144,8 +151,15 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
     provider_attributes_params = nil
     if params[:data]&.first&.dig(:attributes, :provider_attributes)&.present?
       provider_attributes_params = params[:data].first[:attributes][:provider_attributes]
+      Rails.logger.info "🔍 Admin update - Found provider_attributes in data[0][attributes]: #{provider_attributes_params.inspect}"
+    elsif params[:data]&.first&.dig(:attributes, "provider_attributes")&.present?
+      provider_attributes_params = params[:data].first[:attributes]["provider_attributes"]
+      Rails.logger.info "🔍 Admin update - Found provider_attributes (string key) in data[0][attributes]: #{provider_attributes_params.inspect}"
     elsif params[:provider_attributes].present?
       provider_attributes_params = params[:provider_attributes]
+      Rails.logger.info "🔍 Admin update - Found provider_attributes at top level: #{provider_attributes_params.inspect}"
+    else
+      Rails.logger.warn "⚠️ Admin update - No provider_attributes found in request"
     end
 
     # Debug logging
