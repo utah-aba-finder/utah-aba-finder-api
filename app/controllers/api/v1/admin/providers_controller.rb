@@ -315,6 +315,10 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
 
   def update_provider_attributes(provider, attributes_data)
     # attributes_data should be a hash like: { "field_name" => "value", "another_field" => "value" }
+    # Handle ActionController::Parameters by converting to hash
+    if attributes_data.is_a?(ActionController::Parameters)
+      attributes_data = attributes_data.to_unsafe_h
+    end
     return unless attributes_data.is_a?(Hash)
 
     Rails.logger.info "🔍 Updating provider_attributes for provider #{provider.id}: #{attributes_data.inspect}"
@@ -458,6 +462,10 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
 
   def update_provider_attributes(provider, attributes_data)
     # attributes_data should be a hash like: { "field_name" => "value", "another_field" => "value" }
+    # Handle ActionController::Parameters by converting to hash
+    if attributes_data.is_a?(ActionController::Parameters)
+      attributes_data = attributes_data.to_unsafe_h
+    end
     return unless attributes_data.is_a?(Hash)
 
     Rails.logger.info "🔍 Updating provider_attributes for provider #{provider.id}: #{attributes_data.inspect}"
