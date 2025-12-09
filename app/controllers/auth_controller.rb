@@ -71,7 +71,7 @@ class AuthController < ActionController::API
           user: {
             id: user.id,
             email: user.email,
-            first_name: user.first_name,
+            first_name: user.respond_to?(:first_name) ? user.first_name : nil,
             role: numeric_role,
             provider_id: user.provider_id
           }
@@ -107,7 +107,7 @@ class AuthController < ActionController::API
         user: {
           id: user.id,
           email: user.email,
-          first_name: user.first_name,
+          first_name: user.respond_to?(:first_name) ? user.first_name : nil,
           role: numeric_role,
           provider_id: user.provider_id
         }
