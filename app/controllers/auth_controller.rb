@@ -50,6 +50,7 @@ class AuthController < ActionController::API
         user: {
           id: user.id,
           email: user.email,
+          first_name: user.first_name,
           role: numeric_role,
           provider_id: user.provider_id
         }
@@ -79,6 +80,7 @@ class AuthController < ActionController::API
         user: {
           id: user.id,
           email: user.email,
+          first_name: user.first_name,
           role: numeric_role,
           provider_id: user.provider_id
         }
@@ -107,25 +109,36 @@ class AuthController < ActionController::API
   end
 
   def change_password
-    # Require authentication for password changes
-    authenticate_user!
+    # Get user from Bearer token (user ID)
+    token = request.headers['Authorization']&.sub(/^Bearer\s+/,'')
+    unless token
+      render json: { error: 'No authorization token provided' }, status: :unauthorized
+      return
+    end
     
-    user = current_user
+    user = User.find_by(id: token)
+    unless user
+      render json: { error: 'Invalid authorization token' }, status: :unauthorized
+      return
+    end
     
-    if user.valid_password?(params[:current_password])
-      if user.update(password: params[:new_password], password_confirmation: params[:new_password_confirmation])
-        render json: { message: 'Password changed successfully' }
-      else
-        render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
-      end
-    else
+    # Verify current password
+    unless user.valid_password?(params[:current_password])
       render json: { error: 'Current password is incorrect' }, status: :unauthorized
+      return
+    end
+    
+    # Update password
+    if user.update(password: params[:new_password], password_confirmation: params[:new_password_confirmation])
+      render json: { message: 'Password changed successfully' }, status: :ok
+    else
+      render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
   private
 
   def user_params
-    params.require(:user).permit(:email, :password, :password_confirmation, :provider_id, :role)
+    params.require(:user).permit(:email, :password, :password_confirmation, :provider_id, :role, :first_name)
   end
 end 
