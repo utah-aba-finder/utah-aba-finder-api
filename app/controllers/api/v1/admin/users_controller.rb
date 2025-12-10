@@ -106,23 +106,40 @@ class Api::V1::Admin::UsersController < Api::V1::Admin::BaseController
   end
 
   def update
-    user = User.find(params[:id])
-    
-    if user.update(admin_user_params)
-      render json: {
-        message: 'User updated successfully',
-        user: {
-          id: user.id,
-          email: user.email,
-          first_name: user.respond_to?(:first_name) ? user.first_name : nil,
-          role: user.role,
-          provider_id: user.provider_id,
-          created_at: user.created_at,
-          updated_at: user.updated_at
-        }
-      }, status: :ok
-    else
-      render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
+    begin
+      user = User.find(params[:id])
+      update_params = admin_user_params
+      
+      Rails.logger.info "Updating user #{user.id} (#{user.email}) with params: #{update_params.inspect}"
+      
+      if user.update(update_params)
+        # Reload to get fresh data from database
+        user.reload
+        
+        Rails.logger.info "User updated successfully. first_name: #{user.respond_to?(:first_name) ? user.first_name.inspect : 'N/A'}"
+        
+        render json: {
+          message: 'User updated successfully',
+          user: {
+            id: user.id,
+            email: user.email,
+            first_name: user.respond_to?(:first_name) ? user.first_name : nil,
+            role: user.role,
+            provider_id: user.provider_id,
+            created_at: user.created_at,
+            updated_at: user.updated_at
+          }
+        }, status: :ok
+      else
+        Rails.logger.error "User update failed: #{user.errors.full_messages}"
+        render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
+      end
+    rescue ActiveRecord::RecordNotFound => e
+      render json: { error: "User not found" }, status: :not_found
+    rescue => e
+      Rails.logger.error "Error in admin users update: #{e.class.name} - #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      render json: { error: "An error occurred while updating user: #{e.message}" }, status: :internal_server_error
     end
   end
 
@@ -130,7 +147,13 @@ class Api::V1::Admin::UsersController < Api::V1::Admin::BaseController
 
   def admin_user_params
     permitted = [:email, :role, :provider_id]
-    permitted << :first_name if User.column_names.include?('first_name')
+    # Check if first_name column exists in the database
+    if User.column_names.include?('first_name')
+      permitted << :first_name
+      Rails.logger.info "first_name column exists, allowing first_name updates"
+    else
+      Rails.logger.warn "first_name column does not exist in users table"
+    end
     params.require(:user).permit(*permitted)
   end
 end
