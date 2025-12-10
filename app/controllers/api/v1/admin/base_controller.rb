@@ -13,6 +13,11 @@ class Api::V1::Admin::BaseController < ApplicationController
   end
   
   def log_memory_usage
-    MemoryMonitor.log_memory_usage("#{self.class.name}##{action_name}")
+    begin
+      MemoryMonitor.log_memory_usage("#{self.class.name}##{action_name}")
+    rescue => e
+      Rails.logger.warn "MemoryMonitor error: #{e.message}"
+      # Don't fail the request if memory monitoring fails
+    end
   end
 end 
