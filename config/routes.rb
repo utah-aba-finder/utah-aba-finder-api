@@ -68,7 +68,11 @@ Rails.application.routes.draw do
 
       namespace :admin do
         resources :providers, only: [:index, :create, :update]
-        resources :users, only: [:index, :show, :update]
+        resources :users, only: [:index, :show, :update] do
+          collection do
+            post :assign_providers
+          end
+        end
         resources :mass_emails, only: [:index] do
           collection do
             post :send_password_reminders

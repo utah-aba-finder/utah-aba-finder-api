@@ -1,5 +1,5 @@
 class Api::V1::ProviderAssignmentsController < ApplicationController
-  before_action :authenticate!
+  before_action :authenticate_user!
   before_action :authorize_assignment, only: [:create, :destroy]
   
   # POST /api/v1/provider_assignments
@@ -24,7 +24,7 @@ class Api::V1::ProviderAssignmentsController < ApplicationController
     assignment = ProviderAssignment.create!(
       user: user, 
       provider: provider,
-      assigned_by: @current_user&.email || user.email
+      assigned_by: current_user&.email || user.email
     )
     
     render json: { 
@@ -64,7 +64,7 @@ class Api::V1::ProviderAssignmentsController < ApplicationController
   
   # GET /api/v1/provider_assignments
   def index
-    if @current_user&.role == 'super_admin'
+    if current_user&.role == 'super_admin'
       # Super admins can see all assignments
       assignments = ProviderAssignment.includes(:user, :provider)
         .order(created_at: :desc)
@@ -101,7 +101,7 @@ class Api::V1::ProviderAssignmentsController < ApplicationController
   
   def authorize_assignment
     # Only super admins can assign/unassign providers
-    unless @current_user&.role == 'super_admin'
+    unless current_user&.role == 'super_admin'
       render json: { error: 'Access denied. Only super admins can manage provider assignments.' }, status: :forbidden
       return
     end

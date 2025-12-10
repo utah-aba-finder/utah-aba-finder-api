@@ -143,6 +143,107 @@ class Api::V1::Admin::UsersController < Api::V1::Admin::BaseController
     end
   end
 
+  # Assign user to multiple providers
+  def assign_providers
+    begin
+      user_email = params[:user_email] || params[:email]
+      provider_ids = params[:provider_ids] || []
+      
+      if user_email.blank?
+        render json: { error: "user_email is required" }, status: :bad_request
+        return
+      end
+      
+      if provider_ids.blank? || !provider_ids.is_a?(Array) || provider_ids.empty?
+        render json: { error: "provider_ids must be a non-empty array" }, status: :bad_request
+        return
+      end
+      
+      user = User.find_by(email: user_email)
+      if user.nil?
+        render json: { error: "User not found with email: #{user_email}" }, status: :not_found
+        return
+      end
+      
+      # Find all providers
+      providers = Provider.where(id: provider_ids)
+      if providers.count != provider_ids.count
+        found_ids = providers.pluck(:id)
+        missing_ids = provider_ids.map(&:to_i) - found_ids
+        render json: { 
+          error: "Some providers not found", 
+          missing_provider_ids: missing_ids,
+          found_provider_ids: found_ids
+        }, status: :not_found
+        return
+      end
+      
+      # Create assignments for each provider
+      assignments = []
+      errors = []
+      
+      providers.each do |provider|
+        # Check if assignment already exists (not checking all access methods, just assignments)
+        existing_assignment = ProviderAssignment.find_by(user: user, provider: provider)
+        if existing_assignment
+          errors << {
+            provider_id: provider.id,
+            provider_name: provider.name,
+            error: "User already assigned to this provider",
+            assignment_id: existing_assignment.id
+          }
+          next
+        end
+        
+        # Create assignment
+        begin
+          assignment = ProviderAssignment.create!(
+            user: user,
+            provider: provider,
+            assigned_by: current_user&.email || user.email
+          )
+          
+          assignments << {
+            id: assignment.id,
+            provider_id: provider.id,
+            provider_name: provider.name,
+            assigned_at: assignment.created_at
+          }
+        rescue ActiveRecord::RecordInvalid => e
+          errors << {
+            provider_id: provider.id,
+            provider_name: provider.name,
+            error: e.message
+          }
+        end
+      end
+      
+      # Reload user to get updated provider count
+      user.reload
+      
+      render json: {
+        success: true,
+        message: "Successfully assigned user to #{assignments.count} provider(s)",
+        user: {
+          id: user.id,
+          email: user.email,
+          accessible_providers_count: user.all_managed_providers.count
+        },
+        assignments: assignments,
+        errors: errors,
+        summary: {
+          total_requested: provider_ids.count,
+          successful: assignments.count,
+          failed: errors.count
+        }
+      }, status: :ok
+    rescue => e
+      Rails.logger.error "Error in admin users assign_providers: #{e.class.name} - #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      render json: { error: "An error occurred while assigning providers: #{e.message}" }, status: :internal_server_error
+    end
+  end
+
   private
 
   def admin_user_params
