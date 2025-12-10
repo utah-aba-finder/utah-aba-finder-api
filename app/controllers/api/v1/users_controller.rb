@@ -8,7 +8,8 @@ class Api::V1::UsersController < ApplicationController
         provider = user.provider
         { 
           id: user.id, 
-          email: user.email, 
+          email: user.email,
+          first_name: user.first_name,
           role: user.role,
           provider_id: user.provider_id,
           provider_name: provider ? provider.name : nil,
@@ -31,6 +32,7 @@ class Api::V1::UsersController < ApplicationController
       user: {
         id: user.id,
         email: user.email,
+        first_name: user.first_name,
         role: user.role,
         provider_id: user.provider_id,
         provider_name: provider ? provider.name : nil,
@@ -388,7 +390,9 @@ class Api::V1::UsersController < ApplicationController
     # Apply filters
     users = users.where(role: role_filter) if role_filter.present?
     users = users.where(provider_id: provider_filter) if provider_filter.present?
-    users = users.where("email ILIKE ?", "%#{search}%") if search.present?
+    if search.present?
+      users = users.where("email ILIKE ? OR first_name ILIKE ?", "%#{search}%", "%#{search}%")
+    end
     
     # Pagination
     total_count = users.count
@@ -399,7 +403,8 @@ class Api::V1::UsersController < ApplicationController
         provider = user.provider
         { 
           id: user.id, 
-          email: user.email, 
+          email: user.email,
+          first_name: user.first_name,
           role: user.role,
           provider_id: user.provider_id,
           provider_name: provider ? provider.name : nil,
