@@ -567,26 +567,135 @@ class Api::V1::ProvidersController < ApplicationController
     end
   end
 
-  # Claim account endpoint - allows providers to claim their account by email
+  # Claim account endpoint - creates a claim request that requires super admin approval
+  # Supports two methods:
+  # 1. Direct email match (if email matches provider's registered email) - still requires approval
+  # 2. Provider name + claimer email - requires approval
   def claim_account
     email = params[:email]
+    provider_name = params[:provider_name]
+    provider_id = params[:provider_id]
+    claimer_email = params[:claimer_email] || email
     
-    if email.blank?
-      render json: { error: "Email is required" }, status: :bad_request
+    if claimer_email.blank?
+      render json: { 
+        error: "claimer_email is required",
+        suggestion: "Please provide the email address you want to use for your account"
+      }, status: :bad_request
       return
     end
     
     begin
-      # Find providers with matching email (case-insensitive)
-      providers = Provider.where("LOWER(email) = ?", email.downcase).where(status: :approved)
+      provider = nil
       
-      if providers.empty?
+      # Find provider by ID, name, or email
+      if provider_id.present?
+        provider = Provider.find_by(id: provider_id, status: :approved)
+      elsif provider_name.present?
+        providers = Provider.where("LOWER(name) ILIKE ?", "%#{provider_name.downcase}%")
+                           .where(status: :approved)
+        
+        if providers.count > 1
+          render json: {
+            error: "Multiple providers found",
+            message: "Please specify which provider you want to claim. Found #{providers.count} providers:",
+            providers: providers.map do |p|
+              {
+                id: p.id,
+                name: p.name,
+                email: p.email,
+                website: p.website
+              }
+            end,
+            suggestion: "Please provide provider_id to specify which provider"
+          }, status: :multiple_choices
+          return
+        elsif providers.count == 1
+          provider = providers.first
+        end
+      elsif email.present?
+        # Try to find by email match first
+        providers = Provider.where("LOWER(email) = ?", email.downcase).where(status: :approved)
+        provider = providers.first if providers.count == 1
+      end
+      
+      if provider.nil?
         render json: { 
-          error: "No provider account found with email: #{email}",
-          suggestion: "Please verify your email address or contact support if you believe this is an error"
+          error: "No provider account found",
+          suggestion: "Please provide provider_id, provider_name, or ensure your email matches the provider's registered email"
         }, status: :not_found
         return
       end
+      
+      # Check if user already has access
+      existing_user = User.find_by(email: claimer_email.downcase)
+      if existing_user && existing_user.all_managed_providers.where(id: provider.id).exists?
+        render json: {
+          success: true,
+          message: "You already have access to this provider account",
+          user: {
+            id: existing_user.id,
+            email: existing_user.email,
+            role: existing_user.role
+          },
+          provider: {
+            id: provider.id,
+            name: provider.name,
+            email: provider.email
+          }
+        }, status: :ok
+        return
+      end
+      
+      # Check if there's already a pending claim request
+      existing_request = ProviderClaimRequest.pending
+                                            .where(provider: provider, claimer_email: claimer_email.downcase)
+                                            .first
+      
+      if existing_request
+        render json: {
+          success: true,
+          message: "A claim request is already pending for this provider. Please wait for admin approval.",
+          claim_request: {
+            id: existing_request.id,
+            status: existing_request.status,
+            created_at: existing_request.created_at
+          }
+        }, status: :ok
+        return
+      end
+      
+      # Create claim request
+      claim_request = ProviderClaimRequest.create!(
+        provider: provider,
+        claimer_email: claimer_email.downcase
+      )
+      
+      # Send notification email to admin
+      AdminNotificationMailer.new_provider_claim_request(claim_request).deliver_later
+      
+      render json: {
+        success: true,
+        message: "Claim request submitted successfully. Your request will be reviewed by an administrator. You will receive an email once it's been approved.",
+        claim_request: {
+          id: claim_request.id,
+          status: claim_request.status,
+          provider: {
+            id: provider.id,
+            name: provider.name,
+            email: provider.email
+          },
+          claimer_email: claim_request.claimer_email,
+          created_at: claim_request.created_at
+        }
+      }, status: :created
+      
+    rescue => e
+      Rails.logger.error "Error in claim_account: #{e.class.name} - #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      render json: { error: "An error occurred while submitting claim request: #{e.message}" }, status: :internal_server_error
+    end
+  end
       
       # Check if user already exists
       user = User.find_by(email: email.downcase)
@@ -721,6 +830,7 @@ class Api::V1::ProvidersController < ApplicationController
       render json: { error: "An error occurred while claiming account: #{e.message}" }, status: :internal_server_error
     end
   end
+  
 
   # Location Management Methods
   # Get all locations for a provider

@@ -78,6 +78,12 @@ Rails.application.routes.draw do
             post :assign_providers
           end
         end
+        resources :provider_claim_requests, only: [:index, :show] do
+          member do
+            post :approve
+            post :reject
+          end
+        end
         resources :mass_emails, only: [:index] do
           collection do
             post :send_password_reminders

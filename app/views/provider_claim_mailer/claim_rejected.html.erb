@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+</head>
+<body>
+  <h1>Account Claim Request Update</h1>
+  
+  <p>Your request to claim access to <strong><%= @provider.name %></strong> has been reviewed.</p>
+  
+  <p><strong>Status:</strong> Not Approved</p>
+  
+  <% if @claim_request.rejection_reason.present? %>
+    <p><strong>Reason:</strong> <%= @claim_request.rejection_reason %></p>
+  <% end %>
+  
+  <p>If you believe this is an error or have questions, please contact support.</p>
+  
+  <hr>
+  <p><small>This is an automated message from Autism Services Locator.</small></p>
+</body>
+</html>

@@ -1,0 +1,11 @@
+Account Claim Request Update
+
+Your request to claim access to <%= @provider.name %> has been reviewed.
+
+Status: Not Approved
+
+<% if @claim_request.rejection_reason.present? %>
+Reason: <%= @claim_request.rejection_reason %>
+<% end %>
+
+If you believe this is an error or have questions, please contact support.

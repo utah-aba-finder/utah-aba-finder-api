@@ -1,0 +1,17 @@
+Account Claim Approved
+
+Your request to claim access to <%= @provider.name %> has been approved!
+
+<% if @password %>
+Your Login Credentials:
+Email: <%= @user.email %>
+Password: <%= @password %>
+
+⚠️ Important: Please save these credentials securely. You can change your password after your first login.
+<% else %>
+Your existing account has been linked to this provider.
+<% end %>
+
+Log in at: <%= ENV.fetch('FRONTEND_URL', 'https://autismserviceslocator.com') %>/login
+
+You can now manage your provider profile and connect with families seeking autism services.

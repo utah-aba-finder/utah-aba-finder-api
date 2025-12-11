@@ -17,4 +17,22 @@ class AdminNotificationMailer < ApplicationMailer
 
     )
   end
+  
+  def new_provider_claim_request(claim_request)
+    @claim_request = claim_request
+    @provider = claim_request.provider
+    @admin_email = ENV['ADMIN_NOTIFICATION_EMAIL'] || 'jordanwilliamson@autismserviceslocator.com'
+    
+    # Optionally CC the old registration email for backup
+    cc_emails = []
+    if ENV['ADMIN_NOTIFICATION_CC'].present?
+      cc_emails = ENV['ADMIN_NOTIFICATION_CC'].split(',').map(&:strip)
+    end
+    
+    mail(
+      to: @admin_email,
+      cc: cc_emails.presence,
+      subject: "New Provider Account Claim Request: #{@provider.name}"
+    )
+  end
 end 

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+</head>
+<body>
+  <h1>New Provider Account Claim Request</h1>
+  
+  <h2><%= @provider.name %></h2>
+  
+  <p><strong>Claimer Email:</strong> <%= @claim_request.claimer_email %></p>
+  <p><strong>Provider Registered Email:</strong> <%= @provider.email %></p>
+  <p><strong>Provider Website:</strong> <%= @provider.website %></p>
+  <p><strong>Requested At:</strong> <%= @claim_request.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>
+  
+  <p>
+    <a href="<%= request.base_url %>/admin/provider_claim_requests/<%= @claim_request.id %>">
+      Review this claim request
+    </a>
+  </p>
+
+</body>
+</html>

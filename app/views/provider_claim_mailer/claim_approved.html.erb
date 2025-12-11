@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+</head>
+<body>
+  <h1>Account Claim Approved</h1>
+  
+  <p>Your request to claim access to <strong><%= @provider.name %></strong> has been approved!</p>
+  
+  <% if @password %>
+    <h2>Your Login Credentials:</h2>
+    <p><strong>Email:</strong> <%= @user.email %></p>
+    <p><strong>Password:</strong> <%= @password %></p>
+    <p><em>⚠️ Important: Please save these credentials securely. You can change your password after your first login.</em></p>
+  <% else %>
+    <p>Your existing account has been linked to this provider.</p>
+  <% end %>
+  
+  <p>
+    <a href="<%= ENV.fetch('FRONTEND_URL', 'https://autismserviceslocator.com') %>/login" style="background-color: #4CAF50; color: white; padding: 14px 20px; text-decoration: none; display: inline-block; border-radius: 4px;">
+      Log In Now
+    </a>
+  </p>
+  
+  <p>You can now manage your provider profile and connect with families seeking autism services.</p>
+  
+  <hr>
+  <p><small>This is an automated message from Autism Services Locator.</small></p>
+</body>
+</html>
