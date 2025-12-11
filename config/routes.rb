@@ -82,6 +82,7 @@ Rails.application.routes.draw do
           member do
             post :approve
             post :reject
+            post :resend_email
           end
         end
         resources :mass_emails, only: [:index] do

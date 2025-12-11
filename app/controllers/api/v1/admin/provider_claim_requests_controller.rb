@@ -175,4 +175,77 @@ class Api::V1::Admin::ProviderClaimRequestsController < Api::V1::Admin::BaseCont
       render json: { error: "An error occurred: #{e.message}" }, status: :internal_server_error
     end
   end
+  
+  def resend_email
+    begin
+      claim_request = ProviderClaimRequest.find(params[:id])
+      
+      case claim_request.status
+      when 'approved'
+        # Find the user associated with this claim
+        user = User.find_by(email: claim_request.claimer_email.downcase)
+        
+        if user.nil?
+          render json: {
+            error: "User account not found for this claim request",
+            suggestion: "The user account may have been deleted. You may need to approve the claim again."
+          }, status: :not_found
+          return
+        end
+        
+        # Resend the approval email
+        ProviderClaimMailer.claim_approved(claim_request, user).deliver_later
+        
+        render json: {
+          success: true,
+          message: "Approval email resent successfully to #{claim_request.claimer_email}",
+          claim_request: {
+            id: claim_request.id,
+            status: claim_request.status,
+            claimer_email: claim_request.claimer_email
+          }
+        }, status: :ok
+        
+      when 'rejected'
+        # Resend the rejection email
+        ProviderClaimMailer.claim_rejected(claim_request).deliver_later
+        
+        render json: {
+          success: true,
+          message: "Rejection email resent successfully to #{claim_request.claimer_email}",
+          claim_request: {
+            id: claim_request.id,
+            status: claim_request.status,
+            claimer_email: claim_request.claimer_email
+          }
+        }, status: :ok
+        
+      when 'pending'
+        # Resend the submission confirmation email
+        ProviderClaimMailer.claim_submitted(claim_request).deliver_later
+        
+        render json: {
+          success: true,
+          message: "Confirmation email resent successfully to #{claim_request.claimer_email}",
+          claim_request: {
+            id: claim_request.id,
+            status: claim_request.status,
+            claimer_email: claim_request.claimer_email
+          }
+        }, status: :ok
+        
+      else
+        render json: {
+          error: "Unknown claim request status: #{claim_request.status}"
+        }, status: :unprocessable_entity
+      end
+      
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: "Claim request not found" }, status: :not_found
+    rescue => e
+      Rails.logger.error "Error in admin claim requests resend_email: #{e.class.name} - #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      render json: { error: "An error occurred: #{e.message}" }, status: :internal_server_error
+    end
+  end
 end
