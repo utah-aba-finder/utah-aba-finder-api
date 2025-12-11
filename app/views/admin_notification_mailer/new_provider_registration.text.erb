@@ -1,0 +1,16 @@
+New Provider Registration
+
+<%= @registration.provider_name %>
+
+Email: <%= @registration.email %>
+Category: <%= @registration.category %>
+Status: <%= @registration.status %>
+Submitted: <%= @registration.created_at.strftime("%B %d, %Y at %I:%M %p") %>
+
+Submitted Information:
+<% @registration.submitted_data.each do |key, value| %>
+<%= key.humanize %>: <%= value %>
+<% end %>
+
+Review this registration:
+<%= request.base_url %>/admin/provider_registrations/<%= @registration.id %>

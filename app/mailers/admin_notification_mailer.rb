@@ -1,10 +1,18 @@
 class AdminNotificationMailer < ApplicationMailer
   def new_provider_registration(registration)
     @registration = registration
-    @admin_email = 'registration@autismserviceslocator.com'
+    # Use environment variable if set, otherwise default to jordanwilliamson@autismserviceslocator.com
+    @admin_email = ENV['ADMIN_NOTIFICATION_EMAIL'] || 'jordanwilliamson@autismserviceslocator.com'
+    
+    # Optionally CC the old registration email for backup
+    cc_emails = []
+    if ENV['ADMIN_NOTIFICATION_CC'].present?
+      cc_emails = ENV['ADMIN_NOTIFICATION_CC'].split(',').map(&:strip)
+    end
     
     mail(
       to: @admin_email,
+      cc: cc_emails.presence,
       subject: "New Provider Registration: #{registration.provider_name}"
 
     )
