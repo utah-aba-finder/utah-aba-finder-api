@@ -10,6 +10,8 @@ Password: <%= @password %>
 ⚠️ Important: Please save these credentials securely. You can change your password after your first login.
 <% else %>
 Your existing account has been linked to this provider.
+
+If you need to reset your password, please use the "Forgot Password" feature on the login page.
 <% end %>
 
 Log in at: <%= ENV.fetch('FRONTEND_URL', 'https://autismserviceslocator.com') %>/login
