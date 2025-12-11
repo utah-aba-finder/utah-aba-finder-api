@@ -1,5 +1,6 @@
 class ApplicationController < ActionController::API
   before_action :authenticate_client, unless: :skip_client_auth?
+  rescue_from StandardError, with: :handle_error
 
   attr_reader :current_user, :current_client  # so current_user/current_client calls work
 
@@ -9,10 +10,36 @@ class ApplicationController < ActionController::API
   def skip_client_auth?
     return true if devise_controller?
     return true if admin_controller?
+    return true if health_check_controller?
     auth = request.headers['Authorization'].to_s
     # If it's a Bearer token, let downstream user/provider auth handle it
     return true if auth.start_with?('Bearer ')
     false
+  end
+  
+  def health_check_controller?
+    controller_name == 'health' || controller_name == 'rails/health'
+  end
+  
+  def handle_error(exception)
+    # Log the error
+    Rails.logger.error "❌ Error: #{exception.class.name} - #{exception.message}"
+    Rails.logger.error exception.backtrace.join("\n")
+    
+    # Don't expose internal errors in production
+    if Rails.env.production?
+      render json: { 
+        error: "An internal error occurred",
+        request_id: request.uuid
+      }, status: :internal_server_error
+    else
+      render json: { 
+        error: exception.message,
+        class: exception.class.name,
+        backtrace: exception.backtrace.first(10),
+        request_id: request.uuid
+      }, status: :internal_server_error
+    end
   end
 
   # Define this if you actually have admin controllers; otherwise just return false
