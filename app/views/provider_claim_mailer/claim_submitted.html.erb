@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+</head>
+<body>
+  <h1>Account Claim Request Received</h1>
+  
+  <p>Thank you for submitting a claim request for <strong><%= @provider&.name || 'your provider account' %></strong>.</p>
+  
+  <p>Your request has been received and is now pending review by an administrator.</p>
+  
+  <h2>Request Details:</h2>
+  <ul>
+    <li><strong>Provider:</strong> <%= @provider&.name || 'N/A' %></li>
+    <li><strong>Your Email:</strong> <%= @claim_request.claimer_email %></li>
+    <li><strong>Submitted:</strong> <%= @claim_request.created_at.strftime("%B %d, %Y at %I:%M %p") %></li>
+  </ul>
+  
+  <p>You will receive an email notification once your request has been reviewed. This typically takes 1-2 business days.</p>
+  
+  <p>If you have any questions, please contact support.</p>
+  
+  <hr>
+  <p><small>This is an automated message from Autism Services Locator.</small></p>
+</body>
+</html>

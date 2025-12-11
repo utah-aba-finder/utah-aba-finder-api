@@ -676,6 +676,9 @@ class Api::V1::ProvidersController < ApplicationController
       claim_request.reload
       Rails.logger.info "Claim request created: ID #{claim_request.id}, Provider ID: #{claim_request.provider_id}, Provider loaded: #{claim_request.provider.present?}"
       
+      # Send confirmation email to claimer
+      ProviderClaimMailer.claim_submitted(claim_request).deliver_later
+      
       # Send notification email to admin
       AdminNotificationMailer.new_provider_claim_request(claim_request).deliver_later
       

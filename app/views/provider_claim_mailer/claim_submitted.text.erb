@@ -1,0 +1,14 @@
+Account Claim Request Received
+
+Thank you for submitting a claim request for <%= @provider&.name || 'your provider account' %>.
+
+Your request has been received and is now pending review by an administrator.
+
+Request Details:
+- Provider: <%= @provider&.name || 'N/A' %>
+- Your Email: <%= @claim_request.claimer_email %>
+- Submitted: <%= @claim_request.created_at.strftime("%B %d, %Y at %I:%M %p") %>
+
+You will receive an email notification once your request has been reviewed. This typically takes 1-2 business days.
+
+If you have any questions, please contact support.

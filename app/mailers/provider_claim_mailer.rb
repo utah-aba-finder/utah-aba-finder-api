@@ -1,4 +1,14 @@
 class ProviderClaimMailer < ApplicationMailer
+  def claim_submitted(claim_request)
+    @claim_request = claim_request
+    @provider = claim_request.provider
+    
+    mail(
+      to: @claim_request.claimer_email,
+      subject: "Account Claim Request Received - #{@provider&.name || 'Provider Account'}"
+    )
+  end
+  
   def claim_approved(claim_request, user)
     @claim_request = claim_request
     @provider = claim_request.provider

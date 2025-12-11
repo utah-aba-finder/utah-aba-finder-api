@@ -70,9 +70,10 @@ class ProviderClaimRequest < ApplicationRecord
       
       reload
       
-      # Send welcome email with credentials (if new user)
+      # Send welcome email with credentials to the claimer (not the provider's registered email)
       if user.instance_variable_get(:@plain_password)
-        ProviderRegistrationMailer.admin_created_provider(provider, user).deliver_later
+        # Send approval email with credentials to the claimer
+        ProviderClaimMailer.claim_approved(self, user).deliver_later
       else
         # User already exists, just send notification
         ProviderClaimMailer.claim_approved(self, user).deliver_later
