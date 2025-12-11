@@ -666,10 +666,15 @@ class Api::V1::ProvidersController < ApplicationController
       end
       
       # Create claim request
+      Rails.logger.info "Creating claim request for provider ID: #{provider.id}, name: #{provider.name}, claimer: #{claimer_email}"
       claim_request = ProviderClaimRequest.create!(
         provider: provider,
         claimer_email: claimer_email.downcase
       )
+      
+      # Reload to ensure associations are loaded
+      claim_request.reload
+      Rails.logger.info "Claim request created: ID #{claim_request.id}, Provider ID: #{claim_request.provider_id}, Provider loaded: #{claim_request.provider.present?}"
       
       # Send notification email to admin
       AdminNotificationMailer.new_provider_claim_request(claim_request).deliver_later

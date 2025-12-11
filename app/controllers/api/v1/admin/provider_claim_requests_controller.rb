@@ -8,6 +8,9 @@ class Api::V1::Admin::ProviderClaimRequestsController < Api::V1::Admin::BaseCont
       
       claim_requests = ProviderClaimRequest.includes(:provider, :reviewed_by)
       
+      # Log for debugging
+      Rails.logger.info "Loading claim requests, total count: #{claim_requests.count}"
+      
       # Apply filters
       claim_requests = claim_requests.where(status: status_filter) if status_filter.present?
       if search.present?
@@ -25,12 +28,19 @@ class Api::V1::Admin::ProviderClaimRequestsController < Api::V1::Admin::BaseCont
       
       render json: {
         claim_requests: claim_requests.map do |request|
+          provider = request.provider
           {
             id: request.id,
-            provider: {
-              id: request.provider.id,
-              name: request.provider.name,
-              email: request.provider.email
+            provider: provider ? {
+              id: provider.id,
+              name: provider.name,
+              email: provider.email,
+              website: provider.website
+            } : {
+              id: request.provider_id,
+              name: "Provider Not Found (ID: #{request.provider_id})",
+              email: nil,
+              website: nil
             },
             claimer_email: request.claimer_email,
             status: request.status,
@@ -66,15 +76,21 @@ class Api::V1::Admin::ProviderClaimRequestsController < Api::V1::Admin::BaseCont
   def show
     begin
       claim_request = ProviderClaimRequest.includes(:provider, :reviewed_by).find(params[:id])
+      provider = claim_request.provider
       
       render json: {
         claim_request: {
           id: claim_request.id,
-          provider: {
-            id: claim_request.provider.id,
-            name: claim_request.provider.name,
-            email: claim_request.provider.email,
-            website: claim_request.provider.website
+          provider: provider ? {
+            id: provider.id,
+            name: provider.name,
+            email: provider.email,
+            website: provider.website
+          } : {
+            id: claim_request.provider_id,
+            name: "Provider Not Found (ID: #{claim_request.provider_id})",
+            email: nil,
+            website: nil
           },
           claimer_email: claim_request.claimer_email,
           status: claim_request.status,
@@ -93,6 +109,7 @@ class Api::V1::Admin::ProviderClaimRequestsController < Api::V1::Admin::BaseCont
       render json: { error: "Claim request not found" }, status: :not_found
     rescue => e
       Rails.logger.error "Error in admin claim requests show: #{e.class.name} - #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
       render json: { error: "An error occurred: #{e.message}" }, status: :internal_server_error
     end
   end
