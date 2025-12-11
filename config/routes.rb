@@ -58,6 +58,7 @@ Rails.application.routes.draw do
           post :remove_provider_from_user
           get :user_providers
           get :view_stats
+          post :claim_account
         end
         
         member do

@@ -1,11 +1,11 @@
 class Api::V1::ProvidersController < ApplicationController
-  skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo]
+  skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo, :claim_account]
 
   before_action :authenticate_provider_or_client, only: [:show, :update, :put, :remove_logo]
   before_action :authenticate_user!, only: [:accessible_providers, :set_active_provider]
   
   # IMPORTANT: skip client auth for actions that use authenticate_provider_or_client
-  skip_before_action :authenticate_client, only: [:index, :accessible_providers, :set_active_provider, :show, :update, :put, :remove_logo]
+  skip_before_action :authenticate_client, only: [:index, :accessible_providers, :set_active_provider, :show, :update, :put, :remove_logo, :claim_account]
 
   def index
     puts "🔍 Controller loaded: #{__FILE__}"
@@ -564,6 +564,161 @@ class Api::V1::ProvidersController < ApplicationController
       render json: { error: "Provider not found with ID: #{provider_id}" }, status: :not_found
     rescue => e
       render json: { error: e.message }, status: :unprocessable_entity
+    end
+  end
+
+  # Claim account endpoint - allows providers to claim their account by email
+  def claim_account
+    email = params[:email]
+    
+    if email.blank?
+      render json: { error: "Email is required" }, status: :bad_request
+      return
+    end
+    
+    begin
+      # Find providers with matching email (case-insensitive)
+      providers = Provider.where("LOWER(email) = ?", email.downcase).where(status: :approved)
+      
+      if providers.empty?
+        render json: { 
+          error: "No provider account found with email: #{email}",
+          suggestion: "Please verify your email address or contact support if you believe this is an error"
+        }, status: :not_found
+        return
+      end
+      
+      # Check if user already exists
+      user = User.find_by(email: email.downcase)
+      
+      if user
+        # User exists - check if already linked
+        linked_providers = user.all_managed_providers.where(id: providers.pluck(:id))
+        
+        if linked_providers.any?
+          render json: {
+            success: true,
+            message: "You already have access to this provider account",
+            user: {
+              id: user.id,
+              email: user.email,
+              role: user.role
+            },
+            providers: linked_providers.map do |provider|
+              {
+                id: provider.id,
+                name: provider.name,
+                email: provider.email,
+                access_type: provider.user_id == user.id ? "primary_owner" : "assigned"
+              }
+            end
+          }, status: :ok
+          return
+        else
+          # User exists but not linked - link them to all matching providers
+          linked_providers = []
+          providers.each do |provider|
+            # Use provider assignments for multi-provider support
+            assignment = ProviderAssignment.find_or_create_by(
+              user: user,
+              provider: provider
+            ) do |a|
+              a.assigned_by = email # Self-assigned via claim
+            end
+            
+            # Also set as primary provider if user doesn't have one
+            if user.provider_id.nil?
+              user.update!(provider_id: provider.id)
+            end
+            
+            linked_providers << provider
+          end
+          
+          user.reload
+          
+          render json: {
+            success: true,
+            message: "Account successfully claimed and linked to provider(s)",
+            user: {
+              id: user.id,
+              email: user.email,
+              role: user.role,
+              provider_id: user.provider_id
+            },
+            providers: linked_providers.map do |provider|
+              {
+                id: provider.id,
+                name: provider.name,
+                email: provider.email,
+                access_type: provider.user_id == user.id ? "primary_owner" : "assigned"
+              }
+            end
+          }, status: :ok
+          return
+        end
+      else
+        # User doesn't exist - create account and link to providers
+        # Generate a secure random password
+        password = SecureRandom.alphanumeric(12)
+        
+        # Create user account
+        user = User.new(
+          email: email.downcase,
+          password: password,
+          password_confirmation: password,
+          role: 'user'
+        )
+        
+        if user.save
+          # Link to first provider as primary
+          primary_provider = providers.first
+          user.update!(provider_id: primary_provider.id)
+          
+          # Link to all other matching providers via assignments
+          providers.each do |provider|
+            ProviderAssignment.find_or_create_by(
+              user: user,
+              provider: provider
+            ) do |a|
+              a.assigned_by = email # Self-assigned via claim
+            end
+          end
+          
+          # Store password temporarily for email
+          user.instance_variable_set(:@plain_password, password)
+          
+          # Send welcome email with credentials
+          ProviderRegistrationMailer.admin_created_provider(primary_provider, user).deliver_later
+          
+          render json: {
+            success: true,
+            message: "Account created successfully. Check your email for login credentials.",
+            user: {
+              id: user.id,
+              email: user.email,
+              role: user.role,
+              provider_id: user.provider_id
+            },
+            providers: providers.map do |provider|
+              {
+                id: provider.id,
+                name: provider.name,
+                email: provider.email,
+                access_type: provider.id == primary_provider.id ? "primary_owner" : "assigned"
+              }
+            end
+          }, status: :created
+        else
+          render json: { 
+            error: "Failed to create account",
+            errors: user.errors.full_messages
+          }, status: :unprocessable_entity
+        end
+      end
+    rescue => e
+      Rails.logger.error "Error in claim_account: #{e.class.name} - #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      render json: { error: "An error occurred while claiming account: #{e.message}" }, status: :internal_server_error
     end
   end
 
