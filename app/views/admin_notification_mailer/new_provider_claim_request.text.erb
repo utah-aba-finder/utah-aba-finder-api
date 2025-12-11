@@ -1,11 +1,11 @@
 New Provider Account Claim Request
 
-<%= @provider.name %>
+<%= @provider&.name || 'Unknown Provider' %>
 
 Claimer Email: <%= @claim_request.claimer_email %>
-Provider Registered Email: <%= @provider.email %>
-Provider Website: <%= @provider.website %>
+Provider Registered Email: <%= @provider&.email || 'N/A' %>
+Provider Website: <%= @provider&.website || 'N/A' %>
 Requested At: <%= @claim_request.created_at.strftime("%B %d, %Y at %I:%M %p") %>
 
 Review this claim request:
-<%= request.base_url %>/admin/provider_claim_requests/<%= @claim_request.id %>
+<%= ENV.fetch('FRONTEND_URL', 'https://autismserviceslocator.com') %>/admin/provider_claim_requests/<%= @claim_request.id %>

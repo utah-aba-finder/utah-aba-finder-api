@@ -29,10 +29,12 @@ class AdminNotificationMailer < ApplicationMailer
       cc_emails = ENV['ADMIN_NOTIFICATION_CC'].split(',').map(&:strip)
     end
     
+    provider_name = @provider&.name || 'Unknown Provider'
+    
     mail(
       to: @admin_email,
       cc: cc_emails.presence,
-      subject: "New Provider Account Claim Request: #{@provider.name}"
+      subject: "New Provider Account Claim Request: #{provider_name}"
     )
   end
 end 
