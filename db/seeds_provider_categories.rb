@@ -171,7 +171,8 @@ categories = [
       { name: "Delivery Format", field_type: "multi_select", required: true, options: { choices: ["Online Only", "In-Person", "Hybrid (Online + In-Person)", "Self-Paced Online", "Live Online Sessions", "Recorded Content", "Interactive Platform"] } },
       { name: "Integration Options", field_type: "multi_select", required: false, options: { choices: ["ABA Therapy Integration", "Early Education Integration", "School Integration", "Homeschool Integration", "Therapy Integration", "Standalone Program"] } },
       { name: "Pricing", field_type: "multi_select", required: false, options: { choices: ["Free", "Sliding Scale", "Subscription-Based", "One-Time Fee", "Grant-Funded", "Non-Profit Pricing", "Flexible pricing based on your circumstances", "School District Contracts"] } },
-      { name: "Parent/Caregiver Support", field_type: "boolean", required: false, help_text: "Includes training or support for parents/caregivers" }
+      { name: "Parent/Caregiver Support", field_type: "boolean", required: false, help_text: "Includes training or support for parents/caregivers" },
+      { name: "Additional Information", field_type: "textarea", required: false, help_text: "Any additional information about the educational program" }
     ]
   }
 ]
