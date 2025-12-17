@@ -98,7 +98,20 @@ class Api::V1::UsersController < ApplicationController
     
     begin
       provider = Provider.find(provider_id)
+      
+      # Update legacy provider_id relationship
       user.update!(provider_id: provider_id)
+      
+      # Also create provider_assignment for multi-provider system
+      ProviderAssignment.find_or_create_by(
+        user: user,
+        provider: provider
+      ) do |assignment|
+        assignment.assigned_by = current_user&.email || user.email
+      end
+      
+      # Set as active provider if user doesn't have one
+      user.update!(active_provider_id: provider_id) if user.active_provider_id.nil?
       
       render json: { 
         message: "User successfully linked to provider",
@@ -106,7 +119,8 @@ class Api::V1::UsersController < ApplicationController
           id: user.id,
           email: user.email,
           role: user.role,
-          provider_id: user.provider_id
+          provider_id: user.provider_id,
+          active_provider_id: user.active_provider_id
         },
         provider: {
           id: provider.id,
@@ -123,7 +137,20 @@ class Api::V1::UsersController < ApplicationController
 
   def unlink_from_provider
     user = User.find(params[:id])
+    old_provider_id = user.provider_id
+    
+    # Remove provider_assignment if it exists
+    if old_provider_id
+      ProviderAssignment.where(user: user, provider_id: old_provider_id).destroy_all
+    end
+    
+    # Clear legacy provider_id
     user.update!(provider_id: nil)
+    
+    # Clear active_provider if it was the same provider
+    if user.active_provider_id == old_provider_id
+      user.update!(active_provider_id: nil)
+    end
     
     render json: { 
       message: "User successfully unlinked from provider",
@@ -131,7 +158,8 @@ class Api::V1::UsersController < ApplicationController
         id: user.id,
         email: user.email,
         role: user.role,
-        provider_id: user.provider_id
+        provider_id: user.provider_id,
+        active_provider_id: user.active_provider_id
       }
     }, status: :ok
   end
@@ -150,7 +178,19 @@ class Api::V1::UsersController < ApplicationController
         return
       end
       
+      # Update legacy provider_id relationship
       user.update!(provider_id: provider_id)
+      
+      # Also create provider_assignment for multi-provider system
+      ProviderAssignment.find_or_create_by(
+        user: user,
+        provider: provider
+      ) do |assignment|
+        assignment.assigned_by = current_user&.email || user.email
+      end
+      
+      # Set as active provider if user doesn't have one
+      user.update!(active_provider_id: provider_id) if user.active_provider_id.nil?
       
       render json: { 
         success: true,
@@ -480,19 +520,30 @@ class Api::V1::UsersController < ApplicationController
         return
       end
       
-      # Check both old and new systems
-      linked_via_old_system = user.provider_id == provider_id
+      # Check all linking methods
+      linked_via_old_system = user.provider_id.to_i == provider_id.to_i
       linked_via_new_system = provider.user_id == user.id
+      linked_via_assignment = ProviderAssignment.exists?(user: user, provider: provider)
       
-      if linked_via_old_system || linked_via_new_system
-        # Unlink from old system
+      if linked_via_old_system || linked_via_new_system || linked_via_assignment
+        # Unlink from old system (legacy provider_id)
         if linked_via_old_system
           user.update!(provider_id: nil)
         end
         
-        # Unlink from new system
+        # Unlink from new system (provider.user_id)
         if linked_via_new_system
           provider.update!(user_id: nil)
+        end
+        
+        # Remove provider_assignment
+        if linked_via_assignment
+          ProviderAssignment.where(user: user, provider: provider).destroy_all
+        end
+        
+        # Clear active_provider if it was this provider
+        if user.active_provider_id.to_i == provider_id.to_i
+          user.update!(active_provider_id: nil)
         end
         
         render json: { 
@@ -508,7 +559,8 @@ class Api::V1::UsersController < ApplicationController
             email: provider.email
           },
           unlinked_from_old_system: linked_via_old_system,
-          unlinked_from_new_system: linked_via_new_system
+          unlinked_from_new_system: linked_via_new_system,
+          unlinked_from_assignment: linked_via_assignment
         }, status: :ok
       else
         render json: { error: "User is not linked to this provider" }, status: :bad_request

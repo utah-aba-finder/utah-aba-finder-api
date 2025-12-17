@@ -110,9 +110,11 @@ class ApplicationController < ActionController::API
       begin
         # Try to decode as JWT or handle other token formats
         # For now, let's try to find by email if it looks like an email
+        # Normalize email (downcase) for matching
         if token.include?('@')
-          user = User.find_by(email: token)
-          Rails.logger.info "🔍 Auth - User found by email: #{user.present?}"
+          normalized_email = token.downcase.strip
+          user = User.find_by('LOWER(email) = ?', normalized_email)
+          Rails.logger.info "🔍 Auth - User found by email: #{user.present?} (searched for: #{normalized_email})"
         end
         
         # If still not found, try to handle session tokens or other formats
@@ -143,7 +145,19 @@ class ApplicationController < ActionController::API
 
     # 1) Bearer user (preferred path)
     if bearer && token.present?
-      if (user = User.find_by(id: token))
+      # Try to find user by ID first
+      user = User.find_by(id: token)
+      
+      # If not found by ID, try email lookup (normalized)
+      unless user
+        if token.include?('@')
+          normalized_email = token.downcase.strip
+          user = User.find_by('LOWER(email) = ?', normalized_email)
+          Rails.logger.info "Provider auth - User found by email: #{user.present?} (searched for: #{normalized_email})"
+        end
+      end
+      
+      if user
         @current_user = user
         provider_id = params[:id].to_s
 
