@@ -56,6 +56,34 @@ class Api::V1::UsersController < ApplicationController
     end
   end
 
+  def update
+    user = User.find(params[:id])
+    
+    # Check if user is updating their own profile or is a super admin
+    if @current_user && (@current_user.id == user.id || @current_user.role == 'super_admin' || @current_user.role.to_s == '0')
+      if user.update(user_params)
+        render json: {
+          message: 'User updated successfully',
+          user: {
+            id: user.id,
+            email: user.email,
+            first_name: user.respond_to?(:first_name) ? user.first_name : nil,
+            role: user.role,
+            provider_id: user.provider_id,
+            created_at: user.created_at,
+            updated_at: user.updated_at
+          }
+        }, status: :ok
+      else
+        render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
+      end
+    else
+      render json: { error: 'Access denied. You can only update your own profile.' }, status: :forbidden
+    end
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'User not found' }, status: :not_found
+  end
+
   def check_user_exists
     email = params[:email]
     user = User.find_by(email: email)

@@ -124,7 +124,7 @@ Rails.application.routes.draw do
       end
       
       # User management routes (for Super Admin)
-      resources :users, only: [:index, :show, :create] do
+      resources :users, only: [:index, :show, :create, :update] do
         collection do
           get :users_with_providers
           get :providers_list
