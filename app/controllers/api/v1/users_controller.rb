@@ -1,5 +1,7 @@
 class Api::V1::UsersController < ApplicationController
-  before_action :authenticate_client
+  # Allow both API key and Bearer token authentication
+  before_action :authenticate_client, unless: -> { request.headers['Authorization']&.start_with?('Bearer ') }
+  before_action :authenticate_user!, if: -> { request.headers['Authorization']&.start_with?('Bearer ') }
 
   def index
     users = User.all.includes(:provider)
