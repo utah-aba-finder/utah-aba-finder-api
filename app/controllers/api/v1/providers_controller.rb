@@ -187,40 +187,83 @@ class Api::V1::ProvidersController < ApplicationController
     else
       Rails.logger.info "Using JSON path"
       # Handle JSON data (for regular updates)
-      if provider.update(provider_params)
-        # Get the attributes from either array or hash structure
-        attributes = if params[:data].is_a?(Array) && params[:data].first&.dig(:attributes)
-          params[:data].first[:attributes]
-        elsif params[:data]&.dig(:attributes)
-          params[:data][:attributes]
+      begin
+        permitted_params = provider_params
+        if provider.update(permitted_params)
+          # Get the attributes from either array or hash structure
+          attributes = if params[:data].is_a?(Array) && params[:data].first&.dig(:attributes)
+            params[:data].first[:attributes]
+          elsif params[:data]&.dig(:attributes)
+            params[:data][:attributes]
+          else
+            {}
+          end
+          
+          # Only update locations if locations data is provided
+          if attributes[:locations]&.present?
+            provider.update_locations(attributes[:locations])
+          end
+          
+          # Only update insurance if insurance data is provided
+          if attributes[:insurance]&.present?
+            provider.update_provider_insurance(attributes[:insurance])
+          end
+          
+          # Only update counties if counties data is provided
+          if attributes[:counties_served]&.present?
+            provider.update_counties_from_array(attributes[:counties_served].map { |county| county["county_id"] })
+          end
+          
+          # Only update practice types if practice type data is provided
+          if attributes[:provider_type]&.present?
+            provider.update_practice_types(attributes[:provider_type])
+          end
+          
+          provider.touch # Ensure updated_at is updated
+          render json: ProviderSerializer.format_providers([provider])
         else
-          {}
+          render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
         end
-        
-        # Only update locations if locations data is provided
-        if attributes[:locations]&.present?
-          provider.update_locations(attributes[:locations])
+      rescue ActiveSupport::MessageVerifier::InvalidSignature => e
+        Rails.logger.error "❌ Error: #{e.class} - #{e.message}"
+        Rails.logger.error "❌ Error processing parameters - likely due to signed/encrypted parameters in request"
+        # Try to update without the problematic parameters
+        safe_params = provider_params.except(:password, :username, :id)
+        if provider.update(safe_params)
+          # Continue with the rest of the update logic
+          attributes = if params[:data].is_a?(Array) && params[:data].first&.dig(:attributes)
+            params[:data].first[:attributes]
+          elsif params[:data]&.dig(:attributes)
+            params[:data][:attributes]
+          else
+            {}
+          end
+          
+          if attributes[:locations]&.present?
+            provider.update_locations(attributes[:locations])
+          end
+          
+          if attributes[:insurance]&.present?
+            provider.update_provider_insurance(attributes[:insurance])
+          end
+          
+          if attributes[:counties_served]&.present?
+            provider.update_counties_from_array(attributes[:counties_served].map { |county| county["county_id"] })
+          end
+          
+          if attributes[:provider_type]&.present?
+            provider.update_practice_types(attributes[:provider_type])
+          end
+          
+          provider.touch
+          render json: ProviderSerializer.format_providers([provider])
+        else
+          render json: { error: 'Failed to update provider. Please ensure all required fields are valid.' }, status: :unprocessable_entity
         end
-        
-        # Only update insurance if insurance data is provided
-        if attributes[:insurance]&.present?
-          provider.update_provider_insurance(attributes[:insurance])
-        end
-        
-        # Only update counties if counties data is provided
-        if attributes[:counties_served]&.present?
-          provider.update_counties_from_array(attributes[:counties_served].map { |county| county["county_id"] })
-        end
-        
-        # Only update practice types if practice type data is provided
-        if attributes[:provider_type]&.present?
-          provider.update_practice_types(attributes[:provider_type])
-        end
-        
-        provider.touch # Ensure updated_at is updated
-        render json: ProviderSerializer.format_providers([provider])
-      else
-        render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
+      rescue => e
+        Rails.logger.error "❌ Error: #{e.class} - #{e.message}"
+        Rails.logger.error e.backtrace.first(10).join("\n")
+        render json: { error: 'An error occurred while updating the provider. Please try again.' }, status: :internal_server_error
       end
     end
   end
@@ -1125,7 +1168,10 @@ class Api::V1::ProvidersController < ApplicationController
         )
       elsif params[:data]&.dig(:attributes)
         # Handle hash structure (like in actual API calls)
-        params[:data][:attributes].permit(
+        # Filter out problematic parameters that might be signed/encrypted or shouldn't be updated
+        # Convert to hash, filter, then permit
+        attributes_hash = params[:data][:attributes].to_unsafe_h.except(:password, :username, :id, :states, :category, :category_name, :provider_attributes, :category_fields, :updated_last)
+        ActionController::Parameters.new(attributes_hash).permit(
           :name,
           :website,
           :email,
