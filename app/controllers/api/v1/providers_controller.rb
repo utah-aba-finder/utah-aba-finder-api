@@ -77,7 +77,14 @@ class Api::V1::ProvidersController < ApplicationController
     end
     
     # Include necessary associations for performance
-    includes_array = [:counties, :practice_types, :locations, :insurances]
+    # Note: counties must include state to avoid N+1 in serializer
+    includes_array = [
+      { counties: :state },  # Include state to avoid N+1 in get_provider_states
+      :practice_types, 
+      { locations: :practice_types },
+      { provider_insurances: :insurance },
+      :insurances
+    ]
     includes_array += [:logo_attachment, :logo_blob] unless Rails.env.test?
     providers = providers.includes(includes_array)
     

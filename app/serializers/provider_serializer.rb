@@ -101,27 +101,29 @@ class ProviderSerializer
   private
 
   def self.get_provider_states(provider)
-    # Use raw SQL to get states since the association is commented out
-    sql = "SELECT DISTINCT s.name FROM states s 
-            INNER JOIN counties c ON c.state_id = s.id 
-            INNER JOIN counties_providers cp ON cp.county_id = c.id 
-            WHERE cp.provider_id = #{provider.id}"
-    
-    result = ActiveRecord::Base.connection.execute(sql)
-    result.values.flatten.compact.uniq
+    # Use preloaded counties association to get states (avoids N+1 queries)
+    if provider.association(:counties).loaded?
+      provider.counties.map(&:state).compact.map(&:name).uniq
+    else
+      # Fallback: use association which should already be preloaded
+      provider.counties.includes(:state).map(&:state).compact.map(&:name).uniq
+    end
   end
 
   def self.get_provider_counties(provider)
-    # Use raw SQL to get counties since the association is commented out
-    sql = "SELECT c.id, c.name FROM counties c 
-            INNER JOIN counties_providers cp ON cp.county_id = c.id 
-            WHERE cp.provider_id = #{provider.id}"
+    # Use preloaded counties association (avoids N+1 queries)
+    # Counties are already included in the controller's includes_array
+    counties = if provider.association(:counties).loaded?
+      provider.counties
+    else
+      # Fallback: should be preloaded already, but if not, use association
+      provider.counties
+    end
     
-    result = ActiveRecord::Base.connection.execute(sql)
-    result.map do |row|
+    counties.map do |county|
       {
-        "county_id" => row['id'],
-        "county_name" => row['name']
+        "county_id" => county.id,
+        "county_name" => county.name
       }
     end
   end
