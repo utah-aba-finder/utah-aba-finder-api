@@ -1,5 +1,6 @@
 class ApplicationController < ActionController::API
   before_action :authenticate_client, unless: :skip_client_auth?
+  after_action :set_cors_headers
   rescue_from StandardError, with: :handle_error
 
   attr_reader :current_user, :current_client  # so current_user/current_client calls work
@@ -50,6 +51,27 @@ class ApplicationController < ActionController::API
   def devise_controller?
     # Skip authentication for Devise controllers
     controller_name.start_with?('sessions', 'registrations', 'passwords', 'password_resets', 'confirmations', 'unlocks')
+  end
+
+  def set_cors_headers
+    # Ensure CORS headers are set on all responses, including errors
+    # Rack::Cors should handle this, but we ensure it as a fallback
+    origin = request.headers['Origin']
+    if origin && allowed_origin?(origin)
+      headers['Access-Control-Allow-Origin'] = origin
+      headers['Access-Control-Allow-Credentials'] = 'true'
+    end
+  end
+
+  def allowed_origin?(origin)
+    allowed_origins = [
+      'http://localhost:3000',
+      'https://autismserviceslocator.com',
+      'https://www.autismserviceslocator.com'
+    ]
+    frontend_url = ENV['FRONTEND_URL'].presence
+    allowed_origins << frontend_url if frontend_url
+    allowed_origins.include?(origin)
   end
 
   def authenticate_client
