@@ -116,12 +116,21 @@ class Api::V1::ProviderSelfController < ApplicationController
 
   def update_provider_attributes(attributes_data)
     # attributes_data should be a hash like: { "field_name" => "value", "another_field" => "value" }
+    # Handle ActionController::Parameters by converting to hash
+    if attributes_data.is_a?(ActionController::Parameters)
+      attributes_data = attributes_data.to_unsafe_h
+    end
     return unless attributes_data.is_a?(Hash)
 
+    Rails.logger.info "🔍 Provider self - Updating provider_attributes for provider #{@provider.id}: #{attributes_data.inspect}"
+
     attributes_data.each do |field_name, value|
-      # Find the category field by name
-      field = @provider.category_fields.find_by(name: field_name)
-      next unless field
+      # Find the category field by name (case-insensitive)
+      field = @provider.category_fields.find_by('LOWER(name) = LOWER(?)', field_name)
+      unless field
+        Rails.logger.warn "⚠️ Provider self - Category field '#{field_name}' not found for provider #{@provider.id} (category: #{@provider.category})"
+        next
+      end
 
       # Handle array values (for multi_select fields)
       if value.is_a?(Array)
@@ -133,7 +142,11 @@ class Api::V1::ProviderSelfController < ApplicationController
       end
 
       # Use set_attribute_value which handles find_or_initialize_by
-      @provider.set_attribute_value(field_name, processed_value)
+      if @provider.set_attribute_value(field_name, processed_value)
+        Rails.logger.info "✅ Provider self - Updated attribute '#{field_name}' for provider #{@provider.id}: #{processed_value}"
+      else
+        Rails.logger.error "❌ Provider self - Failed to update attribute '#{field_name}' for provider #{@provider.id}"
+      end
     end
   end
 end 

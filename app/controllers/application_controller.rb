@@ -187,11 +187,21 @@ class ApplicationController < ActionController::API
         render json: { error: 'Access denied - You do not have permission to access this provider' }, status: :forbidden and return
       end
 
-      # If header is Bearer but doesn't match a user, DO NOT fall back to API-key here.
+      # If no user found, check if token is a provider ID (before returning error)
+      if token.present? && (provider = Provider.find_by(id: token))
+        if provider.id.to_s == params[:id].to_s
+          Rails.logger.info "Provider auth - Provider self access granted"
+          return
+        else
+          Rails.logger.info "Provider auth - Provider self access denied (token provider ID doesn't match params ID)"
+        end
+      end
+
+      # If header is Bearer but doesn't match a user or provider, DO NOT fall back to API-key here.
       render json: { error: 'Invalid authorization token' }, status: :unauthorized and return
     end
 
-    # 2) Provider self (rare, only if you explicitly send provider id as token)
+    # 2) Provider self (rare, only if you explicitly send provider id as token, and no Bearer prefix)
     if token.present? && (provider = Provider.find_by(id: token))
       if provider.id.to_s == params[:id].to_s
         Rails.logger.info "Provider auth - Provider self access granted"
