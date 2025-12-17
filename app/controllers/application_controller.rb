@@ -137,14 +137,22 @@ class ApplicationController < ActionController::API
   def authenticate_provider_or_client
     auth = request.headers['Authorization'].to_s
     bearer = auth.start_with?('Bearer ')
-    token  = bearer ? auth.sub(/^Bearer\s+/,'') : nil
+    # Extract token - either from Bearer prefix or use the whole auth string if it looks like a user ID or email
+    token = if bearer
+      auth.sub(/^Bearer\s+/,'')
+    elsif auth.present? && (auth.match?(/^\d+$/) || auth.include?('@'))
+      # If it's just a user ID (digits) or email (contains @), treat it as a token
+      auth
+    else
+      nil
+    end
 
     Rails.logger.info "Provider auth - Raw Authorization: #{auth.inspect}"
     Rails.logger.info "Provider auth - Token: #{token.inspect}"
     Rails.logger.info "Provider auth - Params ID: #{params[:id]}"
 
-    # 1) Bearer user (preferred path)
-    if bearer && token.present?
+    # 1) Bearer user or user ID/email token (preferred path)
+    if token.present?
       # Try to find user by ID first
       user = User.find_by(id: token)
       
@@ -184,7 +192,7 @@ class ApplicationController < ActionController::API
     end
 
     # 2) Provider self (rare, only if you explicitly send provider id as token)
-    if bearer && (provider = Provider.find_by(id: token))
+    if token.present? && (provider = Provider.find_by(id: token))
       if provider.id.to_s == params[:id].to_s
         Rails.logger.info "Provider auth - Provider self access granted"
         return
