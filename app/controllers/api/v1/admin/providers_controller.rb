@@ -188,6 +188,12 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         update_counties_served(provider, counties_params)
       end
 
+      # Handle states - if states_params is provided, it should remove counties from states not in the list
+      # Note: States are computed from counties, so we handle this by filtering counties
+      if states_params.present?
+        handle_states_update(provider, states_params)
+      end
+
       # Update provider_attributes (category-specific fields) if provided
       if provider_attributes_params.present?
         update_provider_attributes(provider, provider_attributes_params)
@@ -321,6 +327,42 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       )
       Rails.logger.info "✅ Added county #{county_id} for provider #{provider.id}"
     end
+  end
+
+  def handle_states_update(provider, states_data)
+    # States are computed from counties, so when states are provided,
+    # we need to keep only counties from the specified states
+    Rails.logger.info "🔍 Handling states update for provider #{provider.id}: #{states_data.inspect}"
+    
+    # states_data should be an array of state names or state IDs
+    # Extract state names/IDs
+    state_names = states_data.map { |s| s.is_a?(Hash) ? (s[:name] || s["name"]) : s.to_s }.compact
+    
+    if state_names.empty?
+      # If empty array, remove all counties (provider serves no states)
+      CountiesProvider.unscoped.where(provider_id: provider.id).delete_all
+      Rails.logger.info "✅ Removed all counties (no states specified)"
+      return
+    end
+    
+    # Find states by name or abbreviation
+    states = State.where("name IN (?) OR abbreviation IN (?)", state_names, state_names)
+    state_ids = states.pluck(:id)
+    
+    Rails.logger.info "🔍 Found state IDs: #{state_ids.inspect}"
+    
+    # Find all counties in these states
+    allowed_county_ids = County.where(state_id: state_ids).pluck(:id)
+    
+    Rails.logger.info "🔍 Allowed county IDs: #{allowed_county_ids.inspect}"
+    
+    # Remove counties that are NOT in the allowed states
+    CountiesProvider.unscoped
+      .where(provider_id: provider.id)
+      .where.not(county_id: allowed_county_ids)
+      .delete_all
+    
+    Rails.logger.info "✅ Removed counties from states not in the list"
   end
 
   def update_provider_attributes(provider, attributes_data)
