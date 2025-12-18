@@ -1169,26 +1169,45 @@ class Api::V1::ProvidersController < ApplicationController
       elsif params[:data]&.dig(:attributes)
         # Handle hash structure (like in actual API calls)
         # Filter out problematic parameters that might be signed/encrypted or shouldn't be updated
-        # Convert to hash, filter, then permit
-        attributes_hash = params[:data][:attributes].to_unsafe_h.except(:password, :username, :id, :states, :category, :category_name, :provider_attributes, :category_fields, :updated_last)
-        ActionController::Parameters.new(attributes_hash).permit(
-          :name,
-          :website,
-          :email,
-          :cost,
-          :min_age,
-          :max_age,
-          :waitlist,
-          :telehealth_services,
-          :spanish_speakers,
-          :at_home_services,
-          :in_clinic_services,
-          :status,
-          :provider_type,
-          :in_home_only,
-          :logo,  # Changed from logo: [] to :logo to accept single file
-          service_delivery: {}
-        )
+        begin
+          # Convert to hash, filter, then permit
+          attributes_hash = params[:data][:attributes].to_unsafe_h.except(:password, :username, :id, :states, :category, :category_name, :provider_attributes, :category_fields, :updated_last)
+          ActionController::Parameters.new(attributes_hash).permit(
+            :name,
+            :website,
+            :email,
+            :cost,
+            :min_age,
+            :max_age,
+            :waitlist,
+            :telehealth_services,
+            :spanish_speakers,
+            :at_home_services,
+            :in_clinic_services,
+            :status,
+            :provider_type,
+            :in_home_only,
+            :logo,  # Changed from logo: [] to :logo to accept single file
+            service_delivery: {}
+          )
+        rescue ActiveSupport::MessageVerifier::InvalidSignature => e
+          # If we can't convert to hash due to signed parameters, try a different approach
+          # Create a new hash with only the permitted keys
+          permitted_keys = [:name, :website, :email, :cost, :min_age, :max_age, :waitlist, 
+                           :telehealth_services, :spanish_speakers, :at_home_services, 
+                           :in_clinic_services, :status, :provider_type, :in_home_only, :logo, :service_delivery]
+          safe_hash = {}
+          permitted_keys.each do |key|
+            begin
+              value = params[:data][:attributes][key]
+              safe_hash[key] = value unless value.nil?
+            rescue ActiveSupport::MessageVerifier::InvalidSignature
+              # Skip this key if it's a signed parameter we can't read
+              next
+            end
+          end
+          ActionController::Parameters.new(safe_hash).permit(*permitted_keys)
+        end
       else
         # Fallback for simple updates
         params.permit(
