@@ -43,7 +43,7 @@ RSpec.describe 'Multi-Provider Access', type: :request do
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       
-      expect(json['active_provider_id']).to eq(provider2.id.to_s)
+      expect(json['active_provider_id']).to eq(provider2.id)
       
       # Verify the user's active provider was updated
       user.reload
