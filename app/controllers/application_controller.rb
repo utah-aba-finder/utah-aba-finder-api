@@ -3,7 +3,7 @@ class ApplicationController < ActionController::API
   after_action :set_cors_headers
   rescue_from StandardError, with: :handle_error
 
-  attr_reader :current_user, :current_client  # so current_user/current_client calls work
+  attr_reader :current_user, :current_client, :current_provider  # so current_user/current_client/current_provider calls work
 
   private
 
@@ -190,6 +190,7 @@ class ApplicationController < ActionController::API
       # If no user found, check if token is a provider ID (before returning error)
       if token.present? && (provider = Provider.find_by(id: token))
         if provider.id.to_s == params[:id].to_s
+          @current_provider = provider
           Rails.logger.info "Provider auth - Provider self access granted"
           return
         else
@@ -204,6 +205,7 @@ class ApplicationController < ActionController::API
     # 2) Provider self (rare, only if you explicitly send provider id as token, and no Bearer prefix)
     if token.present? && (provider = Provider.find_by(id: token))
       if provider.id.to_s == params[:id].to_s
+        @current_provider = provider
         Rails.logger.info "Provider auth - Provider self access granted"
         return
       else

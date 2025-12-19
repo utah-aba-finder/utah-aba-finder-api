@@ -769,9 +769,19 @@ class Api::V1::ProvidersController < ApplicationController
     begin
       provider = Provider.find(provider_id)
       
-      # Check if current user can access this provider (for user authentication)
-      if @current_user && !@current_user.can_access_provider?(provider.id)
-        render json: { error: 'Access denied. You can only view locations for providers you have access to.' }, status: :forbidden
+      # Check access: either user can access provider OR provider self-authentication matches
+      if @current_user
+        unless @current_user.can_access_provider?(provider.id)
+          render json: { error: 'Access denied. You can only view locations for providers you have access to.' }, status: :forbidden
+          return
+        end
+      elsif @current_provider
+        unless @current_provider.id.to_s == provider_id.to_s
+          render json: { error: 'Access denied. You can only view locations for your own provider.' }, status: :forbidden
+          return
+        end
+      else
+        render json: { error: 'Unauthorized' }, status: :unauthorized
         return
       end
       
@@ -815,9 +825,19 @@ class Api::V1::ProvidersController < ApplicationController
     begin
       provider = Provider.find(provider_id)
       
-      # Check if current user can access this provider (for user authentication)
-      if @current_user && !@current_user.can_access_provider?(provider.id)
-        render json: { error: 'Access denied. You can only add locations to providers you have access to.' }, status: :forbidden
+      # Check access: either user can access provider OR provider self-authentication matches
+      if @current_user
+        unless @current_user.can_access_provider?(provider.id)
+          render json: { error: 'Access denied. You can only add locations to providers you have access to.' }, status: :forbidden
+          return
+        end
+      elsif @current_provider
+        unless @current_provider.id.to_s == provider_id.to_s
+          render json: { error: 'Access denied. You can only add locations to your own provider.' }, status: :forbidden
+          return
+        end
+      else
+        render json: { error: 'Unauthorized' }, status: :unauthorized
         return
       end
       
@@ -862,9 +882,19 @@ class Api::V1::ProvidersController < ApplicationController
     begin
       provider = Provider.find(provider_id)
       
-      # Check if current user can access this provider (for user authentication)
-      if @current_user && !@current_user.can_access_provider?(provider.id)
-        render json: { error: 'Access denied. You can only update locations for providers you have access to.' }, status: :forbidden
+      # Check access: either user can access provider OR provider self-authentication matches
+      if @current_user
+        unless @current_user.can_access_provider?(provider.id)
+          render json: { error: 'Access denied. You can only update locations for providers you have access to.' }, status: :forbidden
+          return
+        end
+      elsif @current_provider
+        unless @current_provider.id.to_s == provider_id.to_s
+          render json: { error: 'Access denied. You can only update locations for your own provider.' }, status: :forbidden
+          return
+        end
+      else
+        render json: { error: 'Unauthorized' }, status: :unauthorized
         return
       end
       
@@ -909,9 +939,19 @@ class Api::V1::ProvidersController < ApplicationController
     begin
       provider = Provider.find(provider_id)
       
-      # Check if current user can access this provider (for user authentication)
-      if @current_user && !@current_user.can_access_provider?(provider.id)
-        render json: { error: 'Access denied. You can only remove locations from providers you have access to.' }, status: :forbidden
+      # Check access: either user can access provider OR provider self-authentication matches
+      if @current_user
+        unless @current_user.can_access_provider?(provider.id)
+          render json: { error: 'Access denied. You can only remove locations from providers you have access to.' }, status: :forbidden
+          return
+        end
+      elsif @current_provider
+        unless @current_provider.id.to_s == provider_id.to_s
+          render json: { error: 'Access denied. You can only remove locations from your own provider.' }, status: :forbidden
+          return
+        end
+      else
+        render json: { error: 'Unauthorized' }, status: :unauthorized
         return
       end
       

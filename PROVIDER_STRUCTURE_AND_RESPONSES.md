@@ -329,3 +329,4 @@ Associated records (locations, insurance, counties, practice_types)
 
 See `REGISTRATION_TO_PROVIDER_DATA_MAPPING.md` for detailed mapping information.
 
+
