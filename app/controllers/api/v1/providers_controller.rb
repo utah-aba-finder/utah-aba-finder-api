@@ -2,10 +2,10 @@ class Api::V1::ProvidersController < ApplicationController
   skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo, :claim_account, :provider_locations, :add_location, :update_location, :remove_location]
 
   before_action :authenticate_provider_or_client, only: [:show, :update, :put, :remove_logo, :provider_locations, :add_location, :update_location, :remove_location]
-  before_action :authenticate_user!, only: [:accessible_providers, :set_active_provider]
+  before_action :authenticate_user!, only: [:accessible_providers, :set_active_provider, :my_providers, :user_providers, :assign_provider_to_user, :remove_provider_from_user, :view_stats]
   
-  # IMPORTANT: skip client auth for actions that use authenticate_provider_or_client
-  skip_before_action :authenticate_client, only: [:index, :accessible_providers, :set_active_provider, :show, :update, :put, :remove_logo, :claim_account, :provider_locations, :add_location, :update_location, :remove_location]
+  # IMPORTANT: skip client auth for actions that use authenticate_provider_or_client or authenticate_user!
+  skip_before_action :authenticate_client, only: [:index, :accessible_providers, :set_active_provider, :show, :update, :put, :remove_logo, :claim_account, :provider_locations, :add_location, :update_location, :remove_location, :my_providers, :user_providers, :assign_provider_to_user, :remove_provider_from_user, :view_stats, :track_view]
 
   def index
     puts "🔍 Controller loaded: #{__FILE__}"
@@ -339,111 +339,85 @@ class Api::V1::ProvidersController < ApplicationController
 
   # Multi-provider management methods
   def my_providers
-    # Try to authenticate as user first, then fall back to API key auth
-    token = request.headers['Authorization']&.gsub('Bearer ', '')
-    
-    if token.present?
-      # Try user authentication first
-      user = User.find_by(id: token)
-      if user
-        @current_user = user
-      else
-        # If no user found, try API key authentication
-        client = Client.find_by(api_key: token)
-        unless client
-          render json: { error: 'Invalid authorization token' }, status: :unauthorized
-          return
-        end
-        @current_client = client
-        render json: { error: 'API key authentication not supported for this endpoint' }, status: :unauthorized
-        return
-      end
-    else
-      render json: { error: 'No authorization token provided' }, status: :unauthorized
+    # Use @current_user from authenticate_user! before_action
+    unless @current_user
+      render json: { error: 'User not authenticated' }, status: :unauthorized
       return
     end
     
-    if @current_user
-      # Get all providers this user can manage (both legacy and new relationships)
-      providers = @current_user.all_managed_providers
-      render json: ProviderSerializer.format_providers(providers)
-    else
-      render json: { error: 'User not authenticated' }, status: :unauthorized
-    end
+    # Get all providers this user can manage (both legacy and new relationships)
+    providers = @current_user.all_managed_providers
+    render json: ProviderSerializer.format_providers(providers)
   end
 
   def accessible_providers
-    # Try to authenticate as user first, then fall back to API key auth
-    token = request.headers['Authorization']&.gsub('Bearer ', '')
-    
-    if token.present?
-      # Try user authentication first
-      user = User.find_by(id: token)
-      if user
-        @current_user = user
-      else
-        # If no user found, try API key authentication
-        client = Client.find_by(api_key: token)
-        unless client
-          render json: { error: 'Invalid authorization token' }, status: :unauthorized
-          return
-        end
-        @current_client = client
-        render json: { error: 'API key authentication not supported for this endpoint' }, status: :unauthorized
-        return
-      end
-    else
-      render json: { error: 'No authorization token provided' }, status: :unauthorized
+    # Use @current_user from authenticate_user! before_action
+    unless @current_user
+      render json: { error: 'User not authenticated' }, status: :unauthorized
       return
     end
     
-    if @current_user
-      all_providers = @current_user.all_managed_providers
-      current_provider = @current_user.active_provider
-      
-      render json: {
-        providers: ProviderSerializer.format_providers(all_providers),
-        current_provider_id: current_provider&.id,
-        total_count: all_providers.count
-      }
-    else
-      render json: { error: 'User not authenticated' }, status: :unauthorized
-    end
+    all_providers = @current_user.all_managed_providers
+    current_provider = @current_user.active_provider
+    
+    render json: {
+      providers: ProviderSerializer.format_providers(all_providers),
+      current_provider_id: current_provider&.id,
+      total_count: all_providers.count
+    }
   end
 
   def set_active_provider
-    # Try to authenticate as user first
-    token = request.headers['Authorization']&.gsub('Bearer ', '')
+    # Use @current_user from authenticate_user! before_action
+    unless @current_user
+      render json: { error: 'Unauthorized' }, status: :unauthorized
+      return
+    end
     
-    if token.present?
-      user = User.find_by(id: token)
-      if user
-        provider_id = params.require(:provider_id)
-        
-        unless user.can_access_provider?(provider_id)
-          render json: { error: "Forbidden - You don't have access to this provider" }, status: :forbidden
-          return
-        end
-        
-        if user.set_active_provider(provider_id)
-          render json: { 
-            success: true,
-            active_provider_id: provider_id,
-            message: "Active provider context updated"
-          }
-        else
-          render json: { error: "Failed to set active provider" }, status: :unprocessable_entity
-        end
+    # Support setting active provider for another user if current user is admin
+    target_user = @current_user
+    if params[:user_email].present? && (@current_user.role == 'super_admin' || @current_user.role.to_s == '0')
+      target_user = User.find_by(email: params[:user_email])
+      unless target_user
+        render json: { error: "User not found with email: #{params[:user_email]}" }, status: :not_found
         return
       end
     end
     
-    # If user authentication fails, return unauthorized
-    render json: { error: 'Unauthorized' }, status: :unauthorized
+    provider_id = params[:provider_id] || params.require(:provider_id)
+    
+    unless target_user.can_access_provider?(provider_id)
+      render json: { error: "Forbidden - User doesn't have access to this provider" }, status: :forbidden
+      return
+    end
+    
+    if target_user.set_active_provider(provider_id)
+      render json: { 
+        success: true,
+        active_provider_id: provider_id.to_i,
+        user_id: target_user.id,
+        user_email: target_user.email,
+        message: "Active provider context updated"
+      }
+    else
+      render json: { error: "Failed to set active provider. Provider may not be accessible to this user." }, status: :unprocessable_entity
+    end
   end
 
   # Assign a user to a provider (for admin operations)
   def assign_provider_to_user
+    # Use @current_user from authenticate_user! before_action
+    unless @current_user
+      render json: { error: 'User not authenticated' }, status: :unauthorized
+      return
+    end
+    
+    # Only allow super admins to assign providers to users
+    unless @current_user.role == 'super_admin' || @current_user.role.to_s == '0'
+      render json: { error: 'Access denied. Only super admins can assign providers to users.' }, status: :forbidden
+      return
+    end
+    
     user_email = params[:user_email]
     provider_id = params[:provider_id]
     
@@ -510,15 +484,34 @@ class Api::V1::ProvidersController < ApplicationController
 
   # List all providers a user can access (including assignments)
   def user_providers
+    # Use @current_user from authenticate_user! before_action
+    unless @current_user
+      render json: { error: 'User not authenticated' }, status: :unauthorized
+      return
+    end
+    
     user_email = params[:user_email]
     
+    # Allow users to view their own providers, or admins to view any user's providers
     if user_email.blank?
-      render json: { error: "user_email is required" }, status: :bad_request
+      # If no user_email provided, return current user's providers
+      user = @current_user
+    else
+      # If user_email provided, check if current user is admin or viewing their own email
+      unless @current_user.role == 'super_admin' || @current_user.role.to_s == '0' || @current_user.email.downcase == user_email.downcase
+        render json: { error: 'Access denied. You can only view your own providers.' }, status: :forbidden
+        return
+      end
+      
+      user = User.find_by(email: user_email)
+    end
+    
+    if user.blank?
+      render json: { error: "User not found with email: #{user_email}" }, status: :not_found
       return
     end
     
     begin
-      user = User.find_by(email: user_email)
       
       if user.nil?
         render json: { error: "User not found with email: #{user_email}" }, status: :not_found
@@ -556,6 +549,18 @@ class Api::V1::ProvidersController < ApplicationController
 
   # Remove a user's access to a provider (for admin operations)
   def remove_provider_from_user
+    # Use @current_user from authenticate_user! before_action
+    unless @current_user
+      render json: { error: 'User not authenticated' }, status: :unauthorized
+      return
+    end
+    
+    # Only allow super admins to remove provider assignments
+    unless @current_user.role == 'super_admin' || @current_user.role.to_s == '0'
+      render json: { error: 'Access denied. Only super admins can remove provider assignments.' }, status: :forbidden
+      return
+    end
+    
     user_email = params[:user_email]
     provider_id = params[:provider_id]
     
@@ -954,19 +959,9 @@ class Api::V1::ProvidersController < ApplicationController
   # - Sponsor: Standard (30-day views, trend chart, clicks to website)
   # - Partner: Full (daily stats, 90-day history, referral sources, geographic insights)
   def view_stats
-    # Authenticate user to get their providers
-    token = request.headers['Authorization']&.gsub('Bearer ', '')
-    
-    if token.present?
-      user = User.find_by(id: token)
-      if user
-        @current_user = user
-      else
-        render json: { error: 'Invalid authorization token' }, status: :unauthorized
-        return
-      end
-    else
-      render json: { error: 'No authorization token provided' }, status: :unauthorized
+    # Use @current_user from authenticate_user! before_action
+    unless @current_user
+      render json: { error: 'User not authenticated' }, status: :unauthorized
       return
     end
     

@@ -46,8 +46,8 @@ class Api::V1::Admin::UsersController < Api::V1::Admin::BaseController
             provider_email: provider&.email,
             created_at: user.created_at,
             updated_at: user.updated_at,
-            last_sign_in_at: user.last_sign_in_at,
-            sign_in_count: user.sign_in_count
+            last_sign_in_at: user.respond_to?(:last_sign_in_at) ? user.last_sign_in_at : nil,
+            sign_in_count: user.respond_to?(:sign_in_count) ? user.sign_in_count : nil
           }
         },
         pagination: {
@@ -92,8 +92,8 @@ class Api::V1::Admin::UsersController < Api::V1::Admin::BaseController
           provider_email: provider&.email,
           created_at: user.created_at,
           updated_at: user.updated_at,
-          last_sign_in_at: user.last_sign_in_at,
-          sign_in_count: user.sign_in_count
+          last_sign_in_at: user.respond_to?(:last_sign_in_at) ? user.last_sign_in_at : nil,
+          sign_in_count: user.respond_to?(:sign_in_count) ? user.sign_in_count : nil
         }
       }, status: :ok
     rescue ActiveRecord::RecordNotFound => e
