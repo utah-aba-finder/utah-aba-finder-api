@@ -1,11 +1,11 @@
 class Api::V1::ProvidersController < ApplicationController
-  skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo, :claim_account]
+  skip_before_action :authenticate_client, only: [:show, :update, :put, :remove_logo, :claim_account, :provider_locations, :add_location, :update_location, :remove_location]
 
-  before_action :authenticate_provider_or_client, only: [:show, :update, :put, :remove_logo]
+  before_action :authenticate_provider_or_client, only: [:show, :update, :put, :remove_logo, :provider_locations, :add_location, :update_location, :remove_location]
   before_action :authenticate_user!, only: [:accessible_providers, :set_active_provider]
   
   # IMPORTANT: skip client auth for actions that use authenticate_provider_or_client
-  skip_before_action :authenticate_client, only: [:index, :accessible_providers, :set_active_provider, :show, :update, :put, :remove_logo, :claim_account]
+  skip_before_action :authenticate_client, only: [:index, :accessible_providers, :set_active_provider, :show, :update, :put, :remove_logo, :claim_account, :provider_locations, :add_location, :update_location, :remove_location]
 
   def index
     puts "🔍 Controller loaded: #{__FILE__}"
@@ -763,6 +763,13 @@ class Api::V1::ProvidersController < ApplicationController
     
     begin
       provider = Provider.find(provider_id)
+      
+      # Check if current user can access this provider (for user authentication)
+      if @current_user && !@current_user.can_access_provider?(provider.id)
+        render json: { error: 'Access denied. You can only view locations for providers you have access to.' }, status: :forbidden
+        return
+      end
+      
       locations = provider.locations
       
       render json: {
@@ -802,6 +809,12 @@ class Api::V1::ProvidersController < ApplicationController
     
     begin
       provider = Provider.find(provider_id)
+      
+      # Check if current user can access this provider (for user authentication)
+      if @current_user && !@current_user.can_access_provider?(provider.id)
+        render json: { error: 'Access denied. You can only add locations to providers you have access to.' }, status: :forbidden
+        return
+      end
       
       location = provider.locations.build(location_params)
       
@@ -843,6 +856,13 @@ class Api::V1::ProvidersController < ApplicationController
     
     begin
       provider = Provider.find(provider_id)
+      
+      # Check if current user can access this provider (for user authentication)
+      if @current_user && !@current_user.can_access_provider?(provider.id)
+        render json: { error: 'Access denied. You can only update locations for providers you have access to.' }, status: :forbidden
+        return
+      end
+      
       location = provider.locations.find(location_id)
       
       if location.update(location_params)
@@ -883,6 +903,13 @@ class Api::V1::ProvidersController < ApplicationController
     
     begin
       provider = Provider.find(provider_id)
+      
+      # Check if current user can access this provider (for user authentication)
+      if @current_user && !@current_user.can_access_provider?(provider.id)
+        render json: { error: 'Access denied. You can only remove locations from providers you have access to.' }, status: :forbidden
+        return
+      end
+      
       location = provider.locations.find(location_id)
       
       location_name = location.name.presence || "Location #{location.id}"
