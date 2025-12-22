@@ -46,7 +46,9 @@ class Api::V1::ProviderSelfController < ApplicationController
         
         # Only update counties if counties data is provided
         if params[:data]&.first&.dig(:attributes, :counties_served)&.present?
-          @provider.update_counties_from_array(params[:data].first[:attributes][:counties_served].map { |county| county["county_id"] })
+          # Extract county IDs and filter out invalid ones (0, nil, etc.)
+          county_ids = params[:data].first[:attributes][:counties_served].map { |county| county["county_id"] || county[:county_id] }.compact.reject { |id| id.to_i <= 0 }
+          @provider.update_counties_from_array(county_ids)
         end
         
         # Only update practice types if practice type data is provided

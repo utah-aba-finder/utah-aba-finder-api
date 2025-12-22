@@ -298,14 +298,22 @@ class Provider < ApplicationRecord
   def update_counties_from_array(county_ids)
     return if county_ids.blank?
 
+    # Filter out invalid county IDs (0, nil, negative, or non-existent)
+    valid_county_ids = county_ids.compact.reject { |id| id.to_i <= 0 }
+    
+    # Find only valid counties that exist in the database
+    valid_counties = County.where(id: valid_county_ids).to_a
+    
     # Clear existing counties
     self.counties.clear
 
-    # Add new counties
-    county_ids.each do |county_id|
-      county = County.find(county_id)
+    # Add new counties (only valid ones)
+    valid_counties.each do |county|
       self.counties << county
     end
+    
+    Rails.logger.info "✅ Updated counties for provider #{id}: #{valid_counties.map(&:name).join(', ')}"
+    Rails.logger.warn "⚠️ Filtered out invalid county IDs: #{(county_ids - valid_county_ids).inspect}" if county_ids.size != valid_county_ids.size
   end
 
   def create_practice_types(practice_type_params)

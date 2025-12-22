@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_12_09_031432) do
+ActiveRecord::Schema[7.1].define(version: 2025_12_10_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_trgm"
   enable_extension "plpgsql"
@@ -195,6 +195,24 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_09_031432) do
     t.index ["slug"], name: "index_provider_categories_on_slug", unique: true
   end
 
+  create_table "provider_claim_requests", force: :cascade do |t|
+    t.bigint "provider_id", null: false
+    t.string "claimer_email", null: false
+    t.string "status", default: "pending", null: false
+    t.bigint "reviewed_by_id"
+    t.datetime "reviewed_at"
+    t.text "admin_notes"
+    t.text "rejection_reason"
+    t.boolean "is_processed", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["claimer_email"], name: "index_provider_claim_requests_on_claimer_email"
+    t.index ["is_processed"], name: "index_provider_claim_requests_on_is_processed"
+    t.index ["provider_id", "status"], name: "index_provider_claim_requests_on_provider_id_and_status"
+    t.index ["provider_id"], name: "index_provider_claim_requests_on_provider_id"
+    t.index ["status"], name: "index_provider_claim_requests_on_status"
+  end
+
   create_table "provider_insurances", force: :cascade do |t|
     t.bigint "provider_id", null: false
     t.bigint "insurance_id", null: false
@@ -355,6 +373,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_09_031432) do
   add_foreign_key "provider_assignments", "users"
   add_foreign_key "provider_attributes", "category_fields"
   add_foreign_key "provider_attributes", "providers"
+  add_foreign_key "provider_claim_requests", "providers"
+  add_foreign_key "provider_claim_requests", "users", column: "reviewed_by_id"
   add_foreign_key "provider_insurances", "insurances"
   add_foreign_key "provider_insurances", "providers"
   add_foreign_key "provider_practice_types", "practice_types"
