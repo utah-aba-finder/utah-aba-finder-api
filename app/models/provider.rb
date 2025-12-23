@@ -212,39 +212,56 @@ class Provider < ApplicationRecord
   def update_locations(location_params)
     return if location_params.blank?
 
-    location_params_ids = location_params.map { |location| location[:id] }.compact
+    # Extract IDs handling both symbol and string keys
+    location_params_ids = location_params.map { |location| location[:id] || location["id"] }.compact.map(&:to_i)
 
+    Rails.logger.info "🔍 Provider#update_locations - Received #{location_params.count} locations with IDs: #{location_params_ids.inspect}"
+    Rails.logger.info "🔍 Provider#update_locations - Current locations count: #{self.locations.count}"
+
+    # Remove locations that are not in the params (handles both symbol and string keys)
     self.locations.each do |location|
       unless location_params_ids.include?(location.id)
+        Rails.logger.info "🔍 Provider#update_locations - Removing location ID #{location.id} (#{location.name})"
         location.destroy
       end
     end
 
+    # Update existing locations or create new ones
     location_params.each do |location_info|
-      location = if location_info[:id].present?
-                  self.locations.find_by(id: location_info[:id])
+      # Handle both symbol and string keys for ID
+      location_id = location_info[:id] || location_info["id"]
+      
+      # Handle both symbol and string keys for all fields
+      location = if location_id.present?
+                  Rails.logger.info "🔍 Provider#update_locations - Updating existing location ID #{location_id}"
+                  self.locations.find_by(id: location_id)
                 else
+                  Rails.logger.info "🔍 Provider#update_locations - Creating new location"
                   self.locations.new
                 end
 
+      # Extract values handling both symbol and string keys
       location.update!(
-        name: location_info[:name] ,
-        address_1: location_info[:address_1] ,
-        address_2: location_info[:address_2] ,
-        city: location_info[:city] ,
-        state: location_info[:state] ,
-        zip: location_info[:zip] ,
-        phone: location_info[:phone] ,
-        email: location_info[:email] ,
-        in_home_waitlist: location_info[:in_home_waitlist],
-        in_clinic_waitlist: location_info[:in_clinic_waitlist]
+        name: location_info[:name] || location_info["name"],
+        address_1: location_info[:address_1] || location_info["address_1"],
+        address_2: location_info[:address_2] || location_info["address_2"],
+        city: location_info[:city] || location_info["city"],
+        state: location_info[:state] || location_info["state"],
+        zip: location_info[:zip] || location_info["zip"],
+        phone: location_info[:phone] || location_info["phone"],
+        email: location_info[:email] || location_info["email"],
+        in_home_waitlist: location_info[:in_home_waitlist] || location_info["in_home_waitlist"],
+        in_clinic_waitlist: location_info[:in_clinic_waitlist] || location_info["in_clinic_waitlist"]
       )
 
-      # location services update
-      update_location_services(location, location_info[:services])
+      # location services update (handle both symbol and string keys)
+      services = location_info[:services] || location_info["services"]
+      update_location_services(location, services)
+      
+      Rails.logger.info "✅ Provider#update_locations - Saved location ID #{location.id} (#{location.name})"
     end
 
-    self.reload
+    Rails.logger.info "✅ Provider#update_locations - Final locations count: #{self.reload.locations.count}"
   end
 
   def initialize_provider_insurances
