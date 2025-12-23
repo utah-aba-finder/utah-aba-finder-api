@@ -414,12 +414,18 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
     
     # Create new locations
     locations_data.each do |location_info|
-      # For telehealth-only providers, only require phone number
-      # For other providers, require address or city
-      if provider.telehealth_only?
-        next unless location_info[:phone].present?
-      else
-        next unless location_info[:address_1].present? || location_info[:city].present?
+      # Require at least phone OR (address_1 OR city) for any location
+      # This allows phone-only locations (telehealth/remote services) even for non-telehealth providers
+      has_contact_info = location_info[:phone].present? || 
+                        location_info["phone"].present? ||
+                        location_info[:address_1].present? || 
+                        location_info["address_1"].present? ||
+                        location_info[:city].present? || 
+                        location_info["city"].present?
+      
+      unless has_contact_info
+        Rails.logger.warn "⚠️ Skipping location without contact info (phone, address_1, or city): #{location_info[:name] || location_info['name']}"
+        next
       end
       
       Rails.logger.info "🔍 DEBUG: Processing location_info: #{location_info.inspect}"
