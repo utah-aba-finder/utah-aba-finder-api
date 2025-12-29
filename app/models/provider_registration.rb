@@ -448,25 +448,76 @@ class ProviderRegistration < ApplicationRecord
     location_data = data['service_areas'] || data['geographic_coverage']
     primary_address = data['primary_address'] || {}
     
+    # Extract waitlist values from submitted data (can be at top level or nested)
+    in_home_waitlist = data['in_home_waitlist'] || primary_address['in_home_waitlist']
+    in_clinic_waitlist = data['in_clinic_waitlist'] || primary_address['in_clinic_waitlist']
+    
+    # Normalize waitlist values to valid options (default to "Contact for availability" if not provided)
+    in_home_waitlist = normalize_waitlist_value(in_home_waitlist) || "Contact for availability"
+    in_clinic_waitlist = normalize_waitlist_value(in_clinic_waitlist) || "Contact for availability"
+    
+    location_attrs = {
+      in_home_waitlist: in_home_waitlist,
+      in_clinic_waitlist: in_clinic_waitlist
+    }
+    
     if primary_address.present? && primary_address['street'].present?
       provider.locations.create!(
-        name: "#{provider_name} - Main Office",
-        address_1: primary_address['street'] || primary_address['address_1'] || "Contact for address",
-        address_2: primary_address['suite'] || primary_address['address_2'] || '',
-        city: primary_address['city'] || "Contact for location",
-        state: primary_address['state'] || "Contact for location",
-        zip: primary_address['zip'] || "Contact for location",
-        phone: primary_address['phone'] || data['contact_phone'] || provider.phone
+        location_attrs.merge(
+          name: "#{provider_name} - Main Office",
+          address_1: primary_address['street'] || primary_address['address_1'] || "Contact for address",
+          address_2: primary_address['suite'] || primary_address['address_2'] || '',
+          city: primary_address['city'] || "Contact for location",
+          state: primary_address['state'] || "Contact for location",
+          zip: primary_address['zip'] || "Contact for location",
+          phone: primary_address['phone'] || data['contact_phone'] || provider.phone
+        )
       )
     elsif location_data.present?
       provider.locations.create!(
-        name: "#{provider_name} - Main Office",
-        address_1: "Contact for address", # We don't have full address from registration
-        city: "Contact for location",
-        state: "Contact for location",
-        zip: "Contact for location",
-        phone: data['contact_phone'] || provider.phone
+        location_attrs.merge(
+          name: "#{provider_name} - Main Office",
+          address_1: "Contact for address", # We don't have full address from registration
+          city: "Contact for location",
+          state: "Contact for location",
+          zip: "Contact for location",
+          phone: data['contact_phone'] || provider.phone
+        )
       )
+    end
+  end
+  
+  # Normalize waitlist value to valid Location::WAITLIST_OPTIONS
+  # Same logic as Provider model for consistency
+  def normalize_waitlist_value(value)
+    return nil if value.blank?
+    
+    value = value.to_s.strip
+    
+    # If value is already a valid option, return it
+    return value if Location::WAITLIST_OPTIONS.include?(value)
+    
+    # Map common invalid values to valid ones
+    case value.downcase
+    when "this service isn't provided at this location",
+         "this service is not provided at this location",
+         "service not provided",
+         "not provided"
+      "No in-home services available at this location"
+    when "contact for availability",
+         "contact us",
+         "call for availability"
+      "Contact for availability"
+    when "no waitlist",
+         "no wait"
+      "No waitlist"
+    when "not accepting new clients",
+         "not accepting clients"
+      "Not accepting new clients"
+    else
+      # Default to "Contact for availability" if unrecognized
+      Rails.logger.warn "⚠️ Invalid waitlist value in registration '#{value}', defaulting to 'Contact for availability'"
+      "Contact for availability"
     end
   end
 
