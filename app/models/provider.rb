@@ -222,10 +222,17 @@ class Provider < ApplicationRecord
     Rails.logger.info "🔍 Provider#update_locations - Current locations count: #{self.locations.count}"
 
     # Track which location should be primary (from parameter or from location data)
-    new_primary_location_id = primary_location_id
+    # Convert to integer if present (handles string "2464" -> 2464)
+    new_primary_location_id = if primary_location_id.present?
+                                primary_location_id.to_i
+                              else
+                                nil
+                              end
+
+    Rails.logger.info "🔍 Provider#update_locations - new_primary_location_id after conversion: #{new_primary_location_id.inspect}"
 
     # If primary_location_id not provided, check if any location has primary: true
-    if new_primary_location_id.nil?
+    if new_primary_location_id.nil? || new_primary_location_id == 0
       primary_location_info = location_params.find { |loc| loc[:primary] == true || loc["primary"] == true }
       if primary_location_info
         # If it's an existing location (has ID), use that ID
