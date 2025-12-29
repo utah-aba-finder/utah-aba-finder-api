@@ -573,10 +573,20 @@ class Provider < ApplicationRecord
 
   # Set primary location (safely validates it belongs to provider)
   def set_primary_location(location_id)
+    # Convert to integer to ensure proper matching
+    location_id = location_id.to_i if location_id.present?
+    Rails.logger.info "🔍 set_primary_location - Attempting to set primary_location_id to: #{location_id.inspect} (class: #{location_id.class})"
+    Rails.logger.info "🔍 set_primary_location - Provider has #{locations.count} locations with IDs: #{locations.pluck(:id).inspect}"
+    
     location = locations.find_by(id: location_id)
-    return false unless location
+    unless location
+      Rails.logger.warn "⚠️ set_primary_location - Location ID #{location_id} not found for provider #{id}"
+      return false
+    end
 
-    update_column(:primary_location_id, location_id)
+    result = update_column(:primary_location_id, location_id)
+    Rails.logger.info "✅ set_primary_location - Successfully set primary_location_id to #{location_id} (result: #{result.inspect})"
+    Rails.logger.info "🔍 set_primary_location - Provider.primary_location_id after update: #{reload.primary_location_id.inspect}"
     true
   end
 

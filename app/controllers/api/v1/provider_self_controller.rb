@@ -38,8 +38,13 @@ class Api::V1::ProviderSelfController < ApplicationController
         Rails.logger.info "✅ Provider self-update - Basic provider fields updated successfully"
         # Only update locations if locations data is provided
         if params[:data]&.first&.dig(:attributes, :locations)&.present?
-          primary_location_id = params[:data]&.first&.dig(:attributes, :primary_location_id)
-          @provider.update_locations(params[:data].first[:attributes][:locations], primary_location_id: primary_location_id)
+          # Handle both symbol and string keys for primary_location_id
+          attributes = params[:data].first[:attributes]
+          primary_location_id = attributes[:primary_location_id] || attributes["primary_location_id"]
+          # Convert to integer if present (handles string "2465" -> 2465)
+          primary_location_id = primary_location_id.to_i if primary_location_id.present? && primary_location_id.to_i > 0
+          Rails.logger.info "🔍 Provider self-update - primary_location_id from params: #{primary_location_id.inspect} (class: #{primary_location_id.class})"
+          @provider.update_locations(attributes[:locations] || attributes["locations"], primary_location_id: primary_location_id)
         end
         
         # Only update insurance if insurance data is provided
