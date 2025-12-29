@@ -69,7 +69,8 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       
       # Set up locations if provided
       if attributes[:locations].present?
-        update_locations(provider, attributes[:locations])
+        primary_location_id = attributes[:primary_location_id] || attributes["primary_location_id"]
+        update_locations(provider, attributes[:locations], primary_location_id: primary_location_id)
         
         # If this was a clinic-based provider, update in_home_only to false after locations are created
         if !admin_provider_params[:in_home_only]
@@ -125,10 +126,13 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
 
     # Handle locations separately if provided
     locations_params = nil
+    primary_location_id = nil
     if params[:data]&.first&.dig(:attributes, :locations)&.present?
       locations_params = params[:data].first[:attributes][:locations]
+      primary_location_id = params[:data].first[:attributes][:primary_location_id] || params[:data].first[:attributes]["primary_location_id"]
     elsif params[:locations].present?
       locations_params = params[:locations]
+      primary_location_id = params[:primary_location_id]
     end
 
     # Handle counties served separately if provided
@@ -173,7 +177,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
 
     # Create locations FIRST to satisfy validation
     if locations_params.present?
-      update_locations(provider, locations_params)
+      update_locations(provider, locations_params, primary_location_id: primary_location_id)
     end
 
     # Now update the provider (validation should pass since locations exist)
@@ -401,13 +405,32 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
     end
   end
 
-  def update_locations(provider, locations_data)
+  def update_locations(provider, locations_data, primary_location_id: nil)
     Rails.logger.info "🔍 DEBUG: update_locations method called with provider_id: #{provider.id}"
     Rails.logger.info "🔍 DEBUG: locations_data class: #{locations_data.class}"
     Rails.logger.info "🔍 DEBUG: locations_data first item class: #{locations_data.first.class if locations_data.any?}"
     Rails.logger.info "🔍 DEBUG: locations_data first item permitted?: #{locations_data.first.permitted? if locations_data.any?}"
+    Rails.logger.info "🔍 DEBUG: primary_location_id: #{primary_location_id.inspect}"
     
     Rails.logger.info "🔍 Updating locations for provider #{provider.id}: #{locations_data.inspect}"
+    
+    # Track which location should be primary
+    new_primary_location_id = primary_location_id
+    
+    # If primary_location_id not provided, check if any location has primary: true
+    if new_primary_location_id.nil?
+      primary_location_info = locations_data.find { |loc| loc[:primary] == true || loc["primary"] == true }
+      if primary_location_info
+        new_primary_location_id = primary_location_info[:id] || primary_location_info["id"]
+        Rails.logger.info "🔍 Admin update_locations - Found primary location in params: #{new_primary_location_id}"
+      end
+    end
+    
+    # Use Provider model's update_locations method which handles primary_location_id properly
+    provider.update_locations(locations_data, primary_location_id: new_primary_location_id)
+    
+    # Legacy code below (keeping for reference but Provider model method handles it now)
+    return
     
     # Clear existing locations
     provider.locations.destroy_all

@@ -200,9 +200,10 @@ class Api::V1::ProvidersController < ApplicationController
           end
           
           # Only update locations if locations data is provided
-          if attributes[:locations]&.present?
-            provider.update_locations(attributes[:locations])
-          end
+                 if attributes[:locations]&.present?
+                   primary_location_id = attributes[:primary_location_id] || attributes["primary_location_id"]
+                   provider.update_locations(attributes[:locations], primary_location_id: primary_location_id)
+                 end
           
           # Only update insurance if insurance data is provided
           if attributes[:insurance]&.present?
@@ -222,6 +223,16 @@ class Api::V1::ProvidersController < ApplicationController
           end
           
           provider.touch # Ensure updated_at is updated
+          # Reload provider with associations to ensure fresh data (especially locations and primary_location_id)
+          provider.reload
+          provider = Provider.includes(
+            :practice_types,
+            { :locations => :practice_types },
+            { :provider_insurances => :insurance },
+            { :provider_attributes => :category_field },
+            { :provider_category => :category_fields },
+            :counties
+          ).find(provider.id)
           render json: ProviderSerializer.format_providers([provider])
         else
           render json: { errors: provider.errors.full_messages }, status: :unprocessable_entity
@@ -241,9 +252,10 @@ class Api::V1::ProvidersController < ApplicationController
             {}
           end
           
-          if attributes[:locations]&.present?
-            provider.update_locations(attributes[:locations])
-          end
+                 if attributes[:locations]&.present?
+                   primary_location_id = attributes[:primary_location_id] || attributes["primary_location_id"]
+                   provider.update_locations(attributes[:locations], primary_location_id: primary_location_id)
+                 end
           
           if attributes[:insurance]&.present?
             provider.update_provider_insurance(attributes[:insurance])
@@ -808,6 +820,13 @@ class Api::V1::ProvidersController < ApplicationController
             zip: location.zip,
             in_home_waitlist: location.in_home_waitlist,
             in_clinic_waitlist: location.in_clinic_waitlist,
+            # Return both formats for consistency
+            services: location.practice_types.map do |type|
+              {
+                id: type.id,
+                name: type.name
+              }
+            end,
             practice_types: location.practice_types.pluck(:name)
           }
         end,

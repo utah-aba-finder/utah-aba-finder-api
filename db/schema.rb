@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_12_10_190000) do
+ActiveRecord::Schema[7.1].define(version: 2025_12_23_231137) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_trgm"
   enable_extension "plpgsql"
@@ -305,8 +305,10 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_10_190000) do
     t.integer "sponsorship_tier", default: 0, null: false
     t.string "stripe_customer_id"
     t.string "stripe_subscription_id"
+    t.bigint "primary_location_id"
     t.index ["category"], name: "index_providers_on_category"
     t.index ["is_sponsored"], name: "index_providers_on_is_sponsored"
+    t.index ["primary_location_id"], name: "index_providers_on_primary_location_id"
     t.index ["sponsored_until"], name: "index_providers_on_sponsored_until"
     t.index ["sponsorship_tier"], name: "index_providers_on_sponsorship_tier"
     t.index ["stripe_customer_id"], name: "index_providers_on_stripe_customer_id"
@@ -383,6 +385,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_10_190000) do
   add_foreign_key "provider_service_types", "provider_categories"
   add_foreign_key "provider_service_types", "providers"
   add_foreign_key "provider_views", "providers"
+  add_foreign_key "providers", "locations", column: "primary_location_id", on_delete: :nullify
   add_foreign_key "providers", "users"
   add_foreign_key "sponsorships", "providers"
   add_foreign_key "users", "providers", column: "active_provider_id"

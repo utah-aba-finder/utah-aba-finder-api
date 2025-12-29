@@ -34,7 +34,8 @@ class ProviderSerializer
                 name: type.name
               }
             end,
-            "locations": provider.locations.map do |location| 
+            "primary_location_id": provider.primary_location_id,
+            "locations": provider.locations.order(:id).map do |location| 
               {
               id: location.id,
               name: location.name,
@@ -44,14 +45,17 @@ class ProviderSerializer
               state: location.state,
               zip: location.zip,
               phone: location.phone,
+              # Return both formats for consistency and backward compatibility
               services: location.practice_types.map do |type|
                 {
                   id: type.id,
                   name: type.name
                 }
               end,
+              practice_types: location.practice_types.pluck(:name),  # Also include string array format
               in_home_waitlist: location.in_home_waitlist,
-              in_clinic_waitlist: location.in_clinic_waitlist
+              in_clinic_waitlist: location.in_clinic_waitlist,
+              primary: location.id == provider.primary_location_id
               }
             end,
             "website": provider.website,

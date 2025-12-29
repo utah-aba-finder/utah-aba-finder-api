@@ -6,6 +6,7 @@ class Provider < ApplicationRecord
   has_many :counties_providers, dependent: :destroy
   has_many :counties, through: :counties_providers
   has_many :locations
+  belongs_to :primary_location, class_name: 'Location', optional: true
   has_many :provider_insurances
   has_many :insurances, through: :provider_insurances
   has_many :provider_practice_types, dependent: :destroy
@@ -119,6 +120,7 @@ class Provider < ApplicationRecord
   # Custom validation for in-home only providers
   validate :locations_required_unless_in_home_only
   validate :validate_service_delivery_structure
+  validate :primary_location_belongs_to_provider
 
   # Scopes
   scope :by_category, ->(category) { where(category: category) }
@@ -209,19 +211,40 @@ class Provider < ApplicationRecord
   end
 
   #should refactor into smaller methods
-  def update_locations(location_params)
+  def update_locations(location_params, primary_location_id: nil)
     return if location_params.blank?
 
     # Extract IDs handling both symbol and string keys
     location_params_ids = location_params.map { |location| location[:id] || location["id"] }.compact.map(&:to_i)
 
     Rails.logger.info "🔍 Provider#update_locations - Received #{location_params.count} locations with IDs: #{location_params_ids.inspect}"
+    Rails.logger.info "🔍 Provider#update_locations - Primary location ID: #{primary_location_id.inspect}"
     Rails.logger.info "🔍 Provider#update_locations - Current locations count: #{self.locations.count}"
+
+    # Track which location should be primary (from parameter or from location data)
+    new_primary_location_id = primary_location_id
+
+    # If primary_location_id not provided, check if any location has primary: true
+    if new_primary_location_id.nil?
+      primary_location_info = location_params.find { |loc| loc[:primary] == true || loc["primary"] == true }
+      if primary_location_info
+        # If it's an existing location (has ID), use that ID
+        # If it's a new location (no ID), we'll track it and set it after creation
+        location_id = primary_location_info[:id] || primary_location_info["id"]
+        new_primary_location_id = location_id if location_id.present?
+        Rails.logger.info "🔍 Provider#update_locations - Found primary location in params: #{new_primary_location_id || 'new location (will set after creation)'}"
+      end
+    end
 
     # Remove locations that are not in the params (handles both symbol and string keys)
     self.locations.each do |location|
       unless location_params_ids.include?(location.id)
         Rails.logger.info "🔍 Provider#update_locations - Removing location ID #{location.id} (#{location.name})"
+        # If this was the primary location, clear it
+        if self.primary_location_id.to_i == location.id
+          update_column(:primary_location_id, nil)
+          Rails.logger.info "🔍 Provider#update_locations - Cleared primary_location_id (was location #{location.id})"
+        end
         location.destroy
       end
     end
@@ -255,10 +278,37 @@ class Provider < ApplicationRecord
       )
 
       # location services update (handle both symbol and string keys)
+      # Accept either 'services' or 'practice_types' field
       services = location_info[:services] || location_info["services"]
-      update_location_services(location, services)
+      practice_types = location_info[:practice_types] || location_info["practice_types"]
+      
+      Rails.logger.info "🔍 Provider#update_locations - Location #{location.id}: services=#{services.inspect}, practice_types=#{practice_types.inspect}"
+      
+      # Use practice_types if provided (string array), otherwise use services
+      services_to_update = practice_types.present? ? practice_types : services
+      Rails.logger.info "🔍 Provider#update_locations - Location #{location.id}: services_to_update=#{services_to_update.inspect}"
+      update_location_services(location, services_to_update)
       
       Rails.logger.info "✅ Provider#update_locations - Saved location ID #{location.id} (#{location.name})"
+      
+      # If this location should be primary and it's a new location (no ID in params), set it as primary
+      if new_primary_location_id.nil? && (location_info[:primary] == true || location_info["primary"] == true)
+        new_primary_location_id = location.id
+        Rails.logger.info "🔍 Provider#update_locations - Setting new location #{location.id} as primary"
+      end
+    end
+
+    # Set primary location after all locations are saved
+    if new_primary_location_id.present?
+      if set_primary_location(new_primary_location_id)
+        Rails.logger.info "✅ Provider#update_locations - Set primary location to ID #{new_primary_location_id}"
+      else
+        Rails.logger.warn "⚠️ Provider#update_locations - Failed to set primary location ID #{new_primary_location_id} (location not found)"
+      end
+    elsif primary_location_id.present? && !location_params_ids.include?(primary_location_id.to_i)
+      # Primary location was removed, clear it
+      update_column(:primary_location_id, nil)
+      Rails.logger.info "🔍 Provider#update_locations - Cleared primary location (was removed)"
     end
 
     Rails.logger.info "✅ Provider#update_locations - Final locations count: #{self.reload.locations.count}"
@@ -392,19 +442,81 @@ class Provider < ApplicationRecord
   end
 
   def update_location_services(location, services_params)
-    return if services_params.blank?
-
-    services_params_ids = services_params.map { |service| service[:id] }.compact
-
-    location.practice_types.each do |practice_type|
-      unless services_params_ids.include?(practice_type.id)
-        location.practice_types.delete(practice_type)
-      end
+    # Handle both formats:
+    # 1. services: [{id, name}] (preferred)
+    # 2. practice_types: ["ABA Therapy", "Speech Therapy"] (alternative)
+    
+    Rails.logger.info "🔍 update_location_services - Location ID: #{location.id}, services_params: #{services_params.inspect}"
+    Rails.logger.info "🔍 update_location_services - services_params class: #{services_params.class}, nil?: #{services_params.nil?}, blank?: #{services_params.blank?}, empty?: #{services_params.is_a?(Array) && services_params.empty?}"
+    
+    # If services_params is nil/blank/empty array, don't update (preserve existing)
+    # Empty array is treated as "preserve existing" to prevent accidental deletion
+    if services_params.nil? || services_params.blank? || (services_params.is_a?(Array) && services_params.empty?)
+      Rails.logger.info "🔍 update_location_services - Preserving existing services (services_params is nil/blank/empty)"
+      return
     end
+    
+    # Determine which format we received
+    if services_params.is_a?(Array) && services_params.any? && services_params.first.is_a?(String)
+      # Format: practice_types: ["ABA Therapy", "Speech Therapy"]
+      Rails.logger.info "🔍 update_location_services - Using string array format (practice_types)"
+      practice_type_names = services_params.map(&:to_s).compact.reject(&:blank?)
+      
+      if practice_type_names.empty?
+        Rails.logger.info "🔍 update_location_services - Preserving existing (all names blank)"
+        return  # Preserve if all names are blank
+      end
+      
+      Rails.logger.info "🔍 update_location_services - Clearing existing and adding: #{practice_type_names.inspect}"
+      # Clear existing and add new ones by name
+      location.practice_types.clear
+      practice_type_names.each do |name|
+        practice_type = PracticeType.find_by(name: name)
+        if practice_type
+          location.practice_types << practice_type unless location.practice_types.include?(practice_type)
+          Rails.logger.info "✅ update_location_services - Added practice_type: #{name} (ID: #{practice_type.id})"
+        else
+          Rails.logger.warn "⚠️ Practice type not found by name: #{name}"
+        end
+      end
+      Rails.logger.info "✅ update_location_services - Final practice_types count: #{location.practice_types.count}"
+    else
+      # Format: services: [{id, name}] or [{id}]
+      Rails.logger.info "🔍 update_location_services - Using object array format (services)"
+      services_params_ids = services_params.map { |service| service[:id] || service["id"] }.compact.reject { |id| id.to_i <= 0 }
+      
+      Rails.logger.info "🔍 update_location_services - Extracted IDs: #{services_params_ids.inspect}"
+      
+      # If no valid IDs found, preserve existing (don't clear accidentally)
+      if services_params_ids.empty?
+        Rails.logger.info "🔍 update_location_services - Preserving existing (no valid IDs found)"
+        return
+      end
 
-    services_params.each do |service_info|
-      practice_type = PracticeType.find(service_info[:id])
-      location.practice_types << practice_type unless location.practice_types.include?(practice_type)
+      # Remove practice types not in the list
+      location.practice_types.each do |practice_type|
+        unless services_params_ids.include?(practice_type.id)
+          Rails.logger.info "🔍 update_location_services - Removing practice_type: #{practice_type.name} (ID: #{practice_type.id})"
+          location.practice_types.delete(practice_type)
+        end
+      end
+
+      # Add new practice types
+      services_params.each do |service_info|
+        service_id = service_info[:id] || service_info["id"]
+        next unless service_id.present? && service_id.to_i > 0
+        
+        practice_type = PracticeType.find_by(id: service_id)
+        if practice_type
+          unless location.practice_types.include?(practice_type)
+            location.practice_types << practice_type
+            Rails.logger.info "✅ update_location_services - Added practice_type: #{practice_type.name} (ID: #{service_id})"
+          end
+        else
+          Rails.logger.warn "⚠️ Practice type not found by ID: #{service_id}"
+        end
+      end
+      Rails.logger.info "✅ update_location_services - Final practice_types count: #{location.practice_types.count}"
     end
   end
 
@@ -449,5 +561,27 @@ class Provider < ApplicationRecord
     unless service_delivery.is_a?(Hash) && service_delivery.key?('in_home') && service_delivery.key?('in_clinic')
       errors.add(:service_delivery, "must have 'in_home' and 'in_clinic' keys")
     end
+  end
+
+  def primary_location_belongs_to_provider
+    return unless primary_location_id.present?
+
+    unless locations.exists?(id: primary_location_id)
+      errors.add(:primary_location_id, "must be one of the provider's locations")
+    end
+  end
+
+  # Set primary location (safely validates it belongs to provider)
+  def set_primary_location(location_id)
+    location = locations.find_by(id: location_id)
+    return false unless location
+
+    update_column(:primary_location_id, location_id)
+    true
+  end
+
+  # Get primary location (returns first location if none set, for backward compatibility)
+  def primary_location_or_first
+    primary_location || locations.order(:id).first
   end
 end

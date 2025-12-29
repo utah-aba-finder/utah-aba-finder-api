@@ -32,11 +32,14 @@ class Api::V1::ProviderSelfController < ApplicationController
       end
     else
       Rails.logger.info "Provider self-update - Using JSON path"
+      Rails.logger.info "Provider self-update - provider_params: #{provider_params.inspect}"
       # Handle JSON data (for regular updates)
       if @provider.update(provider_params)
+        Rails.logger.info "✅ Provider self-update - Basic provider fields updated successfully"
         # Only update locations if locations data is provided
         if params[:data]&.first&.dig(:attributes, :locations)&.present?
-          @provider.update_locations(params[:data].first[:attributes][:locations])
+          primary_location_id = params[:data]&.first&.dig(:attributes, :primary_location_id)
+          @provider.update_locations(params[:data].first[:attributes][:locations], primary_location_id: primary_location_id)
         end
         
         # Only update insurance if insurance data is provided
@@ -62,6 +65,16 @@ class Api::V1::ProviderSelfController < ApplicationController
         end
         
         @provider.touch
+        # Reload provider with associations to ensure fresh data (especially locations and primary_location_id)
+        @provider.reload
+        @provider = Provider.includes(
+          :practice_types,
+          { :locations => :practice_types },
+          { :provider_insurances => :insurance },
+          { :provider_attributes => :category_field },
+          { :provider_category => :category_fields },
+          :counties
+        ).find(@provider.id)
         render json: ProviderSerializer.format_providers([@provider])
       else
         render json: { errors: @provider.errors.full_messages }, status: :unprocessable_entity
