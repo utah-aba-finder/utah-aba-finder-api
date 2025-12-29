@@ -36,15 +36,30 @@ class Api::V1::ProviderSelfController < ApplicationController
       # Handle JSON data (for regular updates)
       if @provider.update(provider_params)
         Rails.logger.info "✅ Provider self-update - Basic provider fields updated successfully"
-        # Only update locations if locations data is provided
-        if params[:data]&.first&.dig(:attributes, :locations)&.present?
-          # Handle both symbol and string keys for primary_location_id
-          attributes = params[:data].first[:attributes]
-          primary_location_id = attributes[:primary_location_id] || attributes["primary_location_id"]
-          # Convert to integer if present (handles string "2465" -> 2465)
-          primary_location_id = primary_location_id.to_i if primary_location_id.present? && primary_location_id.to_i > 0
-          Rails.logger.info "🔍 Provider self-update - primary_location_id from params: #{primary_location_id.inspect} (class: #{primary_location_id.class})"
-          @provider.update_locations(attributes[:locations] || attributes["locations"], primary_location_id: primary_location_id)
+        
+        # Extract attributes to check for locations and primary_location_id
+        attributes = params[:data]&.first&.dig(:attributes) || {}
+        primary_location_id = attributes[:primary_location_id] || attributes["primary_location_id"]
+        locations_data = attributes[:locations] || attributes["locations"]
+        
+        # Convert primary_location_id to integer if present
+        if primary_location_id.present?
+          primary_location_id = primary_location_id.to_i if primary_location_id.to_i > 0
+          Rails.logger.info "🔍 Provider self-update - primary_location_id from params: #{primary_location_id.inspect}"
+        end
+        
+        # Update locations if locations data is provided
+        if locations_data.present?
+          Rails.logger.info "🔍 Provider self-update - Updating locations with primary_location_id: #{primary_location_id.inspect}"
+          @provider.update_locations(locations_data, primary_location_id: primary_location_id)
+        elsif primary_location_id.present?
+          # If only primary_location_id is provided (without locations), update just the primary location
+          Rails.logger.info "🔍 Provider self-update - Only primary_location_id provided, updating primary location to: #{primary_location_id.inspect}"
+          if @provider.set_primary_location(primary_location_id)
+            Rails.logger.info "✅ Provider self-update - Successfully set primary location to: #{primary_location_id}"
+          else
+            Rails.logger.warn "⚠️ Provider self-update - Failed to set primary location to: #{primary_location_id}"
+          end
         end
         
         # Only update insurance if insurance data is provided
