@@ -18,8 +18,10 @@
 
 ## Valid Waitlist Options
 
+### All Options (In-Home Waitlist)
+
 ```javascript
-const WAITLIST_OPTIONS = [
+const ALL_WAITLIST_OPTIONS = [
   "No waitlist",
   "1-2 weeks",
   "2-4 weeks",
@@ -28,9 +30,21 @@ const WAITLIST_OPTIONS = [
   "6+ months",
   "Not accepting new clients",
   "Contact for availability",
-  "No in-home services available at this location"
+  "No in-home services available at this location"  // Only for in_home_waitlist
 ];
 ```
+
+### In-Clinic Waitlist Options
+
+For the `in_clinic_waitlist` field, filter out the in-home-specific option:
+
+```javascript
+const IN_CLINIC_WAITLIST_OPTIONS = ALL_WAITLIST_OPTIONS.filter(
+  option => option !== "No in-home services available at this location"
+);
+```
+
+**Important:** The backend validates both fields against the full `WAITLIST_OPTIONS` list, but the frontend should filter out `"No in-home services available at this location"` from the in-clinic dropdown since it doesn't make logical sense for clinic services.
 
 ## Recommended Approach
 
