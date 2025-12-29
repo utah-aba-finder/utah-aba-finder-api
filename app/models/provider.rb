@@ -597,6 +597,38 @@ class Provider < ApplicationRecord
 
   private
 
+  def normalize_waitlist_value(value)
+    return nil if value.blank?
+    
+    value = value.to_s.strip
+    
+    # If value is already a valid option, return it
+    return value if Location::WAITLIST_OPTIONS.include?(value)
+    
+    # Map common invalid values to valid ones
+    case value.downcase
+    when "this service isn't provided at this location",
+         "this service is not provided at this location",
+         "service not provided",
+         "not provided"
+      "No in-home services available at this location"
+    when "contact for availability",
+         "contact us",
+         "call for availability"
+      "Contact for availability"
+    when "no waitlist",
+         "no wait"
+      "No waitlist"
+    when "not accepting new clients",
+         "not accepting clients"
+      "Not accepting new clients"
+    else
+      # Default to "Contact for availability" if unrecognized
+      Rails.logger.warn "⚠️ Invalid waitlist value '#{value}', defaulting to 'Contact for availability'"
+      "Contact for availability"
+    end
+  end
+
   def primary_location_belongs_to_provider
     return unless primary_location_id.present?
 
