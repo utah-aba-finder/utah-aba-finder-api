@@ -390,6 +390,30 @@ class Provider < ApplicationRecord
     Rails.logger.warn "⚠️ Filtered out invalid county IDs: #{(county_ids - valid_county_ids).inspect}" if county_ids.size != valid_county_ids.size
   end
 
+  # Set primary location (safely validates it belongs to provider)
+  def set_primary_location(location_id)
+    # Convert to integer to ensure proper matching
+    location_id = location_id.to_i if location_id.present?
+    Rails.logger.info "🔍 set_primary_location - Attempting to set primary_location_id to: #{location_id.inspect} (class: #{location_id.class})"
+    Rails.logger.info "🔍 set_primary_location - Provider has #{locations.count} locations with IDs: #{locations.pluck(:id).inspect}"
+    
+    location = locations.find_by(id: location_id)
+    unless location
+      Rails.logger.warn "⚠️ set_primary_location - Location ID #{location_id} not found for provider #{id}"
+      return false
+    end
+
+    result = update_column(:primary_location_id, location_id)
+    Rails.logger.info "✅ set_primary_location - Successfully set primary_location_id to #{location_id} (result: #{result.inspect})"
+    Rails.logger.info "🔍 set_primary_location - Provider.primary_location_id after update: #{reload.primary_location_id.inspect}"
+    true
+  end
+
+  # Get primary location (returns first location if none set, for backward compatibility)
+  def primary_location_or_first
+    primary_location || locations.order(:id).first
+  end
+
   def create_practice_types(practice_type_params)
     return if practice_type_params.blank?
 
@@ -568,30 +592,6 @@ class Provider < ApplicationRecord
     unless service_delivery.is_a?(Hash) && service_delivery.key?('in_home') && service_delivery.key?('in_clinic')
       errors.add(:service_delivery, "must have 'in_home' and 'in_clinic' keys")
     end
-  end
-
-  # Set primary location (safely validates it belongs to provider)
-  def set_primary_location(location_id)
-    # Convert to integer to ensure proper matching
-    location_id = location_id.to_i if location_id.present?
-    Rails.logger.info "🔍 set_primary_location - Attempting to set primary_location_id to: #{location_id.inspect} (class: #{location_id.class})"
-    Rails.logger.info "🔍 set_primary_location - Provider has #{locations.count} locations with IDs: #{locations.pluck(:id).inspect}"
-    
-    location = locations.find_by(id: location_id)
-    unless location
-      Rails.logger.warn "⚠️ set_primary_location - Location ID #{location_id} not found for provider #{id}"
-      return false
-    end
-
-    result = update_column(:primary_location_id, location_id)
-    Rails.logger.info "✅ set_primary_location - Successfully set primary_location_id to #{location_id} (result: #{result.inspect})"
-    Rails.logger.info "🔍 set_primary_location - Provider.primary_location_id after update: #{reload.primary_location_id.inspect}"
-    true
-  end
-
-  # Get primary location (returns first location if none set, for backward compatibility)
-  def primary_location_or_first
-    primary_location || locations.order(:id).first
   end
 
   private
