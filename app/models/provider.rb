@@ -408,6 +408,7 @@ class Provider < ApplicationRecord
     Rails.logger.info "🔍 set_primary_location - Provider.primary_location_id after update: #{reload.primary_location_id.inspect}"
     true
   end
+  public :set_primary_location
 
   # Get primary location (returns first location if none set, for backward compatibility)
   def primary_location_or_first
