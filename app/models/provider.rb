@@ -570,14 +570,6 @@ class Provider < ApplicationRecord
     end
   end
 
-  def primary_location_belongs_to_provider
-    return unless primary_location_id.present?
-
-    unless locations.exists?(id: primary_location_id)
-      errors.add(:primary_location_id, "must be one of the provider's locations")
-    end
-  end
-
   # Set primary location (safely validates it belongs to provider)
   def set_primary_location(location_id)
     # Convert to integer to ensure proper matching
@@ -600,5 +592,15 @@ class Provider < ApplicationRecord
   # Get primary location (returns first location if none set, for backward compatibility)
   def primary_location_or_first
     primary_location || locations.order(:id).first
+  end
+
+  private
+
+  def primary_location_belongs_to_provider
+    return unless primary_location_id.present?
+
+    unless locations.exists?(id: primary_location_id)
+      errors.add(:primary_location_id, "must be one of the provider's locations")
+    end
   end
 end
