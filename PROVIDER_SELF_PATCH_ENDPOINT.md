@@ -204,6 +204,7 @@ logo: [file]
         ],
         "website": "https://example.com",
         "email": "provider@example.com",
+        "phone": "(555) 123-4567",
         // ... other fields
       }
     }

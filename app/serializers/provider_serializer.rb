@@ -60,6 +60,7 @@ class ProviderSerializer
             end,
             "website": provider.website,
             "email": provider.email,
+            "phone": provider.phone,
             "cost": provider.cost,
             
             "insurance": provider.provider_insurances.select(&:accepted).sort_by { |pi| pi.insurance.name }.map do |provider_insurance|
