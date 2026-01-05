@@ -99,7 +99,16 @@ class Api::V1::ProviderSelfController < ApplicationController
           { :provider_category => :category_fields },
           :counties
         ).find(@provider.id)
-        render json: ProviderSerializer.format_providers([@provider])
+        
+        # Log the final phone value before serialization
+        Rails.logger.info "📞 Provider self-update - Final provider phone before serialization: #{@provider.phone.inspect}"
+        
+        response_data = ProviderSerializer.format_providers([@provider])
+        # Log the phone value in the serialized response
+        phone_in_response = response_data.dig(:data, 0, :attributes, :phone) || response_data.dig("data", 0, "attributes", "phone")
+        Rails.logger.info "📞 Provider self-update - Phone in serialized response: #{phone_in_response.inspect}"
+        
+        render json: response_data
       else
         render json: { errors: @provider.errors.full_messages }, status: :unprocessable_entity
       end
