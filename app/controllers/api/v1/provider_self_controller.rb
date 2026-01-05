@@ -33,9 +33,13 @@ class Api::V1::ProviderSelfController < ApplicationController
     else
       Rails.logger.info "Provider self-update - Using JSON path"
       Rails.logger.info "Provider self-update - provider_params: #{provider_params.inspect}"
+      Rails.logger.info "Provider self-update - phone in params: #{provider_params[:phone].inspect}"
+      Rails.logger.info "Provider self-update - phone in attributes: #{params[:data]&.first&.dig(:attributes, :phone).inspect}"
+      Rails.logger.info "Provider self-update - Current provider phone: #{@provider.phone.inspect}"
       # Handle JSON data (for regular updates)
       if @provider.update(provider_params)
         Rails.logger.info "✅ Provider self-update - Basic provider fields updated successfully"
+        Rails.logger.info "Provider self-update - Provider phone after update: #{@provider.reload.phone.inspect}"
         
         # Extract attributes to check for locations and primary_location_id
         attributes = params[:data]&.first&.dig(:attributes) || {}
