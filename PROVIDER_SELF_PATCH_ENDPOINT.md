@@ -135,7 +135,7 @@ logo: [file]
 - `name`
 - `website`
 - `email`
-- `phone`
+- `phone` ⚠️ **Note**: Provider-level phone field exists but frontend typically uses location-level phone (see Location Fields below)
 - `cost`
 - `min_age`
 - `max_age`
@@ -155,7 +155,7 @@ logo: [file]
 - `city`
 - `state`
 - `zip`
-- `phone`
+- `phone` 📞 **Important**: Each location has its own phone field. The primary location's phone is typically used for the main contact phone displayed in the UI.
 - `email`
 - `in_home_waitlist`
 - `in_clinic_waitlist`
@@ -233,6 +233,46 @@ logo: [file]
 ```json
 {
   "error": "No provider found. Please set an active provider or link a provider to your account."
+}
+```
+
+## Phone Fields - Two Separate Fields
+
+⚠️ **Important**: There are **TWO separate phone fields** in the system:
+
+1. **Provider-level phone** (`provider.attributes.phone`):
+   - Stored in the `providers` table
+   - Legacy field, typically not used by the frontend
+   - Can be updated via `attributes.phone` in the request
+
+2. **Location-level phone** (`location.phone`):
+   - Stored in the `locations` table
+   - **This is what the frontend typically uses and updates**
+   - Each location can have its own phone number
+   - Updated via the `locations` array in the request
+
+**Frontend Implementation Pattern:**
+- The Contact & Services tab phone field should update the **primary location's phone** (not the provider-level phone)
+- Send the phone in the `locations` array with the primary location's ID
+- The backend will update the location's phone field correctly
+
+**Example - Updating Primary Location Phone:**
+```json
+{
+  "data": [
+    {
+      "attributes": {
+        "locations": [
+          {
+            "id": 123,  // Primary location ID
+            "phone": "(555) 987-6543",  // Update the location's phone
+            "name": "Main Office",
+            // ... other location fields
+          }
+        ]
+      }
+    }
+  ]
 }
 ```
 

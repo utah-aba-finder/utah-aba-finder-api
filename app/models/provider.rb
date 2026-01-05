@@ -271,6 +271,9 @@ class Provider < ApplicationRecord
                 end
 
       # Extract values handling both symbol and string keys
+      phone_value = location_info[:phone] || location_info["phone"]
+      Rails.logger.info "🔍 Provider#update_locations - Location #{location_id || 'new'}: phone value received: #{phone_value.inspect}"
+      
       location.update!(
         name: location_info[:name] || location_info["name"],
         address_1: location_info[:address_1] || location_info["address_1"],
@@ -278,11 +281,13 @@ class Provider < ApplicationRecord
         city: location_info[:city] || location_info["city"],
         state: location_info[:state] || location_info["state"],
         zip: location_info[:zip] || location_info["zip"],
-        phone: location_info[:phone] || location_info["phone"],
+        phone: phone_value,
         email: location_info[:email] || location_info["email"],
         in_home_waitlist: location_info[:in_home_waitlist] || location_info["in_home_waitlist"],
         in_clinic_waitlist: location_info[:in_clinic_waitlist] || location_info["in_clinic_waitlist"]
       )
+      
+      Rails.logger.info "✅ Provider#update_locations - Location #{location.id}: phone saved as: #{location.phone.inspect}"
 
       # location services update (handle both symbol and string keys)
       # Accept either 'services' or 'practice_types' field
