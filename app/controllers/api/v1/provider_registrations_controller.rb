@@ -84,13 +84,42 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
     registration = ProviderRegistration.find(params[:id])
     notes = params[:admin_notes]
     
+    # Check if registration can be approved before attempting
+    unless registration.can_be_approved?
+      render json: { 
+        error: 'Registration could not be approved',
+        details: {
+          status: registration.status,
+          is_processed: registration.is_processed,
+          message: registration.status == 'approved' ? 'Registration has already been approved' : 
+                   registration.is_processed ? 'Registration has already been processed' : 
+                   'Registration is not in a pending state'
+        }
+      }, status: :unprocessable_entity
+      return
+    end
+    
     if registration.approve!(current_user, notes)
       render json: { message: 'Registration approved successfully' }
     else
-      render json: { error: 'Registration could not be approved' }, status: :unprocessable_entity
+      # Include error messages from the model
+      error_messages = registration.errors.full_messages
+      Rails.logger.error "Approval failed for registration #{registration.id}: #{error_messages.join(', ')}"
+      
+      render json: { 
+        error: 'Registration could not be approved',
+        details: error_messages.any? ? error_messages : ['Unknown error occurred during approval']
+      }, status: :unprocessable_entity
     end
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Registration not found' }, status: :not_found
+  rescue => e
+    Rails.logger.error "Unexpected error in approve: #{e.class} - #{e.message}"
+    Rails.logger.error e.backtrace.first(10).join("\n")
+    render json: { 
+      error: 'An unexpected error occurred',
+      details: [e.message]
+    }, status: :internal_server_error
   end
 
   def reject
