@@ -1,6 +1,6 @@
-#!/usr/bin/env ruby
 # Script to safely delete duplicate providers
 # Usage: rails runner scripts/delete_duplicate_providers.rb [provider_id_to_keep] [duplicate_id1] [duplicate_id2] ...
+# Or: heroku run rails runner "load 'scripts/delete_duplicate_providers.rb'; ..." --app utah-aba-finder-api
 
 if ARGV.length < 2
   puts "Usage: rails runner scripts/delete_duplicate_providers.rb [keep_id] [duplicate_id1] [duplicate_id2] ..."
