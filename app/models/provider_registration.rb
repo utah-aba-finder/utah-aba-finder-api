@@ -83,6 +83,19 @@ class ProviderRegistration < ApplicationRecord
         Rails.logger.info "User account already exists: #{existing_user.id}, linking to provider"
         existing_user.update(provider_id: provider.id) unless existing_user.provider_id == provider.id
         user = existing_user
+        
+        # If user already exists, we need to generate a new password for the email
+        # (since we don't have the original password)
+        new_password = SecureRandom.alphanumeric(12)
+        user.password = new_password
+        user.password_confirmation = new_password
+        if user.save
+          user.instance_variable_set(:@plain_password, new_password)
+          Rails.logger.info "Generated new password for existing user (password reset)"
+        else
+          Rails.logger.warn "Failed to update password for existing user: #{user.errors.full_messages}"
+          # Continue anyway - we'll try to send email without password
+        end
       else
         user = create_provider_user_account(provider)
         if user
