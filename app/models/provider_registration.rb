@@ -86,14 +86,24 @@ class ProviderRegistration < ApplicationRecord
         
         # If user already exists, we need to generate a new password for the email
         # (since we don't have the original password)
+        # Use update_columns to bypass validations if password update fails
         new_password = SecureRandom.alphanumeric(12)
-        user.password = new_password
-        user.password_confirmation = new_password
-        if user.save
-          user.instance_variable_set(:@plain_password, new_password)
-          Rails.logger.info "Generated new password for existing user (password reset)"
-        else
-          Rails.logger.warn "Failed to update password for existing user: #{user.errors.full_messages}"
+        begin
+          user.password = new_password
+          user.password_confirmation = new_password
+          if user.save
+            user.instance_variable_set(:@plain_password, new_password)
+            Rails.logger.info "Generated new password for existing user (password reset)"
+          else
+            Rails.logger.warn "Failed to update password via save (validation errors): #{user.errors.full_messages.join(', ')}"
+            # Try to update password directly (bypasses validations)
+            # Note: This will hash the password automatically
+            user.update_column(:encrypted_password, User.new(password: new_password).encrypted_password)
+            user.instance_variable_set(:@plain_password, new_password)
+            Rails.logger.info "Updated password via update_column (bypassed validations)"
+          end
+        rescue => password_error
+          Rails.logger.error "Failed to update password: #{password_error.message}"
           # Continue anyway - we'll try to send email without password
         end
       else
