@@ -56,12 +56,11 @@ class ProviderRegistration < ApplicationRecord
       # Create the provider (simplified)
       Rails.logger.info "Creating provider..."
       provider = create_provider_from_registration
-      if provider
-        Rails.logger.info "Provider created successfully: #{provider.id}"
-      else
+      unless provider
         Rails.logger.error "Provider creation failed"
-        raise ActiveRecord::Rollback, "Provider creation failed"
+        raise StandardError, "Provider creation failed"
       end
+      Rails.logger.info "Provider created successfully: #{provider.id}"
       
       # Create secure user account for the provider (check if user already exists)
       Rails.logger.info "Creating user account..."
@@ -95,12 +94,11 @@ class ProviderRegistration < ApplicationRecord
         end
       else
         user = create_provider_user_account(provider)
-        if user
-          Rails.logger.info "User account created successfully: #{user.id}"
-        else
+        unless user
           Rails.logger.error "User account creation failed"
-          raise ActiveRecord::Rollback, "User account creation failed"
+          raise StandardError, "User account creation failed"
         end
+        Rails.logger.info "User account created successfully: #{user.id}"
       end
       
       # Update registration status - skip validations during status changes
