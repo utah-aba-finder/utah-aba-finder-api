@@ -451,14 +451,41 @@ class ProviderRegistration < ApplicationRecord
     counties_data = data['counties'] || data['counties_served'] || data['geographic_coverage'] || data['service_areas']
     
     if counties_data.present?
+      # Normalize to array - handle both string and array inputs
+      counties_array = if counties_data.is_a?(String)
+        # If it's a string like "Utah", try to find counties in that state
+        # Or treat it as a single county name
+        [counties_data]
+      elsif counties_data.is_a?(Array)
+        counties_data
+      else
+        # If it's something else (Hash, etc.), try to convert
+        [counties_data]
+      end
+      
       # Process specific counties if provided
-      counties_data.each do |county_info|
+      counties_array.each do |county_info|
         if county_info.is_a?(Hash) && county_info['name'].present?
           county = County.find_by(name: county_info['name'])
           provider.counties << county if county
         elsif county_info.is_a?(String)
+          # Try to find county by name
           county = County.find_by(name: county_info)
-          provider.counties << county if county
+          if county
+            provider.counties << county unless provider.counties.include?(county)
+          else
+            # If county not found by name, it might be a state name
+            # Try to find all counties in that state
+            state = State.find_by(name: county_info)
+            if state
+              state.counties.each do |state_county|
+                provider.counties << state_county unless provider.counties.include?(state_county)
+              end
+              Rails.logger.info "Added all counties from state '#{county_info}' to provider #{provider.id}"
+            else
+              Rails.logger.warn "Could not find county or state: #{county_info}"
+            end
+          end
         end
       end
     end
