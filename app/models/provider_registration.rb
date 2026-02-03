@@ -94,14 +94,20 @@ class ProviderRegistration < ApplicationRecord
       end
       
       # Send approval email with login credentials (non-blocking - don't fail approval if email fails)
-      Rails.logger.info "Sending approval email..."
+      Rails.logger.info "Sending approval email to #{email}..."
+      Rails.logger.info "User ID: #{user.id}, User Email: #{user.email}"
+      Rails.logger.info "Password set: #{user.instance_variable_get(:@plain_password).present?}"
+      
       begin
-        ProviderRegistrationMailer.approved_with_credentials(self, user).deliver_now
-        Rails.logger.info "Approval email sent successfully"
+        mail = ProviderRegistrationMailer.approved_with_credentials(self, user)
+        Rails.logger.info "Email prepared - To: #{mail.to}, Subject: #{mail.subject}"
+        mail.deliver_now
+        Rails.logger.info "✅ Approval email sent successfully to #{email}"
       rescue => email_error
         # Log email error but don't fail the approval - provider is already created
-        Rails.logger.error "⚠️ Email delivery failed (but approval succeeded): #{email_error.message}"
-        Rails.logger.error "Email error backtrace: #{email_error.backtrace.first(3).join(', ')}"
+        Rails.logger.error "⚠️ Email delivery failed (but approval succeeded): #{email_error.class} - #{email_error.message}"
+        Rails.logger.error "Email error backtrace: #{email_error.backtrace.first(5).join("\n")}"
+        Rails.logger.error "Registration ID: #{id}, Provider ID: #{provider&.id}, User ID: #{user.id}"
         # Continue - approval is successful even if email fails
       end
       
