@@ -47,21 +47,21 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
     registration.idempotency_key = idempotency_key if idempotency_key.present?
     
     if registration.save
-      # Send notification email to admin (non-blocking - don't fail if email fails)
+      # Send notification email to admin (use deliver_now since no background job queue is configured)
       begin
-        AdminNotificationMailer.new_provider_registration(registration).deliver_later
-        Rails.logger.info "Admin notification email queued for registration #{registration.id}"
+        AdminNotificationMailer.new_provider_registration(registration).deliver_now
+        Rails.logger.info "Admin notification email sent for registration #{registration.id}"
       rescue => email_error
-        Rails.logger.error "⚠️ Failed to queue admin notification email: #{email_error.message}"
+        Rails.logger.error "⚠️ Failed to send admin notification email: #{email_error.message}"
         # Continue - registration is saved even if email fails
       end
       
-      # Send confirmation email to provider (non-blocking)
+      # Send confirmation email to provider (use deliver_now since no background job queue is configured)
       begin
-        ProviderRegistrationMailer.received(registration).deliver_later
-        Rails.logger.info "Provider confirmation email queued for registration #{registration.id}"
+        ProviderRegistrationMailer.received(registration).deliver_now
+        Rails.logger.info "Provider confirmation email sent for registration #{registration.id}"
       rescue => email_error
-        Rails.logger.error "⚠️ Failed to queue provider confirmation email: #{email_error.message}"
+        Rails.logger.error "⚠️ Failed to send provider confirmation email: #{email_error.message}"
         # Continue - registration is saved even if email fails
       end
       
