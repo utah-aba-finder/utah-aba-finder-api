@@ -1,6 +1,15 @@
 require 'securerandom'
 
 class ProviderRegistration < ApplicationRecord
+  # Mapping of service_type slugs to correct practice type names (with proper capitalization)
+  PRACTICE_TYPE_MAPPING = {
+    'aba_therapy' => 'ABA Therapy',
+    'speech_therapy' => 'Speech Therapy',
+    'occupational_therapy' => 'Occupational Therapy',
+    'autism_evaluation' => 'Autism Evaluation',
+    'educational_programs' => 'Educational Programs'
+  }.freeze
+
   belongs_to :reviewed_by, class_name: 'User', optional: true
 
 
@@ -406,16 +415,7 @@ class ProviderRegistration < ApplicationRecord
 
   def setup_practice_types(provider)
     return if service_types.blank?
-    
-    # Mapping of service_type slugs to correct practice type names (with proper capitalization)
-    PRACTICE_TYPE_MAPPING = {
-      'aba_therapy' => 'ABA Therapy',
-      'speech_therapy' => 'Speech Therapy',
-      'occupational_therapy' => 'Occupational Therapy',
-      'autism_evaluation' => 'Autism Evaluation',
-      'educational_programs' => 'Educational Programs'
-    }.freeze
-    
+
     service_types.each do |service_type|
       # Get the correct name from mapping, or use titleize as fallback
       correct_name = PRACTICE_TYPE_MAPPING[service_type] || service_type.titleize
