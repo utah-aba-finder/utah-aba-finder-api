@@ -4,6 +4,9 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
 
+  # Notify admin when password is changed (via any method: change_password, reset_password, etc.)
+  after_update :notify_admin_if_password_changed, if: :saved_change_to_encrypted_password?
+
   # Legacy relationship (for backward compatibility - PRIMARY OWNER)
   belongs_to :provider, optional: true
   
@@ -62,5 +65,23 @@ class User < ApplicationRecord
   # Check if user has assigned access to a provider
   def assigned_to?(provider)
     provider_assignments.exists?(provider: provider)
+  end
+  
+  private
+  
+  def notify_admin_if_password_changed
+    # Skip notification if this is a new user (password being set for first time)
+    # saved_change_to_encrypted_password? returns [old_value, new_value] or nil
+    change = saved_change_to_encrypted_password
+    return if change.nil? || change[0].blank? # Skip if no old password (new user)
+    
+    # Send admin notification about password change
+    begin
+      AdminNotificationMailer.password_changed(self).deliver_now
+      Rails.logger.info "Admin notification sent for password change: User #{id} (#{email})"
+    rescue => email_error
+      Rails.logger.error "⚠️ Failed to send admin notification for password change: #{email_error.message}"
+      # Continue - password change succeeded even if email fails
+    end
   end
 end

@@ -35,7 +35,9 @@ class Api::V1::PasswordResetsController < ApplicationController
     
     if user && user.reset_password_period_valid?
       # Use Devise's reset_password method which handles token clearing automatically
+      # Note: Admin notification will be sent via User model's after_update callback
       if user.reset_password(reset_password_params[:password], reset_password_params[:password_confirmation])
+        Rails.logger.info "Password reset successful for user #{user.id} (#{user.email})"
         render json: { message: 'Password updated successfully' }, status: :ok
       else
         render json: { errors: user.errors.full_messages }, status: :unprocessable_entity

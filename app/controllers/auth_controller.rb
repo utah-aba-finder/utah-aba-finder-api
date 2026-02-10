@@ -156,7 +156,9 @@ class AuthController < ActionController::API
     end
     
     # Update password
+    # Note: Admin notification will be sent via User model's after_update callback
     if user.update(password: params[:new_password], password_confirmation: params[:new_password_confirmation])
+      Rails.logger.info "Password changed successfully for user #{user.id} (#{user.email})"
       render json: { message: 'Password changed successfully' }, status: :ok
     else
       render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
