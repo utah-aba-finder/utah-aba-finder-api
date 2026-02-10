@@ -586,11 +586,35 @@ class ProviderRegistration < ApplicationRecord
 
   # Helper method to get submitted_data, handling nested category structure
   def get_submitted_data
-    # Check if data is nested under category key (e.g., submitted_data['educational_programs'])
-    if submitted_data.is_a?(Hash) && submitted_data[category].is_a?(Hash)
+    # Handle different key formats for category nesting (e.g., 'aba-therapy' vs 'aba_therapy')
+    return {} unless submitted_data.is_a?(Hash)
+
+    # Keys we should check for nested category data
+    category_keys = []
+    category_keys << category if category.present?
+    if category.present? && category.include?('-')
+      category_keys << category.tr('-', '_')
+    elsif category.present? && category.include?('_')
+      category_keys << category.tr('_', '-')
+    end
+
+    # Find the first matching nested hash for the category
+    nested_data = nil
+    used_key = nil
+    category_keys.compact.each do |key|
+      value = submitted_data[key]
+      if value.is_a?(Hash)
+        nested_data = value
+        used_key = key
+        break
+      end
+    end
+
+    if nested_data
       # Merge top-level and category-specific data, with category data taking precedence
-      (submitted_data.except(category) || {}).merge(submitted_data[category] || {})
+      (submitted_data.except(*category_keys) || {}).merge(nested_data || {})
     else
+      # No nested category key found; fall back to raw submitted_data
       submitted_data || {}
     end
   end
