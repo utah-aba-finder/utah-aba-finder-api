@@ -407,25 +407,27 @@ class ProviderRegistration < ApplicationRecord
   def setup_practice_types(provider)
     return if service_types.blank?
     
+    # Mapping of service_type slugs to correct practice type names (with proper capitalization)
+    PRACTICE_TYPE_MAPPING = {
+      'aba_therapy' => 'ABA Therapy',
+      'speech_therapy' => 'Speech Therapy',
+      'occupational_therapy' => 'Occupational Therapy',
+      'autism_evaluation' => 'Autism Evaluation',
+      'educational_programs' => 'Educational Programs'
+    }.freeze
+    
     service_types.each do |service_type|
-      # Map service type to practice type
-      practice_type = case service_type
-      when 'aba_therapy'
-        PracticeType.find_by(name: 'ABA Therapy')
-      when 'speech_therapy'
-        PracticeType.find_by(name: 'Speech Therapy')
-      when 'occupational_therapy'
-        PracticeType.find_by(name: 'Occupational Therapy')
-      when 'autism_evaluation'
-        PracticeType.find_by(name: 'Autism Evaluation')
-      when 'educational_programs'
-        # Educational Programs is a category, not a practice type
-        # Try to find or create a practice type for it
-        PracticeType.find_or_create_by(name: 'Educational Programs')
-      else
-        PracticeType.find_by(name: service_type.titleize) || 
-        PracticeType.find_or_create_by(name: service_type.titleize)
-      end
+      # Get the correct name from mapping, or use titleize as fallback
+      correct_name = PRACTICE_TYPE_MAPPING[service_type] || service_type.titleize
+      
+      # First try case-insensitive lookup to find existing practice type
+      practice_type = PracticeType.where('LOWER(name) = ?', correct_name.downcase).first
+      
+      # If not found, try exact match
+      practice_type ||= PracticeType.find_by(name: correct_name)
+      
+      # If still not found, create with correct capitalization
+      practice_type ||= PracticeType.create!(name: correct_name)
       
       if practice_type
         provider.practice_types << practice_type unless provider.practice_types.include?(practice_type)
