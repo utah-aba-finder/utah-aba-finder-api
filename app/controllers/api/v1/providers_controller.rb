@@ -1230,25 +1230,26 @@ class Api::V1::ProvidersController < ApplicationController
     # Handle both array and hash structures for data
     if params[:data].present?
       if params[:data].is_a?(Array) && params[:data].first&.dig(:attributes)
-        # Handle array structure (like in tests)
-        params[:data].first[:attributes].permit(
-          :name,
-          :website,
-          :email,
-          :cost,
-          :min_age,
-          :max_age,
-          :waitlist,
-          :telehealth_services,
-          :spanish_speakers,
-          :at_home_services,
-          :in_clinic_services,
-          :status,
-          :provider_type,
-          :in_home_only,
-          :logo,  # Changed from logo: [] to :logo to accept single file
-          service_delivery: {}
-        )
+        # Handle array structure (like in tests and some frontends)
+        attrs = params[:data].first[:attributes]
+        permitted_keys = [:name, :website, :email, :cost, :min_age, :max_age, :waitlist,
+                         :telehealth_services, :spanish_speakers, :at_home_services,
+                         :in_clinic_services, :status, :provider_type, :in_home_only, :logo, :service_delivery]
+        begin
+          attrs.permit(*permitted_keys, service_delivery: {})
+        rescue ActiveSupport::MessageVerifier::InvalidSignature
+          # Frontend may send signed/encrypted values; extract only safe keys without re-decoding
+          safe_hash = {}
+          permitted_keys.each do |key|
+            begin
+              value = attrs[key]
+              safe_hash[key] = value unless value.nil?
+            rescue ActiveSupport::MessageVerifier::InvalidSignature
+              next
+            end
+          end
+          ActionController::Parameters.new(safe_hash).permit(*permitted_keys, service_delivery: {})
+        end
       elsif params[:data]&.dig(:attributes)
         # Handle hash structure (like in actual API calls)
         # Filter out problematic parameters that might be signed/encrypted or shouldn't be updated

@@ -1,5 +1,7 @@
 # PATCH /api/v1/provider_self - Provider Self-Update Endpoint
 
+**Use this endpoint when a provider edits their own profile** (e.g. after claiming an account). Do not use `PATCH /api/v1/providers/:id` for provider self-service edits; that path can return 500 in some environments when the request contains signed parameters. This endpoint uses the authenticated user's linked provider and avoids those issues.
+
 ## Route
 ```
 PATCH /api/v1/provider_self
