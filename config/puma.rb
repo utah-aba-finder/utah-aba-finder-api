@@ -11,10 +11,12 @@ max_threads_count = ENV.fetch("RAILS_MAX_THREADS") { 5 }
 min_threads_count = ENV.fetch("RAILS_MIN_THREADS") { max_threads_count }
 threads min_threads_count, max_threads_count
 
-# Specifies that the worker count should equal the number of processors in production.
+# Clustered mode (multiple workers) multiplies RAM: each worker boots a full Rails app.
+# On Heroku, Concurrent.physical_processor_count often reflects many host cores, which
+# used to default WEB_CONCURRENCY to 4–8+ and drive small dynos into R14 crashes.
+# Default to single-process mode (threads only); set WEB_CONCURRENCY explicitly for larger dynos.
 if ENV["RAILS_ENV"] == "production"
-  require "concurrent-ruby"
-  worker_count = Integer(ENV.fetch("WEB_CONCURRENCY") { Concurrent.physical_processor_count })
+  worker_count = Integer(ENV.fetch("WEB_CONCURRENCY", "1"))
   workers worker_count if worker_count > 1
 end
 

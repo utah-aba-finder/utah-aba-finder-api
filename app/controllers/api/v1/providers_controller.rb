@@ -8,9 +8,6 @@ class Api::V1::ProvidersController < ApplicationController
   skip_before_action :authenticate_client, only: [:index, :accessible_providers, :set_active_provider, :show, :update, :put, :remove_logo, :claim_account, :provider_locations, :add_location, :update_location, :remove_location, :my_providers, :user_providers, :assign_provider_to_user, :remove_provider_from_user, :view_stats, :track_view]
 
   def index
-    puts "🔍 Controller loaded: #{__FILE__}"
-    puts "🔍 Actions: #{self.class.action_methods.to_a.sort.join(', ')}"
-    
     # Start with approved providers
     providers = Provider.where(status: :approved)
     
