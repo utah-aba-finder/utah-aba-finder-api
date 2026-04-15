@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_10_181750) do
+ActiveRecord::Schema[7.1].define(version: 2026_04_15_180001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_trgm"
   enable_extension "plpgsql"
@@ -128,8 +128,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_10_181750) do
     t.datetime "updated_at", null: false
     t.text "in_home_waitlist", default: "Contact for availability"
     t.text "in_clinic_waitlist", default: "Contact for availability"
+    t.decimal "latitude", precision: 10, scale: 7
+    t.decimal "longitude", precision: 10, scale: 7
     t.index ["in_clinic_waitlist"], name: "index_locations_on_in_clinic_waitlist"
     t.index ["in_home_waitlist"], name: "index_locations_on_in_home_waitlist"
+    t.index ["latitude", "longitude"], name: "index_locations_on_latitude_and_longitude", where: "((latitude IS NOT NULL) AND (longitude IS NOT NULL))"
     t.index ["provider_id"], name: "index_locations_on_provider_id"
   end
 
@@ -250,6 +253,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_10_181750) do
     t.datetime "updated_at", null: false
     t.string "idempotency_key"
     t.string "service_types", default: [], array: true
+    t.string "applicant_email"
     t.index ["category"], name: "index_provider_registrations_on_category"
     t.index ["email"], name: "index_provider_registrations_on_email"
     t.index ["idempotency_key"], name: "index_provider_registrations_on_idempotency_key", unique: true

@@ -5,9 +5,14 @@ class PracticeType < ApplicationRecord
   has_many :locations_practice_types, dependent: :destroy
   has_many :locations, through: :locations_practice_types
 
-  # Display names we always normalize (case / minor spelling variants → single list label)
-  CANONICAL_BY_DOWNCASE = {
-    "aba therapy" => "ABA Therapy"
+  # Display names we always normalize (case / hyphen / underscore variants → one label)
+  CANONICAL_PRACTICE_DISPLAY = {
+    "aba therapy" => "ABA Therapy",
+    "autism evaluation" => "Autism Evaluation",
+    "autism evaluations" => "Autism Evaluation",
+    "speech therapy" => "Speech Therapy",
+    "occupational therapy" => "Occupational Therapy",
+    "educational programs" => "Educational Programs"
   }.freeze
 
   validates :name, presence: true, uniqueness: { case_sensitive: false }
@@ -18,7 +23,8 @@ class PracticeType < ApplicationRecord
     return name_like if name_like.blank?
 
     s = name_like.to_s.strip
-    CANONICAL_BY_DOWNCASE[s.downcase] || s
+    key = s.downcase.tr("_-", " ").squeeze(" ").strip
+    CANONICAL_PRACTICE_DISPLAY[key] || s
   end
 
   # Case-insensitive match; use for API/admin payloads that may use "Aba therapy", etc.

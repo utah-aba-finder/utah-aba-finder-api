@@ -28,8 +28,9 @@ puts "   Email: #{provider.email}"
 
 # Find the registration
 registration = ProviderRegistration.where(
-  'provider_name ILIKE ? OR email = ?',
+  'provider_name ILIKE ? OR email = ? OR applicant_email = ?',
   "%#{provider.name}%",
+  provider.email,
   provider.email
 ).order(created_at: :desc).first
 
@@ -47,11 +48,11 @@ unless registration.status == 'approved' && registration.is_processed
   exit 1
 end
 
-# Find the user
-user = User.find_by(email: registration.email)
+# Find the user (login email is correspondence / applicant when set)
+user = User.find_by(email: registration.correspondence_email)
 
 unless user
-  puts "❌ User not found for email: #{registration.email}"
+  puts "❌ User not found for email: #{registration.correspondence_email}"
   exit 1
 end
 
@@ -72,7 +73,7 @@ begin
   ProviderRegistrationMailer.approved_with_credentials(registration, user).deliver_now
   puts "✅ Approval email sent successfully!"
   puts "   New password: #{new_password}"
-  puts "   Email sent to: #{registration.email}"
+  puts "   Email sent to: #{registration.correspondence_email}"
 rescue => e
   puts "❌ Failed to send email: #{e.message}"
   puts "   Backtrace: #{e.backtrace.first(5).join("\n   ")}"

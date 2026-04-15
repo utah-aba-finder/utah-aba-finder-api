@@ -2,7 +2,12 @@ New Provider Registration
 
 <%= @registration.provider_name %>
 
-Email: <%= @registration.email %>
+Practice / listing email: <%= @registration.email %>
+<% if @registration.applicant_email.present? %>
+Applicant (notifications & login): <%= @registration.applicant_email %>
+<% else %>
+(No separate applicant email; notifications use the practice email above.)
+<% end %>
 Category: <%= @registration.category %>
 Status: <%= @registration.status %>
 Submitted: <%= @registration.created_at.strftime("%B %d, %Y at %I:%M %p") %>
