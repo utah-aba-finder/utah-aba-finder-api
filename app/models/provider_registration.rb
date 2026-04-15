@@ -1,19 +1,25 @@
 require 'securerandom'
 
 class ProviderRegistration < ApplicationRecord
-  # Mapping of service_type slugs to correct practice type names (with proper capitalization)
-  PRACTICE_TYPE_MAPPING = {
+  # Service slugs from ProviderCategory / parameterize may use underscores or hyphens.
+  SERVICE_TYPE_TO_PRACTICE_NAME = {
     'aba_therapy' => 'ABA Therapy',
     'speech_therapy' => 'Speech Therapy',
     'occupational_therapy' => 'Occupational Therapy',
     'autism_evaluation' => 'Autism Evaluation',
+    'autism_evaluations' => 'Autism Evaluation',
     'educational_programs' => 'Educational Programs'
   }.freeze
+
+  PRACTICE_TYPE_MAPPING = SERVICE_TYPE_TO_PRACTICE_NAME.merge(
+    SERVICE_TYPE_TO_PRACTICE_NAME.transform_keys { |k| k.tr('_', '-') }
+  ).freeze
 
   belongs_to :reviewed_by, class_name: 'User', optional: true
 
 
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
+  validates :applicant_email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
   validates :provider_name, presence: true
   validates :category, presence: true
   validates :status, inclusion: { in: %w[pending approved rejected] }
@@ -51,6 +57,12 @@ class ProviderRegistration < ApplicationRecord
     status == 'pending' && !is_processed
   end
 
+  # Email used for registration status mail and for the provider login account when approved.
+  # `email` remains the practice / public listing contact on the Provider record.
+  def correspondence_email
+    applicant_email.presence || email
+  end
+
   def approve!(admin_user, notes = nil)
     return false unless can_be_approved?
     
@@ -73,7 +85,7 @@ class ProviderRegistration < ApplicationRecord
       
       # Create secure user account for the provider (check if user already exists)
       Rails.logger.info "Creating user account..."
-      existing_user = User.find_by(email: email)
+      existing_user = User.find_by(email: correspondence_email)
       if existing_user
         Rails.logger.info "User account already exists: #{existing_user.id}, linking to provider"
         existing_user.update(provider_id: provider.id) unless existing_user.provider_id == provider.id
@@ -126,7 +138,7 @@ class ProviderRegistration < ApplicationRecord
       Rails.logger.info "Registration status updated to approved"
       
       # Send approval email with login credentials (non-blocking - don't fail approval if email fails)
-      Rails.logger.info "Sending approval email to #{email}..."
+      Rails.logger.info "Sending approval email to #{correspondence_email}..."
       Rails.logger.info "User ID: #{user.id}, User Email: #{user.email}"
       Rails.logger.info "Password set: #{user.instance_variable_get(:@plain_password).present?}"
       
@@ -134,7 +146,7 @@ class ProviderRegistration < ApplicationRecord
         mail = ProviderRegistrationMailer.approved_with_credentials(self, user)
         Rails.logger.info "Email prepared - To: #{mail.to}, Subject: #{mail.subject}"
         mail.deliver_now
-        Rails.logger.info "✅ Approval email sent successfully to #{email}"
+        Rails.logger.info "✅ Approval email sent successfully to #{correspondence_email}"
       rescue => email_error
         # Log email error but don't fail the approval - provider is already created
         Rails.logger.error "⚠️ Email delivery failed (but approval succeeded): #{email_error.class} - #{email_error.message}"
@@ -225,7 +237,7 @@ class ProviderRegistration < ApplicationRecord
     
     # Create user account linked to the provider
     user = User.new(
-      email: email,
+      email: correspondence_email,
       password: password,
       password_confirmation: password,
       provider_id: provider.id,

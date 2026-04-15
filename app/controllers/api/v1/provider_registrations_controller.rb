@@ -49,18 +49,18 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
     if registration.save
       # Send notification email to admin (use deliver_now since no background job queue is configured)
       begin
-        admin_email = ENV['ADMIN_NOTIFICATION_EMAIL'] || 'jordanwilliamson@autismserviceslocator.com'
-        Rails.logger.info "📧 Sending admin notification email to: #{admin_email}"
-        Rails.logger.info "📧 Registration details: ID=#{registration.id}, Name=#{registration.provider_name}, Email=#{registration.email}"
-        
+        admin_recipients = AdminNotificationMailer.admin_notification_recipients
+        Rails.logger.info "Sending admin notification for new registration #{registration.id} to: #{admin_recipients.join(', ')}"
+        Rails.logger.info "Registration applicant: #{registration.provider_name} <#{registration.correspondence_email}> (listing: #{registration.email})"
+
         mail = AdminNotificationMailer.new_provider_registration(registration)
-        Rails.logger.info "📧 Email prepared - To: #{mail.to.inspect}, CC: #{mail.cc.inspect}, Subject: #{mail.subject}"
-        
+        Rails.logger.info "Admin mail prepared — To: #{mail.to.inspect}, CC: #{mail.cc.inspect}, Subject: #{mail.subject}"
+
         mail.deliver_now
-        Rails.logger.info "✅ Admin notification email sent successfully for registration #{registration.id}"
+        Rails.logger.info "Admin notification delivered for registration #{registration.id} (Message-ID: #{mail.message_id})"
       rescue => email_error
-        Rails.logger.error "❌ Failed to send admin notification email: #{email_error.class} - #{email_error.message}"
-        Rails.logger.error "Email error backtrace: #{email_error.backtrace.first(5).join("\n")}"
+        Rails.logger.error "Failed to send admin notification email: #{email_error.class} - #{email_error.message}"
+        Rails.logger.error "Admin notification backtrace: #{email_error.backtrace.first(8).join("\n")}"
         # Continue - registration is saved even if email fails
       end
       
@@ -163,6 +163,7 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
   def reg_params
     params.require(:provider_registration).permit(
       :email,
+      :applicant_email,
       :provider_name,
       :category,               # optional; callback fills if blank
       service_types: [],       # <-- THIS is the key fix

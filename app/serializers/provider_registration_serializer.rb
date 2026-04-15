@@ -13,6 +13,7 @@ class ProviderRegistrationSerializer
       type: "provider_registration",
       attributes: {
         email: registration.email,
+        applicant_email: registration.applicant_email,
         provider_name: registration.provider_name,
         category: registration.category,
         status: registration.status,
