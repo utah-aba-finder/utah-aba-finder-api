@@ -426,7 +426,7 @@ class Provider < ApplicationRecord
     practice_type_params.each do |type_info|
       # Handle both name-based and id-based input for backward compatibility
       if type_info[:name].present?
-        practice_type = PracticeType.find_by(name: type_info[:name])
+        practice_type = PracticeType.find_for_name(type_info[:name])
         if practice_type
           ProviderPracticeType.create!(
             provider: self,
@@ -460,7 +460,7 @@ class Provider < ApplicationRecord
     practice_type_params.each do |type_info|
       # Handle both name-based and id-based input for backward compatibility
       if type_info[:name].present?
-        practice_type = PracticeType.find_by(name: type_info[:name])
+        practice_type = PracticeType.find_for_name(type_info[:name])
         if practice_type
           self.practice_types << practice_type
         else
@@ -508,7 +508,7 @@ class Provider < ApplicationRecord
       # Clear existing and add new ones by name
       location.practice_types.clear
       practice_type_names.each do |name|
-        practice_type = PracticeType.find_by(name: name)
+        practice_type = PracticeType.find_for_name(name)
         if practice_type
           location.practice_types << practice_type unless location.practice_types.include?(practice_type)
           Rails.logger.info "✅ update_location_services - Added practice_type: #{name} (ID: #{practice_type.id})"

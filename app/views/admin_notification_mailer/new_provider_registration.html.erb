@@ -14,14 +14,12 @@
   <p><strong>Submitted:</strong> <%= @registration.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>
   
   <h3>Submitted Information:</h3>
-  <% @registration.submitted_data.each do |key, value| %>
-    <p><strong><%= key.humanize %>:</strong> <%= value %></p>
+  <% (@registration.submitted_data || {}).each do |key, value| %>
+    <p><strong><%= key.to_s.humanize %>:</strong> <%= value %></p>
   <% end %>
   
   <p>
-    <a href="<%= request.base_url %>/admin/provider_registrations/<%= @registration.id %>">
-      Review this registration
-    </a>
+    <a href="<%= @registration_review_url %>">Review this registration</a>
   </p>
 
 </body>
