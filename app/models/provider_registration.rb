@@ -419,14 +419,9 @@ class ProviderRegistration < ApplicationRecord
     service_types.each do |service_type|
       # Get the correct name from mapping, or use titleize as fallback
       correct_name = PRACTICE_TYPE_MAPPING[service_type] || service_type.titleize
-      
-      # First try case-insensitive lookup to find existing practice type
-      practice_type = PracticeType.where('LOWER(name) = ?', correct_name.downcase).first
-      
-      # If not found, try exact match
-      practice_type ||= PracticeType.find_by(name: correct_name)
-      
-      # If still not found, create with correct capitalization
+      correct_name = PracticeType.canonical_display_name(correct_name)
+
+      practice_type = PracticeType.find_for_name(correct_name)
       practice_type ||= PracticeType.create!(name: correct_name)
       
       if practice_type

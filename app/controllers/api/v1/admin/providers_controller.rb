@@ -604,7 +604,7 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
       
       # If ID lookup failed, try by name
       if practice_type.nil? && service_info[:name].present?
-        practice_type = PracticeType.find_by(name: service_info[:name])
+        practice_type = PracticeType.find_for_name(service_info[:name])
         Rails.logger.info "🔍 DEBUG: Found practice_type by name: #{practice_type.inspect}"
       end
       
