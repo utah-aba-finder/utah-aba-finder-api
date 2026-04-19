@@ -161,15 +161,13 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
 
   # Allow array for service_types and arbitrary nested JSON for submitted_data
   def reg_params
+    permitted = [:email, :provider_name, :category]
+    permitted << :applicant_email if ProviderRegistration.column_names.include?("applicant_email")
+
     params.require(:provider_registration).permit(
-      :email,
-      :applicant_email,
-      :provider_name,
-      :category,               # optional; callback fills if blank
-      service_types: [],       # <-- THIS is the key fix
-      submitted_data: {}       # <-- allow nested shape
-      # If you intend to accept base64 logo right now, also permit :logo_data and decode in model/service
-      # :logo_data
+      *permitted,
+      service_types: [],
+      submitted_data: {}
     )
   end
 

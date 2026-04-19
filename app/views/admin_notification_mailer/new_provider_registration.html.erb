@@ -9,8 +9,8 @@
   <h2><%= @registration.provider_name %></h2>
   
   <p><strong>Practice / listing email:</strong> <%= @registration.email %></p>
-  <% if @registration.applicant_email.present? %>
-    <p><strong>Applicant (notifications and login):</strong> <%= @registration.applicant_email %></p>
+  <% if @registration.try(:applicant_email).present? %>
+    <p><strong>Applicant (notifications and login):</strong> <%= @registration.try(:applicant_email) %></p>
   <% else %>
     <p><em>No separate applicant email; notifications use the practice email above.</em></p>
   <% end %>

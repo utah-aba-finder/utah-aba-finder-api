@@ -3,8 +3,8 @@ New Provider Registration
 <%= @registration.provider_name %>
 
 Practice / listing email: <%= @registration.email %>
-<% if @registration.applicant_email.present? %>
-Applicant (notifications & login): <%= @registration.applicant_email %>
+<% if @registration.try(:applicant_email).present? %>
+Applicant (notifications & login): <%= @registration.try(:applicant_email) %>
 <% else %>
 (No separate applicant email; notifications use the practice email above.)
 <% end %>

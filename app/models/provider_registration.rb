@@ -19,7 +19,10 @@ class ProviderRegistration < ApplicationRecord
 
 
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :applicant_email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
+  validates :applicant_email,
+            format: { with: URI::MailTo::EMAIL_REGEXP },
+            allow_blank: true,
+            if: -> { self.class.column_names.include?("applicant_email") }
   validates :provider_name, presence: true
   validates :category, presence: true
   validates :status, inclusion: { in: %w[pending approved rejected] }
@@ -60,7 +63,7 @@ class ProviderRegistration < ApplicationRecord
   # Email used for registration status mail and for the provider login account when approved.
   # `email` remains the practice / public listing contact on the Provider record.
   def correspondence_email
-    applicant_email.presence || email
+    try(:applicant_email).presence || email
   end
 
   def approve!(admin_user, notes = nil)
