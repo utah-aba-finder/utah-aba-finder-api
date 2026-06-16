@@ -3,8 +3,8 @@ New Provider Registration
 <%= @registration.provider_name %>
 
 Practice / listing email: <%= @registration.email %>
-<% if @registration.try(:applicant_email).present? %>
-Applicant (notifications & login): <%= @registration.try(:applicant_email) %>
+<% if @separate_applicant_inbox %>
+Applicant (notifications and login): <%= @applicant_inbox_email %>
 <% else %>
 (No separate applicant email; notifications use the practice email above.)
 <% end %>
@@ -13,7 +13,7 @@ Status: <%= @registration.status %>
 Submitted: <%= @registration.created_at.strftime("%B %d, %Y at %I:%M %p") %>
 
 Submitted Information:
-<% (@registration.submitted_data || {}).each do |key, value| %>
+<% @registration.submitted_data_for_admin_display.each do |key, value| %>
 <%= key.to_s.humanize %>: <%= value %>
 <% end %>
 

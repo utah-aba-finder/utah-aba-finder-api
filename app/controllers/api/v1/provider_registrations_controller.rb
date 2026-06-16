@@ -47,11 +47,13 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
     registration.idempotency_key = idempotency_key if idempotency_key.present?
     
     if registration.save
+      registration.reload
+
       # Send notification email to admin (use deliver_now since no background job queue is configured)
       begin
         admin_recipients = AdminNotificationMailer.admin_notification_recipients
         Rails.logger.info "Sending admin notification for new registration #{registration.id} to: #{admin_recipients.join(', ')}"
-        Rails.logger.info "Registration applicant: #{registration.provider_name} <#{registration.correspondence_email}> (listing: #{registration.email})"
+        Rails.logger.info "Registration applicant: #{registration.provider_name} <#{registration.correspondence_email}> (listing: #{registration.email}, applicant_email: #{registration.try(:applicant_email).inspect}, separate: #{registration.separate_applicant_inbox?})"
 
         mail = AdminNotificationMailer.new_provider_registration(registration)
         Rails.logger.info "Admin mail prepared — To: #{mail.to.inspect}, CC: #{mail.cc.inspect}, Subject: #{mail.subject}"
@@ -161,6 +163,7 @@ class Api::V1::ProviderRegistrationsController < ApplicationController
 
   # Allow array for service_types and arbitrary nested JSON for submitted_data
   def reg_params
+    ProviderRegistration.reset_column_information
     permitted = [:email, :provider_name, :category]
     permitted << :applicant_email if ProviderRegistration.column_names.include?("applicant_email")
 

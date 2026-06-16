@@ -15,6 +15,15 @@ class ProviderRegistration < ApplicationRecord
     SERVICE_TYPE_TO_PRACTICE_NAME.transform_keys { |k| k.tr('_', '-') }
   ).freeze
 
+  # Keys the signup form may use inside submitted_data for the applicant inbox.
+  SUBMITTED_DATA_APPLICANT_EMAIL_KEYS = %w[
+    applicant_email applicantEmail
+    your_email yourEmail
+    contact_email contactEmail
+    registrant_email registrantEmail
+    personal_email personalEmail
+  ].freeze
+
   belongs_to :reviewed_by, class_name: 'User', optional: true
 
 
@@ -33,6 +42,7 @@ class ProviderRegistration < ApplicationRecord
 
   # Normalize then derive category
   before_validation :normalize_service_types
+  before_validation :normalize_applicant_email
   before_validation :set_category_from_service_types, if: -> { category.blank? }
   before_validation :set_default_status
   
@@ -64,6 +74,22 @@ class ProviderRegistration < ApplicationRecord
   # `email` remains the practice / public listing contact on the Provider record.
   def correspondence_email
     try(:applicant_email).presence || email
+  end
+
+  # True when notifications/login go to a different inbox than the practice listing email.
+  def separate_applicant_inbox?
+    practice = email.to_s.strip
+    inbox = correspondence_email.to_s.strip
+    inbox.present? && practice.present? && !inbox.casecmp?(practice)
+  end
+
+  # Omit applicant-email duplicates from the admin notification body.
+  def submitted_data_for_admin_display
+    return {} unless submitted_data.is_a?(Hash)
+
+    submitted_data.reject do |key, _|
+      SUBMITTED_DATA_APPLICANT_EMAIL_KEYS.any? { |k| k.to_s.casecmp?(key.to_s) == 0 }
+    end
   end
 
   def approve!(admin_user, notes = nil)
@@ -670,6 +696,35 @@ class ProviderRegistration < ApplicationRecord
       unless ProviderCategory.exists?(slug: service_type)
         errors.add(:service_types, "contains invalid service type: #{service_type}")
       end
+    end
+  end
+
+  def normalize_applicant_email
+    return unless self.class.column_names.include?("applicant_email")
+
+    promote_applicant_email_from_submitted_data if try(:applicant_email).blank?
+
+    return if try(:applicant_email).blank?
+
+    normalized = applicant_email.to_s.strip
+    if normalized.casecmp?(email.to_s.strip) == 0
+      self.applicant_email = nil
+    else
+      self.applicant_email = normalized
+    end
+  end
+
+  def promote_applicant_email_from_submitted_data
+    return unless self.class.column_names.include?("applicant_email")
+    return if try(:applicant_email).present?
+    return unless submitted_data.is_a?(Hash)
+
+    SUBMITTED_DATA_APPLICANT_EMAIL_KEYS.each do |key|
+      val = submitted_data[key] || submitted_data[key.to_s]
+      next if val.blank?
+
+      self.applicant_email = val.to_s.strip
+      return
     end
   end
 end 

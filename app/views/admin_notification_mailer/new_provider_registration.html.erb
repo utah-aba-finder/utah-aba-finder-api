@@ -9,8 +9,8 @@
   <h2><%= @registration.provider_name %></h2>
   
   <p><strong>Practice / listing email:</strong> <%= @registration.email %></p>
-  <% if @registration.try(:applicant_email).present? %>
-    <p><strong>Applicant (notifications and login):</strong> <%= @registration.try(:applicant_email) %></p>
+  <% if @separate_applicant_inbox %>
+    <p><strong>Applicant (notifications and login):</strong> <%= @applicant_inbox_email %></p>
   <% else %>
     <p><em>No separate applicant email; notifications use the practice email above.</em></p>
   <% end %>
@@ -19,7 +19,7 @@
   <p><strong>Submitted:</strong> <%= @registration.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>
   
   <h3>Submitted Information:</h3>
-  <% (@registration.submitted_data || {}).each do |key, value| %>
+  <% @registration.submitted_data_for_admin_display.each do |key, value| %>
     <p><strong><%= key.to_s.humanize %>:</strong> <%= value %></p>
   <% end %>
   
@@ -28,4 +28,4 @@
   </p>
 
 </body>
-</html> 
+</html>

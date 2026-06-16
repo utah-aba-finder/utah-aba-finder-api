@@ -12,8 +12,10 @@ class AdminNotificationMailer < ApplicationMailer
   end
 
   def new_provider_registration(registration)
-    @registration = registration
-    @registration_review_url = registration_admin_review_url(registration)
+    @registration = registration.reload
+    @registration_review_url = registration_admin_review_url(@registration)
+    @separate_applicant_inbox = @registration.separate_applicant_inbox?
+    @applicant_inbox_email = @registration.correspondence_email if @separate_applicant_inbox
     to_list = self.class.admin_notification_recipients
     @admin_email = to_list.join(", ")
 
