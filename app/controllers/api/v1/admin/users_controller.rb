@@ -159,7 +159,7 @@ class Api::V1::Admin::UsersController < Api::V1::Admin::BaseController
         return
       end
       
-      user = User.find_by(email: user_email)
+      user = User.find_by('LOWER(email) = ?', user_email.to_s.downcase.strip)
       if user.nil?
         render json: { error: "User not found with email: #{user_email}" }, status: :not_found
         return

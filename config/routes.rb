@@ -128,10 +128,16 @@ Rails.application.routes.draw do
         collection do
           get :users_with_providers
           get :providers_list
+          get :unlinked_users
           post :bulk_assign_users
+          post :manual_link
+          post :assign_user_by_email
+          post :unlink_user_from_provider
         end
         
         member do
+          post :link_to_provider
+          post :unlink_from_provider
           post :unassign_provider_from_user
         end
       end

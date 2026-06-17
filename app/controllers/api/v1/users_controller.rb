@@ -125,40 +125,28 @@ class Api::V1::UsersController < ApplicationController
   def link_to_provider
     user = User.find(params[:id])
     provider_id = params[:provider_id]
-    
+
     begin
       provider = Provider.find(provider_id)
-      
-      # Update legacy provider_id relationship
-      user.update!(provider_id: provider_id)
-      
-      # Also create provider_assignment for multi-provider system
-      ProviderAssignment.find_or_create_by(
-        user: user,
-        provider: provider
-      ) do |assignment|
-        assignment.assigned_by = current_user&.email || user.email
+      result = assign_user_to_provider!(user, provider)
+
+      if result[:already_linked]
+        render json: {
+          success: true,
+          message: "User already has access to this provider",
+          user: user_link_json(result[:user]),
+          provider: provider_link_json(result[:provider])
+        }, status: :ok
+        return
       end
-      
-      # Set as active provider if user doesn't have one
-      user.update!(active_provider_id: provider_id) if user.active_provider_id.nil?
-      
-      render json: { 
+
+      render json: {
+        success: true,
         message: "User successfully linked to provider",
-        user: {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-          provider_id: user.provider_id,
-          active_provider_id: user.active_provider_id
-        },
-        provider: {
-          id: provider.id,
-          name: provider.name,
-          email: provider.email
-        }
+        user: user_link_json(result[:user]),
+        provider: provider_link_json(result[:provider])
       }, status: :ok
-    rescue ActiveRecord::RecordNotFound => e
+    rescue ActiveRecord::RecordNotFound
       render json: { error: "Provider not found with ID: #{provider_id}" }, status: :not_found
     rescue => e
       render json: { error: e.message }, status: :unprocessable_entity
@@ -196,48 +184,32 @@ class Api::V1::UsersController < ApplicationController
 
   # New endpoint for frontend manual linking
   def manual_link
-    user_email = params[:user_email]
+    user_email = params[:user_email].presence || params[:email].presence
     provider_id = params[:provider_id]
-    
+
+    if user_email.blank? || provider_id.blank?
+      render json: { error: "Both user_email and provider_id are required" }, status: :bad_request
+      return
+    end
+
     begin
-      user = User.find_by(email: user_email)
+      user = User.find_by('LOWER(email) = ?', user_email.to_s.downcase.strip)
       provider = Provider.find(provider_id)
-      
+
       if user.nil?
         render json: { error: "User not found with email: #{user_email}" }, status: :not_found
         return
       end
-      
-      # Update legacy provider_id relationship
-      user.update!(provider_id: provider_id)
-      
-      # Also create provider_assignment for multi-provider system
-      ProviderAssignment.find_or_create_by(
-        user: user,
-        provider: provider
-      ) do |assignment|
-        assignment.assigned_by = current_user&.email || user.email
-      end
-      
-      # Set as active provider if user doesn't have one
-      user.update!(active_provider_id: provider_id) if user.active_provider_id.nil?
-      
-      render json: { 
+
+      result = assign_user_to_provider!(user, provider)
+
+      render json: {
         success: true,
-        message: "User successfully linked to provider",
-        user: {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-          provider_id: user.provider_id
-        },
-        provider: {
-          id: provider.id,
-          name: provider.name,
-          email: provider.email
-        }
+        message: result[:already_linked] ? "User already has access to this provider" : "User successfully linked to provider",
+        user: user_link_json(result[:user]),
+        provider: provider_link_json(result[:provider])
       }, status: :ok
-    rescue ActiveRecord::RecordNotFound => e
+    rescue ActiveRecord::RecordNotFound
       render json: { error: "Provider not found with ID: #{provider_id}" }, status: :not_found
     rescue => e
       render json: { error: e.message }, status: :unprocessable_entity
@@ -302,16 +274,10 @@ class Api::V1::UsersController < ApplicationController
         return
       end
       
-      # Update all users
       updated_users = []
       users.each do |user|
-        user.update!(provider_id: provider_id)
-        updated_users << {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-          provider_id: user.provider_id
-        }
+        result = assign_user_to_provider!(user, provider)
+        updated_users << user_link_json(result[:user])
       end
       
       render json: { 
@@ -430,19 +396,23 @@ class Api::V1::UsersController < ApplicationController
 
   # New endpoint to get all users with their current provider associations
   def users_with_providers
-    users = User.all.includes(:provider)
+    users = User.all.includes(:provider, :assigned_providers)
     render json: {
-      users: users.map { |user| 
+      users: users.map { |user|
         provider = user.provider
-        { 
-          id: user.id, 
-          email: user.email, 
+        managed = user.all_managed_providers
+        {
+          id: user.id,
+          email: user.email,
           role: user.role,
           provider_id: user.provider_id,
-          provider_name: provider ? provider.name : nil,
-          provider_email: provider ? provider.email : nil,
-          created_at: user.created_at 
-        } 
+          provider_name: provider&.name,
+          provider_email: provider&.email,
+          managed_provider_ids: managed.map(&:id),
+          managed_providers: managed.map { |p| { id: p.id, name: p.name, email: p.email } },
+          accessible_providers_count: managed.size,
+          created_at: user.created_at
+        }
       }
     }, status: :ok
   end
@@ -603,6 +573,41 @@ class Api::V1::UsersController < ApplicationController
   end
 
   private
+
+  def assign_user_to_provider!(user, provider)
+    if user.can_access_provider?(provider.id)
+      return { already_linked: true, user: user, provider: provider }
+    end
+
+    assigned_by = current_user&.email || user.email
+    user.update!(provider_id: provider.id) if user.provider_id.nil?
+    user.update!(active_provider_id: provider.id) if user.active_provider_id.nil?
+
+    ProviderAssignment.find_or_create_by!(user: user, provider: provider) do |assignment|
+      assignment.assigned_by = assigned_by
+    end
+
+    { already_linked: false, user: user.reload, provider: provider }
+  end
+
+  def user_link_json(user)
+    {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      provider_id: user.provider_id,
+      active_provider_id: user.active_provider_id,
+      accessible_providers_count: user.all_managed_providers.count
+    }
+  end
+
+  def provider_link_json(provider)
+    {
+      id: provider.id,
+      name: provider.name,
+      email: provider.email
+    }
+  end
 
   def user_params
     params.require(:user).permit(:email, :password, :password_confirmation, :role, :provider_id)
