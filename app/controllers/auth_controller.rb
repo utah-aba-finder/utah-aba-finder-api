@@ -118,9 +118,16 @@ class AuthController < ActionController::API
   end
 
   def password_reset
-    # Use the exact same email verification logic as the AuthenticationController login
-    user = User.find_by(email: params[:email])
-    
+    email = params[:email].presence || params.dig(:password_reset, :email).presence
+    email = email.to_s.downcase.strip.presence
+
+    if email.blank?
+      render json: { error: 'Email is required' }, status: :unprocessable_entity
+      return
+    end
+
+    user = User.find_by('LOWER(email) = ?', email)
+
     if user
       begin
         user.send_reset_password_instructions
@@ -130,8 +137,7 @@ class AuthController < ActionController::API
         render json: { error: 'Failed to send password reset email. Please try again later.' }, status: :internal_server_error
       end
     else
-      # Use the same response logic as login - don't reveal if email exists or not
-      render json: { error: 'If the email exists, password reset instructions have been sent' }, status: :ok
+      render json: { message: 'If the email exists, password reset instructions have been sent' }, status: :ok
     end
   end
 

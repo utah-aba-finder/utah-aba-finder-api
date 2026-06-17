@@ -140,6 +140,7 @@ Rails.application.routes.draw do
       resources :password_resets, only: [:create] do
         collection do
           patch :update
+          patch 'update', action: :update
           get :validate_token
         end
       end
