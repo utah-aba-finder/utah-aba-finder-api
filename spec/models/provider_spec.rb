@@ -149,6 +149,36 @@ RSpec.describe Provider, type: :model do
       expect(location.reload.practice_types).to contain_exactly(aba)
     end
 
+    it "prefers services over stale practice_types on the same location" do
+      aba = PracticeType.create!(name: "ABA Therapy")
+      ot = PracticeType.create!(name: "Occupational Therapy")
+      speech = PracticeType.create!(name: "Speech Therapy")
+      provider = create(:provider, :in_home_only)
+      location = provider.locations.create!(
+        name: "Bethesda", address_1: "123 Main", city: "Bethesda", state: "MD", zip: "20814", phone: "555-0000"
+      )
+      location.practice_types << aba
+
+      provider.update_locations([
+        {
+          id: location.id,
+          name: "Bethesda",
+          address_1: "123 Main",
+          city: "Bethesda",
+          state: "MD",
+          zip: "20814",
+          phone: "555-0000",
+          services: [
+            { id: ot.id, name: "Occupational Therapy" },
+            { id: speech.id, name: "Speech Therapy" }
+          ],
+          practice_types: ["ABA Therapy"]
+        }
+      ])
+
+      expect(location.reload.practice_types).to contain_exactly(ot, speech)
+    end
+
     it "syncs provider phone from the primary location" do
       provider = create(:provider, :in_home_only, phone: "555-1111")
       location = provider.locations.create!(

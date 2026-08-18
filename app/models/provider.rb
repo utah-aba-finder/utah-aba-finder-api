@@ -297,12 +297,14 @@ class Provider < ApplicationRecord
       
       Rails.logger.info "🔍 Provider#update_locations - Location #{location.id}: services=#{services.inspect}, practice_types=#{practice_types.inspect}, service_types=#{service_types.inspect}"
       
-      services_to_update = if practice_types.present?
-                             practice_types
+      # Prefer explicit services array over legacy practice_types strings.
+      # Frontend often sends both; stale practice_types was overwriting edited services.
+      services_to_update = if services.present?
+                             services
                            elsif service_types.present?
                              service_types
                            else
-                             services
+                             practice_types
                            end
       Rails.logger.info "🔍 Provider#update_locations - Location #{location.id}: services_to_update=#{services_to_update.inspect}"
       update_location_services(location, services_to_update)
