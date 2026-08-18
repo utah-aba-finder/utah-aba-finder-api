@@ -290,14 +290,20 @@ class Provider < ApplicationRecord
       Rails.logger.info "✅ Provider#update_locations - Location #{location.id}: phone saved as: #{location.phone.inspect}"
 
       # location services update (handle both symbol and string keys)
-      # Accept either 'services' or 'practice_types' field
+      # Accept services, practice_types, or service_types on each location
       services = location_info[:services] || location_info["services"]
       practice_types = location_info[:practice_types] || location_info["practice_types"]
+      service_types = location_info[:service_types] || location_info["service_types"]
       
-      Rails.logger.info "🔍 Provider#update_locations - Location #{location.id}: services=#{services.inspect}, practice_types=#{practice_types.inspect}"
+      Rails.logger.info "🔍 Provider#update_locations - Location #{location.id}: services=#{services.inspect}, practice_types=#{practice_types.inspect}, service_types=#{service_types.inspect}"
       
-      # Use practice_types if provided (string array), otherwise use services
-      services_to_update = practice_types.present? ? practice_types : services
+      services_to_update = if practice_types.present?
+                             practice_types
+                           elsif service_types.present?
+                             service_types
+                           else
+                             services
+                           end
       Rails.logger.info "🔍 Provider#update_locations - Location #{location.id}: services_to_update=#{services_to_update.inspect}"
       update_location_services(location, services_to_update)
       
@@ -424,28 +430,11 @@ class Provider < ApplicationRecord
     return if practice_type_params.blank?
 
     practice_type_params.each do |type_info|
-      # Handle both name-based and id-based input for backward compatibility
-      if type_info[:name].present?
-        practice_type = PracticeType.find_for_name(type_info[:name])
-        if practice_type
-          ProviderPracticeType.create!(
-            provider: self,
-            practice_type: practice_type
-          )
-        else
-          Rails.logger.warn "Practice type not found by name: #{type_info[:name]}"
-        end
-      elsif type_info[:id].present?
-        # Fallback to ID lookup for backward compatibility
-        practice_type = PracticeType.find_by(id: type_info[:id])
-        if practice_type
-          ProviderPracticeType.create!(
-            provider: self,
-            practice_type: practice_type
-          )
-        else
-          Rails.logger.warn "Practice type not found by ID: #{type_info[:id]}"
-        end
+      practice_type = resolve_practice_type(type_info)
+      if practice_type
+        ProviderPracticeType.create!(provider: self, practice_type: practice_type)
+      else
+        Rails.logger.warn "Practice type not found: #{type_info.inspect}"
       end
     end
   end
@@ -453,29 +442,28 @@ class Provider < ApplicationRecord
   def update_practice_types(practice_type_params)
     return if practice_type_params.blank?
 
-    # Clear existing practice types
-    self.practice_types.clear
-
-    # Add new practice types by name lookup (more robust than ID lookup)
-    practice_type_params.each do |type_info|
-      # Handle both name-based and id-based input for backward compatibility
-      if type_info[:name].present?
-        practice_type = PracticeType.find_for_name(type_info[:name])
-        if practice_type
-          self.practice_types << practice_type
-        else
-          Rails.logger.warn "Practice type not found by name: #{type_info[:name]}"
-        end
-      elsif type_info[:id].present?
-        # Fallback to ID lookup for backward compatibility
-        practice_type = PracticeType.find_by(id: type_info[:id])
-        if practice_type
-          self.practice_types << practice_type
-        else
-          Rails.logger.warn "Practice type not found by ID: #{type_info[:id]}"
-        end
-      end
+    resolved = practice_type_params.filter_map { |type_info| resolve_practice_type(type_info) }.uniq
+    if resolved.empty?
+      Rails.logger.warn "⚠️ update_practice_types - No valid practice types in payload; keeping existing types"
+      return
     end
+
+    self.practice_types = resolved
+  end
+
+  # Keep provider.phone (dashboard) aligned with the primary location phone (admin location form)
+  def sync_phone_from_primary_location!
+    primary = primary_location_or_first
+    return unless primary&.phone.present?
+
+    update_column(:phone, primary.phone) if phone != primary.phone
+  end
+
+  def sync_primary_location_phone_from_provider!
+    primary = primary_location_or_first
+    return unless primary && phone.present?
+
+    primary.update_column(:phone, phone) if primary.phone != phone
   end
 
   def update_location_services(location, services_params)
@@ -520,44 +508,41 @@ class Provider < ApplicationRecord
     else
       # Format: services: [{id, name}] or [{id}]
       Rails.logger.info "🔍 update_location_services - Using object array format (services)"
-      services_params_ids = services_params.map { |service| service[:id] || service["id"] }.compact.reject { |id| id.to_i <= 0 }
-      
-      Rails.logger.info "🔍 update_location_services - Extracted IDs: #{services_params_ids.inspect}"
-      
-      # If no valid IDs found, preserve existing (don't clear accidentally)
-      if services_params_ids.empty?
-        Rails.logger.info "🔍 update_location_services - Preserving existing (no valid IDs found)"
+      resolved_types = services_params.filter_map { |service_info| resolve_practice_type(service_info) }.uniq
+
+      if resolved_types.empty?
+        Rails.logger.info "🔍 update_location_services - Preserving existing (no valid services resolved)"
         return
       end
 
-      # Remove practice types not in the list
-      location.practice_types.each do |practice_type|
-        unless services_params_ids.include?(practice_type.id)
-          Rails.logger.info "🔍 update_location_services - Removing practice_type: #{practice_type.name} (ID: #{practice_type.id})"
-          location.practice_types.delete(practice_type)
-        end
-      end
-
-      # Add new practice types
-      services_params.each do |service_info|
-        service_id = service_info[:id] || service_info["id"]
-        next unless service_id.present? && service_id.to_i > 0
-        
-        practice_type = PracticeType.find_by(id: service_id)
-        if practice_type
-          unless location.practice_types.include?(practice_type)
-            location.practice_types << practice_type
-            Rails.logger.info "✅ update_location_services - Added practice_type: #{practice_type.name} (ID: #{service_id})"
-          end
-        else
-          Rails.logger.warn "⚠️ Practice type not found by ID: #{service_id}"
-        end
-      end
+      location.practice_types = resolved_types
       Rails.logger.info "✅ update_location_services - Final practice_types count: #{location.practice_types.count}"
     end
   end
 
   private
+
+  def resolve_practice_type(type_info)
+    return PracticeType.find_for_name(type_info) if type_info.is_a?(String)
+
+    return nil unless type_info.is_a?(Hash) || type_info.respond_to?(:[])
+
+    name = type_info[:name] || type_info["name"]
+    if name.present?
+      practice_type = PracticeType.find_for_name(name)
+      return practice_type if practice_type
+      Rails.logger.warn "Practice type not found by name: #{name}"
+    end
+
+    service_id = type_info[:id] || type_info["id"]
+    if service_id.present? && service_id.to_i > 0
+      practice_type = PracticeType.find_by(id: service_id)
+      return practice_type if practice_type
+      Rails.logger.warn "Practice type not found by ID: #{service_id}"
+    end
+
+    nil
+  end
 
   def normalize_status
     return unless status.present?

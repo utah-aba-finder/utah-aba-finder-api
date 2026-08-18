@@ -87,6 +87,12 @@ class Api::V1::ProviderSelfController < ApplicationController
         if params[:data]&.first&.dig(:attributes, :provider_attributes)&.present?
           update_provider_attributes(params[:data].first[:attributes][:provider_attributes])
         end
+
+        if locations_data.present?
+          @provider.sync_phone_from_primary_location!
+        elsif provider_params[:phone].present?
+          @provider.sync_primary_location_phone_from_provider!
+        end
         
         @provider.touch
         # Reload provider with associations to ensure fresh data (especially locations and primary_location_id)

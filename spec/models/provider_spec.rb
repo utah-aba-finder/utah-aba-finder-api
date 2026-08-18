@@ -116,5 +116,49 @@ RSpec.describe Provider, type: :model do
       expect(new_location.phone).to eq("333-3333")
       expect(new_location.email).to eq("newlocation@provider1.com")
     end
+
+    it "updates provider practice types from string names" do
+      aba = PracticeType.create!(name: "ABA Therapy")
+      speech = PracticeType.create!(name: "Speech Therapy")
+      provider = create(:provider, :in_home_only)
+
+      provider.update_practice_types(["ABA Therapy", "Speech Therapy"])
+
+      expect(provider.reload.practice_types).to contain_exactly(aba, speech)
+    end
+
+    it "does not wipe provider practice types when payload is invalid" do
+      aba = PracticeType.create!(name: "ABA Therapy")
+      provider = create(:provider, :in_home_only)
+      provider.practice_types << aba
+
+      provider.update_practice_types([{ "id" => 0, "name" => "" }])
+
+      expect(provider.reload.practice_types).to contain_exactly(aba)
+    end
+
+    it "updates location services using service names when ids are missing" do
+      aba = PracticeType.create!(name: "ABA Therapy")
+      provider = create(:provider, :in_home_only)
+      location = provider.locations.create!(
+        name: "Main", address_1: "123 Main", city: "SLC", state: "UT", zip: "84101", phone: "555-0000"
+      )
+
+      provider.update_location_services(location, [{ "name" => "ABA Therapy" }])
+
+      expect(location.reload.practice_types).to contain_exactly(aba)
+    end
+
+    it "syncs provider phone from the primary location" do
+      provider = create(:provider, :in_home_only, phone: "555-1111")
+      location = provider.locations.create!(
+        name: "Main", address_1: "123 Main", city: "SLC", state: "UT", zip: "84101", phone: "555-9999"
+      )
+      provider.update_column(:primary_location_id, location.id)
+
+      provider.sync_phone_from_primary_location!
+
+      expect(provider.reload.phone).to eq("555-9999")
+    end
   end
 end

@@ -203,6 +203,13 @@ class Api::V1::Admin::ProvidersController < Api::V1::Admin::BaseController
         update_provider_attributes(provider, provider_attributes_params)
       end
 
+      # Keep dashboard phone (provider.phone) in sync with location phone edits
+      if locations_params.present?
+        provider.sync_phone_from_primary_location!
+      elsif admin_provider_params[:phone].present?
+        provider.sync_primary_location_phone_from_provider!
+      end
+
       provider.touch # Ensure updated_at is updated
       # Reload provider with associations for serializer
       provider.reload
